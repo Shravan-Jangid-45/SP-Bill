@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Coupons — SP Fashion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --accent-green:#10bf39;
+      --accent-red:#e30202;
+      --accent-blue:#007bff;
+      --accent-orange:#e65c00;
+      --title-font:"DM Sans","Inter",sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--title-font);background:#f5f5f5;min-height:100vh;overflow-x:hidden;}
+    .app{display:flex;width:100%;min-height:100vh;}
+
+    /* Sidebar */
+    .sidebar{background:#1a1a1a;color:white;width:200px;padding:20px 0;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:1100;overflow-y:auto;}
+    .brand{font-size:18px;font-weight:bold;margin-bottom:30px;text-align:center;color:white;}
+    .nav-link{text-decoration:none;color:white;display:block;margin-bottom:5px;}
+    .nav-inner{display:flex;align-items:center;gap:12px;padding:12px 20px;transition:background 0.3s;font-size:14px;}
+    .nav-link:hover .nav-inner{background-color:#333;}
+    .nav-link.active .nav-inner{background:#0066cc;border-left:3px solid #fff;}
+    .nav-inner img{width:16px;height:16px;}
+
+    /* Main */
+    .main-content{margin-left:200px;width:calc(100% - 200px);background:#f5f5f5;display:flex;flex-direction:column;min-height:100vh;}
+
+    /* Top Header */
+    .top-header{background:white;padding:15px 30px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e0e0e0;box-shadow:0 1px 3px rgba(0,0,0,.1);min-height:60px;position:sticky;top:0;z-index:1050;}
+    .page-title{font-size:20px;font-weight:600;color:#333;}
+    .icon-wrapper{width:35px;height:35px;background:#1c1c1c;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;}
+    .icon-wrapper img{width:20px;height:20px;filter:brightness(0) invert(1);}
+    .menu-toggle{display:none;background:none;border:none;font-size:20px;cursor:pointer;color:#333;}
+
+    /* Toolbar */
+    .coupon-toolbar{display:flex;flex-wrap:wrap;align-items:center;padding:12px 30px;background:white;border-bottom:1px solid #e0e0e0;gap:10px;position:sticky;top:60px;z-index:1040;}
+    .search-box-wrap{position:relative;max-width:240px;}
+    .search-input{width:100%;padding:7px 32px 7px 13px;border:1px solid #ddd;border-radius:20px;font-size:13px;font-family:var(--title-font);outline:none;}
+    .search-input:focus{border-color:#aaa;}
+    .search-ico{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.4;pointer-events:none;}
+    .filter-wrap{position:relative;}
+    .filter-btn{display:flex;align-items:center;gap:5px;padding:7px 13px;border:1px solid #ddd;background:white;border-radius:20px;cursor:pointer;font-size:13px;font-family:var(--title-font);}
+    .filter-dropdown{position:absolute;top:calc(100% + 4px);left:0;background:white;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);min-width:140px;z-index:500;display:none;}
+    .filter-dropdown.open{display:block;}
+    .filter-opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f5f5f5;}
+    .filter-opt:last-child{border:none;}
+    .filter-opt:hover{background:#f8f9fa;}
+    .filter-opt.active{color:var(--accent-green);font-weight:700;}
+    .toolbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
+    .tab-lbl{font-size:14px;font-weight:600;cursor:pointer;color:#aaa;padding:3px 0;transition:color .18s;}
+    .tab-lbl.active{color:#10bf39;border-bottom:2px solid #10bf39;}
+    .tab-sep{color:#ddd;font-size:14px;margin:0 2px;}
+    .members-desktop-btn{display:flex;align-items:center;gap:1px;padding:8px 7px;background:#1c1c1c;color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--title-font);}
+    .new-coupon-btn{color:var(--accent-green);font-weight:600;font-size:13px;cursor:pointer;padding:7px 14px;border:1.5px solid var(--accent-green);border-radius:6px;background:white;font-family:var(--title-font);}
+    .new-coupon-btn:hover{background:#f0fff4;}
+
+    /* Content area */
+
+    .content-area{padding:22px 30px;flex-grow:1;}
+    .coupon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;padding:2px 0;}
+    .section-label{font-size:11px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:.8px;margin:20px 0 10px;}
+
+    /* Coupon Card */
+    .coupon-card{background:white;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.09);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s;}
+    .coupon-card:hover{box-shadow:0 5px 18px rgba(0,0,0,.13);}
+    .coupon-card.is-expired{opacity:.65;}
+
+    /* Card top orange strip */
+    .cc-top{background:linear-gradient(135deg,#fff3e0 0%,#ffe0b2 100%);padding:15px 16px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;border-bottom:1.5px dashed #f4a841;}
+    .cc-status-badge{position:absolute;top:9px;right:10px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;text-transform:uppercase;}
+    .cc-status-expired{background:#fce4e4;color:#c62828;}
+    .cc-status-claimed{background:#e8f5e9;color:#388e3c;}
+    .cc-discount{font-size:26px;font-weight:900;color:#e65c00;line-height:1.1;}
+    .cc-code{font-size:15px;font-weight:800;color:#1a1a1a;margin-top:3px;letter-spacing:1px;}
+    .cc-validity{font-size:11px;font-weight:600;color:#e65c00;margin-top:2px;}
+
+    /* Card body */
+    .cc-body{padding:11px 15px;flex-grow:1;}
+    .cc-name{font-size:14px;font-weight:700;color:#222;}
+    .cc-phone{font-size:12px;color:#888;margin-top:1px;}
+    .cc-product-row{margin-top:7px;padding-top:7px;border-top:1px solid #f0f0f0;}
+    .cc-on-lbl{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px;}
+    .cc-product-name{font-size:12px;font-weight:600;color:#444;margin-top:1px;}
+    .cc-product-barcode{font-size:11px;color:#aaa;}
+
+    /* Card footer */
+    .cc-footer{padding:8px 14px 10px;display:flex;gap:8px;}
+    .btn-cc{flex:1;padding:7px 0;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--title-font);transition:all .18s;}
+    .btn-cc-dl{border:1.5px solid #007bff;background:white;color:#007bff;}
+    .btn-cc-dl:hover{background:#e8f0fe;}
+    .btn-cc-edit{border:1.5px solid #ff8c42;background:white;color:#ff8c42;}
+    .btn-cc-edit:hover{background:#fff3ec;}
+    .btn-cc-del{border:1.5px solid var(--accent-red);background:white;color:var(--accent-red);}
+    .btn-cc-del:hover{background:#fff0f0;}
+
+    /* Modals */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;justify-content:center;align-items:center;z-index:2000;padding:14px;}
+    .modal-overlay.show{display:flex;}
+    .modal-box{background:white;border-radius:12px;padding:25px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;}
+    .modal-title{font-size:18px;font-weight:600;color:#333;}
+    .close-btn{background:none;border:none;font-size:24px;cursor:pointer;color:#aaa;line-height:1;}
+    .close-btn:hover{color:#000;}
+    .form-group{margin-bottom:15px;}
+    .form-label{display:block;margin-bottom:5px;font-weight:500;font-size:.9rem;}
+    .form-input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:1rem;font-family:var(--title-font);outline:none;}
+    .form-input:focus{border-color:var(--accent-green);}
+    .radio-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+    .radio-option{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px;font-weight:500;padding:7px 13px;border:1.5px solid #ddd;border-radius:7px;transition:all .2s;user-select:none;}
+    .radio-option.selected{border-color:var(--accent-green);background:#f0fff4;color:#1a7a2a;}
+    .form-actions{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:10px;}
+    .form-actions-right{display:flex;gap:10px;}
+    .btn{padding:10px 20px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--title-font);}
+    .btn-primary{background:var(--accent-green);color:white;}
+    .btn-primary:hover{background:#0ea332;}
+    .btn-secondary{background:#6c757d;color:white;}
+    .btn-danger{background:var(--accent-red);color:white;}
+    .info-box{background:#f0f8ff;border:1px solid #bee3f8;border-radius:8px;padding:10px 14px;margin-top:8px;display:none;font-size:13px;}
+    .info-box.show{display:block;}
+    .warn-box{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin-top:8px;font-size:12px;color:#7a5200;}
+    .member-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #f5f5f5;gap:8px;}
+    .member-row:last-child{border:none;}
+    .member-info{flex:1;min-width:0;}
+    .member-name{font-size:13px;font-weight:600;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .member-meta{font-size:11px;color:#888;margin-top:2px;}
+    .member-amt{font-size:13px;font-weight:700;color:var(--accent-green);white-space:nowrap;margin-right:8px;}
+    .empty-state{text-align:center;padding:40px 20px;color:#ccc;}
+    .empty-state .icon{font-size:48px;margin-bottom:12px;}
+    .empty-state p{font-size:14px;}
+    .notif{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:8px;color:white;font-weight:500;z-index:9999;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.2);animation:slideUp .3s ease;}
+    @keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0;}to{transform:translateX(-50%) translateY(0);opacity:1;}}
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid #ddd;border-top-color:var(--accent-green);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:5px;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    /* Clickable card area */
+    .cc-clickable{cursor:pointer;}
+    .cc-clickable:hover .cc-top{filter:brightness(.97);}
+    .cc-clickable:hover .cc-body{background:#fafafa;}
+
+    /* Claim count pill on card */
+    .cc-claim-pill{display:inline-flex;align-items:center;gap:5px;margin-top:7px;padding:3px 10px;background:#e8f5e9;border-radius:12px;font-size:11px;font-weight:700;color:#2e7d32;cursor:pointer;}
+    .cc-claim-pill.none{background:#f5f5f5;color:#999;}
+
+    /* Detail Modal */
+    .detail-modal-box{background:white;border-radius:14px;width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18);}
+    .detail-header{background:linear-gradient(135deg,#fff3e0,#ffe0b2);padding:20px 22px 16px;border-bottom:1.5px dashed #f4a841;position:relative;}
+    .detail-header-code{font-size:22px;font-weight:900;color:#e65c00;letter-spacing:1px;}
+    .detail-header-disc{font-size:32px;font-weight:900;color:#1a1a1a;margin:2px 0;}
+    .detail-header-valid{font-size:12px;color:#888;margin-top:4px;}
+    .detail-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:22px;cursor:pointer;color:#888;line-height:1;}
+    .detail-close:hover{color:#333;}
+    .detail-body{padding:20px 22px;}
+    .detail-section{margin-bottom:18px;}
+    .detail-section-title{font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #f0f0f0;}
+    .detail-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .detail-info-item label{display:block;font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+    .detail-info-item span{font-size:14px;font-weight:600;color:#222;}
+    .claim-row{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:#f8f9fa;border-radius:10px;margin-bottom:8px;border:1px solid #eee;transition:background .15s;}
+    .claim-row:hover{background:#f0f8ff;}
+    .claim-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:15px;font-weight:700;flex-shrink:0;}
+    .claim-info{flex:1;min-width:0;}
+    .claim-name{font-size:14px;font-weight:700;color:#222;}
+    .claim-phone{font-size:12px;color:#888;margin-top:1px;}
+    .claim-date{font-size:11px;color:#aaa;margin-top:3px;}
+    .claim-bill{display:inline-flex;align-items:center;gap:5px;margin-top:5px;padding:3px 10px;background:#e3f2fd;border-radius:8px;font-size:12px;font-weight:700;color:#1565c0;cursor:pointer;border:none;font-family:var(--title-font);}
+    .claim-bill:hover{background:#bbdefb;}
+    .claim-bill-copied{background:#e8f5e9;color:#2e7d32;}
+    .no-claims{text-align:center;padding:30px 20px;color:#bbb;font-size:14px;}
+    .detail-stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+    .detail-stat{flex:1;min-width:100px;background:#f8f9fa;border-radius:10px;padding:12px 14px;text-align:center;border:1px solid #eee;}
+    .detail-stat-val{font-size:22px;font-weight:900;color:#333;}
+    .detail-stat-lbl{font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;margin-top:2px;}
+
+    /* Mobile */
+    /* Desktop: hide mobile-only buttons */
+    #membersMobileBtn,#addMobileBtn{ display:none; }
+
+    @media(max-width:768px){
+      .app{flex-direction:column;}
+      .main-content{margin-left:0;width:100%;}
+      .top-header{position:fixed;top:0;width:100%;padding:10px 15px;}
+      .coupon-toolbar{top:60px;padding:8px 15px;}
+      .content-area{padding:15px;margin-top:60px;}
+      .sidebar{transform:translateX(-100%);transition:transform .3s;}
+      .sidebar.active{transform:translateX(0);}
+      .menu-toggle{display:block;}
+      .coupon-grid{grid-template-columns:1fr;}
+      .members-desktop-btn,.new-coupon-btn{display:none !important;}
+      /* Mobile-only icon buttons — always show on mobile */
+      #addMobileBtn{ display:flex !important; }
+      #membersMobileBtn.members-visible{ display:flex !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="appSidebar">
+    <div class="brand">SP Fashion</div>
+    <a href="dashboard.html" class="nav-link"><div class="nav-inner"><img src="icon/deshboard.svg"><span>Dashboard</span></div></a>
+    <a href="product.html"   class="nav-link"><div class="nav-inner"><img src="icon/products.svg"><span>Products</span></div></a>
+    <a href="suppliers.html" class="nav-link"><div class="nav-inner"><img src="icon/Suppliers.svg"><span>Suppliers</span></div></a>
+    <a href="staff.html"     class="nav-link"><div class="nav-inner"><img src="icon/customer.svg"><span>Staff Members</span></div></a>
+    <a href="billing.html"   class="nav-link"><div class="nav-inner"><img src="icon/Bill.svg"><span>Billing</span></div></a>
+    <a href="invoices.html"  class="nav-link"><div class="nav-inner"><img src="icon/invoices.svg"><span>Invoices</span></div></a>
+    <a href="cashBook.html"  class="nav-link"><div class="nav-inner"><img src="icon/cashbook.svg"><span>Cash Book</span></div></a>
+    <a href="coupon.html"    class="nav-link active"><div class="nav-inner"><img src="icon/coupon.svg"><span>Coupons</span></div></a>
+    <a href="settings.html"  class="nav-link"><div class="nav-inner"><img src="icon/setting.svg"><span>Settings</span></div></a>
+  </aside>
+
+  <div class="main-content">
+    <!-- Header -->
+    <div class="top-header">
+      <div style="display:flex;align-items:center;gap:15px;">
+        <button class="menu-toggle" id="menuToggle">☰</button>
+        <h1 class="page-title">Coupons</h1>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="icon-wrapper" id="membersMobileBtn" onclick="openMembersModal()"><img src="icon/customer.svg" width="20"/></button>
+        <button class="icon-wrapper" id="addMobileBtn" onclick="document.getElementById('addCouponBtn').click()"><img src="icon/add.svg"/></button>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="coupon-toolbar">
+      <div class="search-box-wrap">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search code, customer…">
+        <span class="search-ico">
+          <img src="icon/search.svg" width="15" />
+        </span>
+      </div>
+      <div class="filter-wrap">
+        <button class="filter-btn" id="filterBtn">All ▾</button>
+        <div class="filter-dropdown" id="filterDropdown">
+          <div class="filter-opt active" data-filter="all"     onclick="setFilter('all',this)">All</div>
+          <div class="filter-opt"        data-filter="valid"   onclick="setFilter('valid',this)">✅ Valid</div>
+          <div class="filter-opt"        data-filter="expired" onclick="setFilter('expired',this)">⏰ Expired</div>
+          <div class="filter-opt"        data-filter="claimed" onclick="setFilter('claimed',this)">✔ Claimed</div>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <span class="tab-lbl active" id="tabSpecific" onclick="switchTab('specific')">Specific</span>
+        <span class="tab-sep">|</span>
+        <span class="tab-lbl" id="tabAll" onclick="switchTab('all')">Common</span>
+        <button class="members-desktop-btn" id="membersDesktopBtn" onclick="openMembersModal()" style="display:none;">
+          <img src="icon/customer.svg" width="20" />
+        </button>
+        <button class="new-coupon-btn" id="addCouponBtn">+ New</button>
+      </div>
+    </div>
+
+    <!-- Grids -->
+    <div class="content-area">
+      <div id="couponGridActive"  class="coupon-grid"></div>
+      <div id="expiredLabel"      class="section-label" style="display:none;">Expired / Claimed</div>
+      <div id="couponGridExpired" class="coupon-grid"></div>
+      <div id="emptyState" class="empty-state" style="display:none;"><div class="icon"></div><p>No coupons found.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="couponModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title" id="couponModalTitle">New Coupon</h2>
+      <button class="close-btn" onclick="closeCouponModal()">&times;</button>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Coupon For</div>
+      <div class="radio-group" id="audienceGroup">
+        <label class="radio-option" data-val="specific" onclick="selectAudience('specific')">Specific Customer</label>
+        <label class="radio-option" data-val="all"      onclick="selectAudience('all')">Common (All)</label>
+      </div>
+    </div>
+    <div class="form-group" id="customerMobileGroup" style="display:none;">
+      <label class="form-label">Customer Mobile *</label>
+      <div style="display:flex;gap:8px;">
+        <input type="tel" class="form-input" id="couponCustomerMobile" placeholder="10-digit mobile" maxlength="10" style="flex:1;">
+        <button class="btn btn-secondary" onclick="lookupCustomerForCoupon()" style="flex-shrink:0;font-size:13px;padding:8px 12px;">Find</button>
+      </div>
+      <div id="couponWarnBox" class="warn-box" style="display:none;"></div>
+      <div style="margin-top:10px;">
+        <label class="form-label">Customer Name</label>
+        <input type="text" class="form-input" id="couponCustomerName" placeholder="Auto-filled on Find, or enter manually">
+      </div>
+    </div>
+    <div class="form-group" id="limitGroup" style="display:none;">
+      <label class="form-label">Usage Limit</label>
+      <div class="radio-group" id="limitTypeGroup">
+        <label class="radio-option" data-val="unlimited" onclick="selectLimit('unlimited')">♾️ Unlimited</label>
+        <label class="radio-option" data-val="limited"   onclick="selectLimit('limited')">🔢 First N customers</label>
+      </div>
+      <div id="limitCountGroup" style="margin-top:8px;display:none;">
+        <input type="number" class="form-input" id="couponLimit" placeholder="e.g. 50" min="1">
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">Discount Type</div>
+      <div class="radio-group" id="discountTypeGroup">
+        <label class="radio-option" data-val="percent" onclick="selectDiscountType('percent')">% Percentage</label>
+        <label class="radio-option" data-val="cash"    onclick="selectDiscountType('cash')">₹ Cash</label>
+      </div>
+    </div>
+    <div class="form-group" id="percentSubGroup" style="display:none;">
+      <div class="form-label">Percentage Type</div>
+      <div class="radio-group" id="percentTypeGroup">
+        <label class="radio-option" data-val="flat_percent"    onclick="selectPercentType('flat_percent')">📋 Flat % on Total Bill</label>
+        <label class="radio-option" data-val="product_percent" onclick="selectPercentType('product_percent')">📦 % on Specific Product</label>
+      </div>
+    </div>
+    <div class="form-group" id="productBarcodeGroup" style="display:none;">
+      <label class="form-label">Product Barcode *</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" class="form-input" id="couponProductBarcode" placeholder="Enter barcode" style="flex:1;">
+        <button class="btn btn-secondary" onclick="lookupProduct()" style="flex-shrink:0;font-size:13px;padding:8px 12px;">Find</button>
+      </div>
+      <div id="productInfo" class="info-box"></div>
+    </div>
+    <div class="form-group" id="discountValueGroup" style="display:none;">
+      <label class="form-label" id="discountValueLabel">Discount Value</label>
+      <input type="number" class="form-input" id="couponDiscountValue" placeholder="e.g. 10" min="0.01" step="0.01">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Coupon Code *</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" class="form-input" id="couponCode" placeholder="e.g. SAVE50" style="flex:1;text-transform:uppercase;">
+        <button class="btn btn-secondary" onclick="generateCode()" style="flex-shrink:0;font-size:13px;padding:8px 12px;">Auto</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Valid Until *</label>
+      <input type="date" class="form-input" id="couponValidity">
+    </div>
+    <div class="form-actions">
+      <div id="editDeleteArea" style="display:none;">
+        <button class="btn btn-danger" id="editDeleteBtn" style="font-size:13px;padding:9px 16px;">Delete</button>
+      </div>
+      <div class="form-actions-right">
+        <button class="btn btn-secondary" onclick="closeCouponModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCoupon()" id="saveCouponBtn">Save Coupon</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MEMBERS MODAL -->
+<div class="modal-overlay" id="membersModal">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Eligible Members (₹3000+ purchase)</h2>
+      <button class="close-btn" onclick="closeMembersModal()">&times;</button>
+    </div>
+    <p style="font-size:12px;color:#888;margin-bottom:12px;">Customers with total bill amount ₹3000 or more.</p>
+    <div id="membersList"><div style="text-align:center;padding:20px;color:#aaa;"><span class="spinner"></span> Loading…</div></div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box" style="max-width:360px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Delete Coupon</h2>
+      <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
+    </div>
+    <p style="font-size:14px;color:#555;margin-bottom:20px;">Are you sure you want to permanently delete this coupon?</p>
+    <div class="form-actions">
+      <div></div>
+      <div class="form-actions-right">
+        <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COUPON DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="detail-modal-box">
+    <div class="detail-header" id="detailHeader">
+      <button class="detail-close" onclick="closeDetailModal()">&times;</button>
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Coupon Code</div>
+      <div class="detail-header-code" id="detailCode">—</div>
+      <div class="detail-header-disc" id="detailDisc">—</div>
+      <div class="detail-header-valid" id="detailValid">—</div>
+    </div>
+    <div class="detail-body" id="detailBody">
+      <div style="text-align:center;padding:30px;"><span class="spinner"></span> Loading details…</div>
+    </div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script type="module">
+'use strict';
+let db;
+try {
+  firebase.initializeApp({
+    apiKey:'AIzaSyCVXql_12NNa9_bUXYfWhj8Z7ZUqTyD1ak',
+    authDomain:'sp-fashion-beca2.firebaseapp.com',
+    projectId:'sp-fashion-beca2',
+    storageBucket:'sp-fashion-beca2.appspot.com',
+    messagingSenderId:'734725526616',
+    appId:'1:734725526616:web:4ed1410e441789653e262d'
+  });
+  db = firebase.firestore();
+} catch(e) {
+  console.error('Firebase init error:', e);
+}
+
+let currentTab    = 'specific';
+let currentFilter = 'all';
+let allCoupons    = [];
+let editingId     = null;
+let deletingId    = null;
+let selAudience   = null;
+let selDiscType   = null;
+let selPctType    = null;
+let selLimitType  = null;
+let productCache  = {}; // barcode -> product name
+
+/* INIT */
+document.addEventListener('DOMContentLoaded', () => {
+  setupSidebar();
+  loadProducts();
+  loadCoupons();
+
+  document.getElementById('couponCode').addEventListener('input', function(){ this.value=this.value.toUpperCase(); });
+  document.getElementById('searchInput').addEventListener('input', renderCoupons);
+
+  document.addEventListener('click', e=>{
+    if(!e.target.closest('.filter-wrap')) document.getElementById('filterDropdown').classList.remove('open');
+  });
+  document.getElementById('filterBtn').addEventListener('click', e=>{
+    e.stopPropagation();
+    document.getElementById('filterDropdown').classList.toggle('open');
+  });
+  document.querySelectorAll('.modal-overlay').forEach(m=>
+    m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('show'); })
+  );
+
+  // Add Coupon button
+  document.getElementById('addCouponBtn').addEventListener('click', ()=>{
+    editingId=null; resetForm();
+    document.getElementById('couponModalTitle').textContent='New Coupon';
+    document.getElementById('editDeleteArea').style.display='none';
+    document.getElementById('saveCouponBtn').textContent='Save Coupon';
+    selectAudience(currentTab==='all'?'all':'specific');
+    const d=new Date(); d.setDate(d.getDate()+30);
+    document.getElementById('couponValidity').value=d.toISOString().split('T')[0];
+    document.getElementById('couponModal').classList.add('show');
+  });
+
+  // Delete from inside edit modal
+  document.getElementById('editDeleteBtn').addEventListener('click', ()=>{
+    if(!editingId){console.warn('editDeleteBtn: no editingId');return;}
+    console.log('editDeleteBtn: opening delete for',editingId);
+    const idForDelete=String(editingId).trim();
+    closeCouponModal();
+    openDelete(idForDelete);
+  });
+
+  setTimeout(updateMembersBtn, 50);
+});
+
+function setupSidebar(){
+  document.getElementById('menuToggle').addEventListener('click',()=>document.getElementById('appSidebar').classList.toggle('active'));
+  document.addEventListener('click',e=>{
+    const sb=document.getElementById('appSidebar'),mt=document.getElementById('menuToggle');
+    if(sb.classList.contains('active')&&!sb.contains(e.target)&&!mt.contains(e.target)) sb.classList.remove('active');
+  });
+}
+
+/* LOAD PRODUCTS */
+async function loadProducts(){
+  try{
+    const snap=await db.collection('products').get();
+    snap.docs.forEach(d=>{
+      const p=d.data();
+      const nm=p.name||p.productName||p.itemName||'';
+      [p.barcode,p.spBarcode,p.productBarcode,p.code].forEach(bc=>{
+        if(bc) productCache[String(bc).trim()]=nm;
+      });
+    });
+  } catch(_){}
+}
+
+/* LOAD COUPONS */
+function loadCoupons(){
+  db.collection('coupons').onSnapshot(snap=>{
+    allCoupons=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderCoupons();
+  }, err=>showNotif('Error: '+err.message,'error'));
+}
+
+/* FILTER */
+function setFilter(f,el){
+  currentFilter=f;
+  document.querySelectorAll('.filter-opt').forEach(o=>o.classList.remove('active'));
+  el.classList.add('active');
+  const lbl={all:'All',valid:'Valid',expired:'Expired',claimed:'Claimed'}[f];
+  document.getElementById('filterBtn').textContent=lbl+' ▾';
+  document.getElementById('filterDropdown').classList.remove('open');
+  renderCoupons();
+}
+window.setFilter=setFilter;
+
+/* TAB */
+function switchTab(tab){
+  currentTab=tab;
+  document.getElementById('tabSpecific').classList.toggle('active',tab==='specific');
+  document.getElementById('tabAll').classList.toggle('active',tab==='all');
+  updateMembersBtn();
+  renderCoupons();
+}
+window.switchTab=switchTab;
+function updateMembersBtn(){
+  // Desktop members button
+  const dBtn=document.getElementById('membersDesktopBtn');
+  if(dBtn) dBtn.style.display=(currentTab==='specific')?'':'none';
+  // Mobile members button — use class toggle so CSS controls it
+  const mBtn=document.getElementById('membersMobileBtn');
+  if(mBtn){
+    if(currentTab==='specific') mBtn.classList.add('members-visible');
+    else mBtn.classList.remove('members-visible');
+  }
+}
+window.addEventListener('resize',updateMembersBtn);
+
+/* RENDER */
+function renderCoupons(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
+  let list=allCoupons.filter(c=>c.audience===currentTab);
+  if(q) list=list.filter(c=>
+    (c.code||'').toLowerCase().includes(q)||
+    (c.customerMobile||'').includes(q)||
+    (c.customerName||'').toLowerCase().includes(q)||
+    String(c.discountValue||'').includes(q)||
+    (c.productBarcode||'').toLowerCase().includes(q)
+  );
+  if(currentFilter!=='all') list=list.filter(c=>{
+    const dead=isDead(c,today);
+    if(currentFilter==='valid')   return !dead;
+    if(currentFilter==='expired') return dead&&!c.claimed;
+    if(currentFilter==='claimed') return !!c.claimed;
+    return true;
+  });
+  const active =list.filter(c=>!isDead(c,today)).sort((a,b)=>new Date(a.validity)-new Date(b.validity));
+  const expired=list.filter(c=> isDead(c,today)).sort((a,b)=>new Date(b.validity)-new Date(a.validity));
+  document.getElementById('couponGridActive').innerHTML =active.map(c=>buildCard(c,false)).join('');
+  document.getElementById('couponGridExpired').innerHTML=expired.map(c=>buildCard(c,true)).join('');
+  document.getElementById('expiredLabel').style.display =expired.length?'':'none';
+  document.getElementById('emptyState').style.display   =(!active.length&&!expired.length)?'':'none';
+}
+
+function isDead(c,today){
+  if(c.claimed) return true;
+  if(c.validity){const e=new Date(c.validity);e.setHours(0,0,0,0);if(e<today)return true;}
+  return false;
+}
+
+/* BUILD CARD */
+function buildCard(c,dead){
+  const discLabel=c.discountType==='cash'?'₹'+c.discountValue+' OFF':c.discountValue+'% OFF';
+  const valDate=c.validity?new Date(c.validity):null;
+  const valStr=valDate?valDate.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}):'—';
+
+  let statusBadge='';
+  if(c.claimed) statusBadge='<span class="cc-status-badge cc-status-claimed">Claimed</span>';
+  else if(dead) statusBadge='<span class="cc-status-badge cc-status-expired">Expired</span>';
+
+  // Customer / audience info
+  let custHtml='';
+  if(c.audience==='specific'){
+    const nm=c.customerName||'';
+    const ph=c.customerMobile||'';
+    if(nm||ph) custHtml=`<div class="cc-name">${nm}</div><div class="cc-phone">${ph}</div>`;
+  } else {
+    const lim=c.limitType==='limited'?'First '+c.usageLimit+' customers':'All Customers';
+    custHtml=`<div class="cc-name">${lim}</div>`;
+  }
+
+  // Claim count pill for "all" type
+  let claimPill='';
+  if(c.audience==='all'){
+    const cnt=c.claimedCount||0;
+    const limit=c.limitType==='limited'&&c.usageLimit?c.usageLimit:null;
+    if(cnt>0){
+      const limitStr=limit?' / '+limit+' limit':'';
+      claimPill=`<div class="cc-claim-pill" onclick="event.stopPropagation();showCouponDetail('${c.id}')">✅ ${cnt} claimed${limitStr} — View Details</div>`;
+    } else {
+      claimPill=`<div class="cc-claim-pill none">0 claimed${limit?' / '+limit+' limit':''}</div>`;
+    }
+  }
+
+  // Product / ON Bill
+  let prodHtml='';
+  const isProduct=c.discountSubType==='product_percent'&&c.productBarcode;
+  if(isProduct){
+    const pName=c.productName||productCache[String(c.productBarcode).trim()]||'';
+    prodHtml=`<div class="cc-product-row">
+      <div class="cc-on-lbl">ON</div>
+      ${pName?`<div class="cc-product-name">${pName}</div>`:''}
+      <div class="cc-product-barcode">${c.productBarcode}</div>
+    </div>`;
+  } else {
+    prodHtml=`<div class="cc-product-row">
+      <div class="cc-on-lbl">ON</div>
+      <div class="cc-product-name">Bill</div>
+    </div>`;
+  }
+
+  // Buttons: active = Download + Edit | expired/claimed = Delete only
+  const safeId=String(c.id||'');
+  const dlBtn=`<button class="btn-cc btn-cc-dl" onclick="event.stopPropagation();downloadCoupon('${safeId}')">Download</button>`;
+  const detailBtn=`<button class="btn-cc btn-cc-dl" onclick="event.stopPropagation();showCouponDetail('${safeId}')" style="border-color:#9c27b0;color:#9c27b0;">Details</button>`;
+  const actionBtn=dead
+    ? `<button class="btn-cc btn-cc-del" onclick="event.stopPropagation();openDelete('${safeId}')">Delete</button>`
+    : `<button class="btn-cc btn-cc-edit" onclick="event.stopPropagation();openEdit('${safeId}')">Edit</button>`;
+  const footerBtns=dead
+    ? detailBtn+actionBtn
+    : dlBtn+actionBtn;
+
+  return `
+  <div class="coupon-card${dead?' is-expired':''}">
+    <div class="cc-top cc-clickable" onclick="showCouponDetail('${safeId}')">
+      ${statusBadge}
+      <div class="cc-discount">${discLabel}</div>
+      <div class="cc-code">${c.code}</div>
+      <div class="cc-validity">Valid Until : ${valStr}</div>
+    </div>
+    <div class="cc-body cc-clickable" onclick="showCouponDetail('${safeId}')">
+      ${custHtml}
+      ${prodHtml}
+      ${claimPill}
+    </div>
+    <div class="cc-footer">${footerBtns}</div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════
+   COUPON DETAIL MODAL
+══════════════════════════════════════════════ */
+function closeDetailModal(){
+  document.getElementById('detailModal').classList.remove('show');
+}
+
+async function showCouponDetail(id){
+  const c=allCoupons.find(x=>x.id===id);
+  if(!c) return;
+
+  // Populate header
+  const discLabel=c.discountType==='cash'?'₹'+c.discountValue+' OFF':c.discountValue+'% OFF';
+  document.getElementById('detailCode').textContent=c.code||'—';
+  document.getElementById('detailDisc').textContent=discLabel;
+  const valDate=c.validity?new Date(c.validity).toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}):'—';
+  document.getElementById('detailValid').textContent='Valid Until: '+valDate;
+
+  // Show modal with loader
+  document.getElementById('detailBody').innerHTML=`<div style="text-align:center;padding:30px;"><span class="spinner"></span> Loading details…</div>`;
+  document.getElementById('detailModal').classList.add('show');
+
+  try{
+    const isSpecific=c.audience==='specific';
+    const isAll=c.audience==='all';
+    let html='';
+
+    // ── Basic Info ──
+    const discTypeLabel=c.discountType==='cash'?'Cash Off (₹)':'Percentage (%)';
+    const subTypeLabel=c.discountSubType==='product_percent'?'On Product':(c.discountSubType==='flat_percent'?'On Bill Total':'—');
+    const audienceLabel=isSpecific?'Specific Customer':'Common (All)';
+    const limitLabel=isAll?(c.limitType==='limited'?'First '+c.usageLimit+' customers':'Unlimited'):'—';
+
+    html+=`<div class="detail-section">
+      <div class="detail-section-title">Coupon Info</div>
+      <div class="detail-info-grid">
+        <div class="detail-info-item"><label>Discount Type</label><span>${discTypeLabel}</span></div>
+        <div class="detail-info-item"><label>Discount Value</label><span>${discLabel}</span></div>
+        <div class="detail-info-item"><label>Audience</label><span>${audienceLabel}</span></div>
+        ${isAll?`<div class="detail-info-item"><label>Usage Limit</label><span>${limitLabel}</span></div>`:''}
+        ${c.discountSubType==='product_percent'?`<div class="detail-info-item"><label>Applied On</label><span>${c.productName||c.productBarcode||'Product'}</span></div>`:''}
+        <div class="detail-info-item"><label>Validity</label><span>${valDate}</span></div>
+      </div>
+    </div>`;
+
+    // ── Stats for "all" type ──
+    if(isAll){
+      const cnt=c.claimedCount||0;
+      const rem=c.limitType==='limited'&&c.usageLimit?Math.max(0,c.usageLimit-cnt):'∞';
+      html+=`<div class="detail-stat-row">
+        <div class="detail-stat"><div class="detail-stat-val">${cnt}</div><div class="detail-stat-lbl">Claimed</div></div>
+        <div class="detail-stat"><div class="detail-stat-val">${c.limitType==='limited'&&c.usageLimit?c.usageLimit:'∞'}</div><div class="detail-stat-lbl">Total Limit</div></div>
+        <div class="detail-stat"><div class="detail-stat-val" style="color:${rem===0?'#e30202':'#10bf39'}">${rem}</div><div class="detail-stat-lbl">Remaining</div></div>
+      </div>`;
+    }
+
+    // ── Claim Details ──
+    html+=`<div class="detail-section"><div class="detail-section-title">Claim Details</div>`;
+
+    if(isSpecific){
+      // Single customer coupon
+      if(!c.claimed){
+        html+=`<div class="no-claims">⏳ Not yet claimed</div>`;
+      } else {
+        const mob=c.customerMobile||'';
+        const nm=c.customerName||'Customer';
+        const claimedAtStr=c.claimedAt?
+          (c.claimedAt.toDate?c.claimedAt.toDate():new Date(c.claimedAt)).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+          :'—';
+
+        // Find bill for this customer
+        let billHtml='<span style="color:#bbb;font-size:12px;">No bill found</span>';
+        try{
+          const bsnap=await db.collection('bills').where('customerPhone','==',mob).orderBy('timestamp','desc').limit(5).get();
+          if(!bsnap.empty){
+            const bills=bsnap.docs.map(d=>({...d.data(),id:d.id}));
+            // Find bill closest to claimedAt if available
+            const billRows=bills.slice(0,3).map(b=>`
+              <button class="claim-bill" onclick="copyBillNo(this,'${b.billNumber||''}')" title="Click to copy">
+                📄 ${b.billNumber||'N/A'}
+              </button>`).join(' ');
+            billHtml=`<div style="margin-top:5px;">${billRows}</div>`;
+          }
+        }catch(_){}
+
+        html+=`<div class="claim-row">
+          <div class="claim-avatar">${nm.charAt(0).toUpperCase()}</div>
+          <div class="claim-info">
+            <div class="claim-name">${nm}</div>
+            <div class="claim-phone">📞 ${mob||'—'}</div>
+            <div class="claim-date">🕐 Claimed: ${claimedAtStr}</div>
+            ${billHtml}
+          </div>
+        </div>`;
+      }
+
+    } else {
+      // All / Common coupon — list of claimers
+      const claimedBy=c.claimedBy||[];
+      if(!claimedBy.length){
+        html+=`<div class="no-claims">⏳ No one has claimed this coupon yet</div>`;
+      } else {
+        html+=`<p style="font-size:12px;color:#888;margin-bottom:12px;">Showing all ${claimedBy.length} customer(s) who have used this coupon. Click any Bill No to copy.</p>`;
+
+        // Fetch customer names and bills for all claimers in parallel
+        const claimerData=await Promise.all(claimedBy.map(async mobile=>{
+          let name='Customer'; let bills=[];
+          try{
+            const bsnap=await db.collection('bills').where('customerPhone','==',mobile).orderBy('timestamp','desc').limit(3).get();
+            bills=bsnap.docs.map(d=>d.data());
+            for(const b of bills){ if(b.customerName&&b.customerName!=='Cash Customer'){name=b.customerName;break;} }
+          }catch(_){}
+          return {mobile,name,bills};
+        }));
+
+        for(const claimer of claimerData){
+          const {mobile,name,bills}=claimer;
+          let billHtml='<span style="color:#bbb;font-size:12px;">No bills found</span>';
+          if(bills.length){
+            const rows=bills.map(b=>`<button class="claim-bill" onclick="copyBillNo(this,'${b.billNumber||''}')" title="Click to copy">📄 ${b.billNumber||'N/A'}</button>`).join(' ');
+            billHtml=`<div style="margin-top:5px;">${rows}</div>`;
+          }
+          html+=`<div class="claim-row">
+            <div class="claim-avatar">${name.charAt(0).toUpperCase()}</div>
+            <div class="claim-info">
+              <div class="claim-name">${name}</div>
+              <div class="claim-phone">📞 ${mobile}</div>
+              ${billHtml}
+            </div>
+          </div>`;
+        }
+      }
+    }
+
+    html+=`</div>`; // close detail-section
+
+    document.getElementById('detailBody').innerHTML=html;
+
+  } catch(err){
+    document.getElementById('detailBody').innerHTML=`<div style="color:#e30202;padding:20px;text-align:center;">Error loading details: ${err.message}</div>`;
+  }
+}
+
+// Copy bill number to clipboard with visual feedback
+window.copyBillNo=function(btn,billNo){
+  if(!billNo){showNotif('Bill number not available','error');return;}
+  navigator.clipboard.writeText(billNo).then(()=>{
+    btn.textContent='✅ '+billNo+' Copied!';
+    btn.classList.add('claim-bill-copied');
+    setTimeout(()=>{btn.textContent='📄 '+billNo;btn.classList.remove('claim-bill-copied');},2000);
+    showNotif('Bill No '+billNo+' copied!','success');
+  }).catch(()=>{
+    // fallback
+    const ta=document.createElement('textarea');
+    ta.value=billNo; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    btn.textContent='✅ '+billNo+' Copied!';
+    btn.classList.add('claim-bill-copied');
+    setTimeout(()=>{btn.textContent='📄 '+billNo;btn.classList.remove('claim-bill-copied');},2000);
+    showNotif('Bill No '+billNo+' copied!','success');
+  });
+};
+
+window.showCouponDetail=showCouponDetail;
+window.closeDetailModal=closeDetailModal;
+
+/* FORM HELPERS */
+function resetForm(){
+  editingId=null;selAudience=null;selDiscType=null;selPctType=null;selLimitType=null;
+  document.querySelectorAll('.radio-option').forEach(o=>o.classList.remove('selected'));
+  ['couponCode','couponValidity','couponDiscountValue','couponProductBarcode','couponCustomerMobile','couponCustomerName','couponLimit']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const wb=document.getElementById('couponWarnBox');wb.style.display='none';wb.innerHTML='';
+  const pi=document.getElementById('productInfo');pi.className='info-box';pi.innerHTML='';
+  ['customerMobileGroup','limitGroup','percentSubGroup','productBarcodeGroup','discountValueGroup','limitCountGroup']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+}
+function closeCouponModal(){
+  document.getElementById('couponModal').classList.remove('show');
+  const btn=document.getElementById('saveCouponBtn');
+  if(btn){btn.textContent='Save Coupon';btn.disabled=false;}
+  resetForm();
+}
+
+window.selectAudience=function(val){
+  selAudience=val;
+  document.querySelectorAll('#audienceGroup .radio-option').forEach(o=>o.classList.toggle('selected',o.dataset.val===val));
+  document.getElementById('customerMobileGroup').style.display=val==='specific'?'':'none';
+  document.getElementById('limitGroup').style.display          =val==='all'?'':'none';
+};
+window.selectDiscountType=function(val){
+  selDiscType=val;
+  document.querySelectorAll('#discountTypeGroup .radio-option').forEach(o=>o.classList.toggle('selected',o.dataset.val===val));
+  document.getElementById('percentSubGroup').style.display    =val==='percent'?'':'none';
+  document.getElementById('productBarcodeGroup').style.display='none';
+  document.getElementById('discountValueGroup').style.display ='';
+  if(val==='cash'){selPctType=null;document.querySelectorAll('#percentTypeGroup .radio-option').forEach(o=>o.classList.remove('selected'));document.getElementById('discountValueLabel').textContent='Cash Discount (₹)';}
+  else document.getElementById('discountValueLabel').textContent='Discount (%)';
+};
+window.selectPercentType=function(val){
+  selPctType=val;
+  document.querySelectorAll('#percentTypeGroup .radio-option').forEach(o=>o.classList.toggle('selected',o.dataset.val===val));
+  document.getElementById('productBarcodeGroup').style.display=val==='product_percent'?'':'none';
+};
+window.selectLimit=function(val){
+  selLimitType=val;
+  document.querySelectorAll('#limitTypeGroup .radio-option').forEach(o=>o.classList.toggle('selected',o.dataset.val===val));
+  document.getElementById('limitCountGroup').style.display=val==='limited'?'':'none';
+};
+function generateCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c='SP';
+  for(let i=0;i<5;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  document.getElementById('couponCode').value=c;
+}
+window.generateCode=generateCode;
+
+/* LOOKUP PRODUCT — searches barcode AND spBarcode */
+window.lookupProduct=async function(){
+  const bc=document.getElementById('couponProductBarcode').value.trim();
+  if(!bc){showNotif('Enter barcode first.','error');return;}
+  const box=document.getElementById('productInfo');
+  box.innerHTML='<span class="spinner"></span> Searching…';box.className='info-box show';
+  if(productCache[bc]){box.innerHTML='✅ <b>'+productCache[bc]+'</b>';return;}
+  try{
+    let foundName='';
+    const s1=await db.collection('products').where('barcode','==',bc).limit(1).get();
+    if(!s1.empty){const d=s1.docs[0].data();foundName=d.name||d.productName||d.itemName||'';}
+    if(!foundName){
+      const s2=await db.collection('products').where('spBarcode','==',bc).limit(1).get();
+      if(!s2.empty){const d=s2.docs[0].data();foundName=d.name||d.productName||d.itemName||'';}
+    }
+    if(foundName){productCache[bc]=foundName;box.innerHTML='✅ <b>'+foundName+'</b>';}
+    else box.innerHTML='⚠️ Product not found for: '+bc;
+  }catch(e){box.innerHTML='❌ '+e.message;}
+};
+
+/* LOOKUP CUSTOMER */
+window.lookupCustomerForCoupon=async function(){
+  const m=document.getElementById('couponCustomerMobile').value.trim();
+  if(m.length!==10){showNotif('Enter 10-digit mobile.','error');return;}
+  const wb=document.getElementById('couponWarnBox');
+  wb.style.display='none';wb.innerHTML='';
+  const nameInput=document.getElementById('couponCustomerName');
+  nameInput.value='';nameInput.placeholder='Searching…';
+  try{
+    let name=null;
+    const cs=await db.collection('customers').where('mobile','==',m).limit(1).get();
+    if(!cs.empty) name=cs.docs[0].data().name;
+    const bs=await db.collection('bills').where('customerPhone','==',m).get();
+    if(!name) for(const d of bs.docs){const n=d.data().customerName;if(n&&n!=='Cash Customer'){name=n;break;}}
+    const total=bs.docs.reduce((s,d)=>s+(d.data().totalAmount||d.data().effectiveTotal||0),0);
+    if(name){
+      nameInput.value=name;nameInput.placeholder='Customer name';
+      if(total<3000){wb.innerHTML=`⚠️ Total ₹${total.toFixed(0)} (below ₹3,000). Coupon still allowed.`;wb.style.display='';}
+    } else {
+      nameInput.placeholder='Not found — enter manually';
+      if(total>0) showNotif('No customer name found. Bills: ₹'+total.toFixed(0),'info');
+    }
+  }catch(e){nameInput.placeholder='Error — enter manually';showNotif('Error: '+e.message,'error');}
+};
+
+/* SAVE COUPON */
+window.saveCoupon=async function(){
+  if(!selAudience){showNotif('Select audience.','error');return;}
+  if(selAudience==='specific'&&document.getElementById('couponCustomerMobile').value.trim().length!==10){showNotif('Enter valid mobile.','error');return;}
+  if(!selDiscType){showNotif('Select discount type.','error');return;}
+  if(selDiscType==='percent'&&!selPctType){showNotif('Select % type.','error');return;}
+  if(selDiscType==='percent'&&selPctType==='product_percent'&&!document.getElementById('couponProductBarcode').value.trim()){showNotif('Enter product barcode.','error');return;}
+  const discVal=parseFloat(document.getElementById('couponDiscountValue').value);
+  if(isNaN(discVal)||discVal<=0){showNotif('Enter discount value.','error');return;}
+  const code=document.getElementById('couponCode').value.trim().toUpperCase();
+  if(!code){showNotif('Enter coupon code.','error');return;}
+  const validity=document.getElementById('couponValidity').value;
+  if(!validity){showNotif('Select validity.','error');return;}
+  if(allCoupons.find(c=>c.code===code&&c.id!==editingId)){showNotif('Code already exists!','error');return;}
+
+  const isEditing=!!editingId; // capture before any reset happens
+  const btn=document.getElementById('saveCouponBtn');btn.textContent='Saving…';btn.disabled=true;
+  try{
+    const data={audience:selAudience,discountType:selDiscType,discountSubType:selDiscType==='percent'?selPctType:'flat_cash',
+      discountValue:discVal,code,validity,claimed:false,claimedCount:0,claimedBy:[],updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+    if(selAudience==='specific'){
+      data.customerMobile=document.getElementById('couponCustomerMobile').value.trim();
+      // Read name from the editable name input (auto-filled or manually entered)
+      const typedName=document.getElementById('couponCustomerName').value.trim();
+      if(typedName){ data.customerName=typedName; }
+      else {
+        // fallback: try to fetch from DB
+        let name='';
+        try{const cs=await db.collection('customers').where('mobile','==',data.customerMobile).limit(1).get();if(!cs.empty)name=cs.docs[0].data().name||'';}catch(_){}
+        if(!name){try{const bs=await db.collection('bills').where('customerPhone','==',data.customerMobile).orderBy('timestamp','desc').limit(5).get();for(const d of bs.docs){const n=d.data().customerName;if(n&&n!=='Cash Customer'){name=n;break;}}}catch(_){}}
+        if(name) data.customerName=name;
+      }
+    }
+    if(selAudience==='all'){data.limitType=selLimitType||'unlimited';data.usageLimit=selLimitType==='limited'?(parseInt(document.getElementById('couponLimit').value)||0):null;}
+    if(selDiscType==='percent'&&selPctType==='product_percent'){
+      const bc=document.getElementById('couponProductBarcode').value.trim();
+      data.productBarcode=bc;
+      if(productCache[bc]) data.productName=productCache[bc];
+    }
+    if(editingId){console.log('Updating coupon:',editingId,data);await db.collection('coupons').doc(editingId).update(data);showNotif('✅ Coupon updated successfully!','success');}
+    else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('coupons').add(data);showNotif('✅ Coupon created successfully!','success');}
+    closeCouponModal();
+  }catch(e){showNotif('Error: '+e.message,'error');}
+  finally{btn.textContent='Save Coupon';btn.disabled=false;}
+};
+
+/* EDIT */
+function openEdit(id){
+  const safeId=String(id||'').trim();
+  const c=allCoupons.find(x=>x.id===safeId);
+  if(!c){console.error('openEdit: coupon not found for id='+safeId);return;}
+  resetForm(); editingId=safeId; // set AFTER resetForm so it is not cleared
+  document.getElementById('couponModalTitle').textContent='Edit Coupon';
+  document.getElementById('editDeleteArea').style.display='';
+  document.getElementById('saveCouponBtn').textContent='Update Coupon';
+  selectAudience(c.audience);selectDiscountType(c.discountType);
+  if(c.discountType==='percent')selectPercentType(c.discountSubType);
+  if(c.audience==='all')selectLimit(c.limitType||'unlimited');
+  document.getElementById('couponCode').value=c.code||'';
+  document.getElementById('couponValidity').value=c.validity||'';
+  document.getElementById('couponDiscountValue').value=c.discountValue||'';
+  if(c.audience==='specific'){
+    document.getElementById('couponCustomerMobile').value=c.customerMobile||'';
+    document.getElementById('couponCustomerName').value=c.customerName||'';
+  }
+  if(c.audience==='all'&&c.limitType==='limited')document.getElementById('couponLimit').value=c.usageLimit||'';
+  if(c.discountSubType==='product_percent'){
+    document.getElementById('couponProductBarcode').value=c.productBarcode||'';
+    const pi=document.getElementById('productInfo');
+    const pn=c.productName||productCache[c.productBarcode]||'';
+    if(pn){pi.innerHTML='✅ <b>'+pn+'</b>';pi.className='info-box show';}
+  }
+  document.getElementById('couponModal').classList.add('show');
+};
+
+/* DELETE */
+function openDelete(id){
+  const safeId=String(id||'').trim();
+  if(!safeId){console.error('openDelete: no id provided');return;}
+  console.log('openDelete called with id='+safeId);
+  deletingId=safeId;
+  const modal=document.getElementById('deleteModal');
+  if(!modal){console.error('deleteModal not found');return;}
+  const btn=document.getElementById('confirmDeleteBtn');
+  if(btn){btn.textContent='Delete';btn.disabled=false;}
+  modal.classList.add('show');
+}
+function closeDeleteModal(){
+  const modal=document.getElementById('deleteModal');
+  if(modal) modal.classList.remove('show');
+  deletingId=null;
+  const btn=document.getElementById('confirmDeleteBtn');
+  if(btn){btn.textContent='Delete';btn.disabled=false;}
+}
+async function confirmDelete(){
+  if(!deletingId){
+    console.error('confirmDelete: deletingId is null');
+    showNotif('Error: no coupon selected','error');
+    return;
+  }
+  const idToDelete=String(deletingId).trim();
+  console.log('confirmDelete: deleting id='+idToDelete);
+  const btn=document.getElementById('confirmDeleteBtn');
+  if(btn){btn.textContent='Deleting…';btn.disabled=true;}
+  try{
+    await db.collection('coupons').doc(idToDelete).delete();
+    console.log('Delete success for id='+idToDelete);
+    showNotif('✅ Coupon deleted successfully.','success');
+    closeDeleteModal();
+  }catch(e){
+    console.error('Delete error:',e);
+    showNotif('Delete failed: '+e.message,'error');
+    if(btn){btn.textContent='Delete';btn.disabled=false;}
+  }
+}
+// expose globally for inline onclick
+window.openDelete=openDelete;
+window.openEdit=openEdit;
+window.closeDeleteModal=closeDeleteModal;
+window.confirmDelete=confirmDelete;
+
+/* MEMBERS MODAL */
+window.openMembersModal=async function(){
+  document.getElementById('membersModal').classList.add('show');
+  const list=document.getElementById('membersList');
+  list.innerHTML='<div style="text-align:center;padding:20px;color:#aaa;"><span class="spinner"></span> Loading…</div>';
+  try{
+    const snap=await db.collection('bills').get();
+    const map={};
+    snap.docs.forEach(d=>{
+      const b=d.data(),ph=b.customerPhone;
+      if(!ph||ph.length!==10)return;
+      if(!map[ph])map[ph]={name:b.customerName||'Unknown',mobile:ph,total:0,count:0};
+      if(b.customerName&&b.customerName!=='Cash Customer'&&b.customerName!=='Unknown')map[ph].name=b.customerName;
+      map[ph].total+=(b.totalAmount||b.effectiveTotal||0);map[ph].count++;
+    });
+    const eligible=Object.values(map).filter(m=>m.total>=3000).sort((a,b)=>b.total-a.total);
+    if(!eligible.length){list.innerHTML='<p style="text-align:center;color:#aaa;padding:20px;">No customers with ₹3000+ purchase.</p>';return;}
+    list.innerHTML=eligible.map(m=>`
+      <div class="member-row">
+        <div class="member-info"><div class="member-name">${m.name}</div><div class="member-meta">${m.mobile} · ${m.count} bills</div></div>
+        <div class="member-amt">₹${m.total.toFixed(0)}</div>
+        <button class="btn btn-primary" style="font-size:12px;padding:5px 12px;" onclick="createCouponFromMember('${m.mobile}','${m.name.replace(/'/g,"\\'")}')">+ Coupon</button>
+      </div>`).join('');
+  }catch(e){list.innerHTML='<p style="color:red;padding:16px;">Error: '+e.message+'</p>';}
+};
+window.closeMembersModal=function(){document.getElementById('membersModal').classList.remove('show');};
+
+window.createCouponFromMember=function(mobile,name){
+  closeMembersModal();editingId=null;resetForm();
+  document.getElementById('couponModalTitle').textContent='New Coupon for Customer';
+  document.getElementById('editDeleteArea').style.display='none';
+  selectAudience('specific');
+  document.getElementById('couponCustomerMobile').value=mobile;
+  document.getElementById('couponCustomerName').value=name;
+  const d=new Date();d.setDate(d.getDate()+30);
+  document.getElementById('couponValidity').value=d.toISOString().split('T')[0];
+  generateCode();
+  document.getElementById('couponModal').classList.add('show');
+};
+
+/* ════════════════════════════════════════════════
+   DOWNLOAD — Canvas-based, Figma-exact (1587×814)
+   ════════════════════════════════════════════════ */
+window.downloadCoupon=async function(id){
+  const c=allCoupons.find(x=>x.id===id);if(!c)return;
+  showNotif('Preparing…','info');
+
+  const W=1587,H=814;
+  const canvas=document.createElement('canvas');
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+
+  /* 1. Background SVG (icon/coupon-bg.svg) */
+  await new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{ctx.drawImage(img,0,0,W,H);res();};
+    img.onerror=()=>{
+      // Fallback gradient
+      const g=ctx.createLinearGradient(0,0,W,0);
+      g.addColorStop(0,'#1a003a');g.addColorStop(0.55,'#5a007a');g.addColorStop(0.82,'#9b1dbd');
+      ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+      // white right strip
+      ctx.fillStyle='#fff';ctx.fillRect(1295,0,292,H);
+      res();
+    };
+    img.crossOrigin='anonymous';
+    img.src='icon/coupon-bg.svg';
+  });
+
+  /* helper: wrap text */
+  function wrapText(text,x,y,maxW,lineH){
+    const words=text.split(' ');let line='';
+    for(let i=0;i<words.length;i++){
+      const test=line?line+' '+words[i]:words[i];
+      if(ctx.measureText(test).width>maxW&&line){ctx.fillText(line,x,y);line=words[i];y+=lineH;}
+      else line=test;
+    }
+    if(line)ctx.fillText(line,x,y);
+  }
+
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';
+
+  /* NOTE: GIFT VOUCHER heading and SP FASHION / phone are in the bg SVG — not drawn here */
+
+  /* 3. Congratulations heading */
+  const isAll=(c.audience==='all');
+  const custName=c.customerName||(isAll?'All Customers':'Customer');
+  ctx.fillStyle='#ffffff';
+  ctx.font='700 38px Inter';
+  ctx.fillText('Congratulations, '+custName+'!',74,390);
+
+  /* 4. Phone (only for specific customer) */
+  const custPhone=c.customerMobile||'';
+  if(custPhone&&!isAll){ctx.font='800 30px Inter';ctx.fillText(custPhone,940,390);}
+
+  /* 5. Horizontal line */
+  ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(76,418);ctx.lineTo(748,418);ctx.stroke();
+
+  /* 6. Offer detail */
+  const isCash=c.discountType==='cash';
+  const discDisplay=isCash?'\u20B9'+c.discountValue:c.discountValue+'%';
+  const isProduct=c.discountSubType==='product_percent'&&c.productBarcode;
+  const pNameFull=isProduct?(c.productName||productCache[String(c.productBarcode).trim()]||c.productBarcode):'';
+  const offerLine=isProduct
+    ?'You Have A Special '+discDisplay+' Discount On \''+pNameFull+'\' Product .'
+    :'You Have A Special '+discDisplay+' Discount On Bill .';
+  ctx.fillStyle='rgba(255,255,255,0.92)';ctx.font='500 28px Inter';
+  ctx.fillText(offerLine,74,458);
+
+  /* 7. Condition */
+  ctx.fillStyle='rgba(255,255,255,0.82)';ctx.font='400 28px Inter';
+  wrapText("Visit our shop and show this voucher to claim your offer. don\'t forget to use it before it expires!",74,500,1020,36);
+
+  /* 8. Blue-gradient pill */
+  ctx.save();
+  const pillG=ctx.createLinearGradient(74,0,470,0);
+  pillG.addColorStop(0,'#8586d5');pillG.addColorStop(1,'#57b7ff');
+  ctx.beginPath();ctx.roundRect(74,584,396,89,44);ctx.fillStyle=pillG;ctx.fill();
+  ctx.restore();
+
+  /* 9. Discount text inside pill */
+  ctx.fillStyle='#ffffff';ctx.font='600 64px Inter';
+  ctx.fillText(discDisplay+' OFF',132,651);
+
+  /* 10. Validity line */
+  const vDate=c.validity?new Date(c.validity):null;
+  const vStr=vDate?vDate.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}):'—';
+  ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='600 28px Inter';
+  const vLabel='This Voucher Valid Until ';
+  ctx.fillText(vLabel,583,715);
+  const vLabelW=ctx.measureText(vLabel).width;
+  ctx.fillStyle='#ffffff';ctx.font='800 28px Inter';
+  ctx.fillText(vStr,583+vLabelW,715);
+
+  /* 10b. Note for 'all' + limited: "Valid for first N customers only" */
+  if(isAll&&c.limitType==='limited'&&c.usageLimit){
+    ctx.fillStyle='rgba(255,255,200,0.9)';ctx.font='600 22px Inter';
+    ctx.fillText('* Valid for first '+c.usageLimit+' customers only',583,748);
+  }
+
+  /* 11. Product / On Bill grey box */
+  ctx.save();
+  ctx.fillStyle='rgba(144,144,144,0.55)';
+  ctx.beginPath();ctx.roundRect(109,691,326,70,12);ctx.fill();
+  ctx.restore();
+  ctx.fillStyle='#ffffff';ctx.font='600 26px Inter';
+  if(isProduct){
+    ctx.fillText(pNameFull,129,722);
+    ctx.font='400 22px Inter';ctx.fillStyle='rgba(255,255,255,0.8)';
+    ctx.fillText(c.productBarcode,129,750);
+  } else {
+    ctx.fillText('On Bill',129,736);
+  }
+
+  /* SP FASHION / 8000478785 are in bg SVG — not drawn here */
+
+  /* 12. Barcode — vertical, moved up so code fits below it
+         Figma origin: translate(1329, 720) rotate(-90deg) → barcode area y:[220,720] on screen */
+  try{
+    const bcCv=document.createElement('canvas');
+    JsBarcode(bcCv,c.code,{format:'CODE128',width:3,height:420,margin:8,
+      displayValue:false,background:'#ffffff',lineColor:'#000000'});
+    ctx.save();
+    ctx.translate(1329,730);   // moved up from 783 to 730
+    ctx.rotate(-Math.PI/2);
+    ctx.drawImage(bcCv,0,0,bcCv.width,bcCv.height, 0,0,500,106);
+    ctx.restore();
+
+    /* 13. Coupon code text — horizontal, below barcode (barcode bottom now at y≈730) */
+    ctx.save();
+    ctx.textAlign='center';ctx.textBaseline='alphabetic';
+    ctx.fillStyle='#555';ctx.font='400 14px Inter';
+    ctx.fillText('COUPON CODE',1382,754);
+    ctx.fillStyle='#111';ctx.font='700 24px Inter';
+    ctx.fillText(c.code,1382,782);
+    ctx.restore();
+  }catch(e){console.warn('Barcode:',e);}
+
+  /* Export */
+  canvas.toBlob(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='Coupon_'+c.code+'.png';
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},300);
+    showNotif('✅ Downloaded!','success');
+  },'image/png',1.0);
+};
+
+/* NOTIFICATION */
+function showNotif(msg,type='info'){
+  const el=document.createElement('div');el.className='notif';
+  el.style.background=type==='success'?'#10bf39':type==='error'?'#e30202':'#007bff';
+  el.textContent=msg;document.body.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300);},3000);
+}
+
+window.closeCouponModal=closeCouponModal;
+
+  import { checkPageAccess, applySidebarPermissions,
+          applyQuickActionPermissions, addLogoutToSidebar } from './auth.js';
+  if (!checkPageAccess()) throw new Error('Access denied');
+  applySidebarPermissions();
+  addLogoutToSidebar();
+</script>
+<script>
+(function(){
+  try { var d=JSON.parse(localStorage.getItem('staffAuth')||'null');
+    if(!d||!d.userId){location.href='login.html?redirect=billing.html';return;}
+  } catch(e){location.href='login.html';return;}
+  var o=document.createElement('div');
+  o.id='__auth_guard__';
+  o.style.cssText='position:fixed;inset:0;background:#000;z-index:99999;';
+  document.documentElement.appendChild(o);
+})();
+</script>
+</body>
+</html>

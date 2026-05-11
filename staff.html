@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Staff & Account Management - SP Fashion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- ══ Instant auth guard ══ -->
+  <script>
+    (function(){
+      try{var d=JSON.parse(localStorage.getItem('staffAuth')||'null');
+        if(!d||!d.userId){location.href='login.html?redirect=staff.html';return;}
+      }catch(e){location.href='login.html';return;}
+      var o=document.createElement('div');
+      o.id='__auth_guard__';
+      o.style.cssText='position:fixed;inset:0;background:#000;z-index:99999;';
+      document.documentElement.appendChild(o);
+    })();
+  </script>
+
+  <style>
+    :root{--green:#10bf39;--red:#e30202;--blue:#0066cc;--orange:#e65c00;
+          --purple:#9c27b0;--font:"DM Sans","Inter",sans-serif;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--font);background:#f5f5f5;min-height:100vh;overflow-x:hidden;}
+    .app{display:flex;width:100%;min-height:100vh;}
+
+    /* SIDEBAR */
+    .sidebar{background:#1a1a1a;color:#fff;width:200px;padding:20px 0;display:flex;
+             flex-direction:column;position:fixed;top:0;left:0;height:100vh;
+             z-index:1100;overflow-y:auto;transition:transform .3s ease-in-out;}
+    .brand{font-size:18px;font-weight:700;margin-bottom:30px;text-align:center;padding:0 16px;}
+    .nav-link{text-decoration:none;color:#fff;display:block;margin-bottom:5px;}
+    .nav-inner{display:flex;align-items:center;gap:12px;padding:12px 20px;
+               transition:background .3s;font-size:14px;}
+    .nav-link:hover .nav-inner{background:#333;}
+    .nav-link.active .nav-inner{background:#0066cc;border-left:3px solid #fff;}
+    .nav-inner img{width:16px;height:16px;}
+    .mobile-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1099;
+                    opacity:0;visibility:hidden;transition:opacity .3s;}
+    .mobile-overlay.active{opacity:1;visibility:visible;}
+
+    /* LAYOUT */
+    .main-content{margin-left:200px;width:calc(100% - 200px);background:#fff;
+                  display:flex;flex-direction:column;min-height:100vh;}
+    .top-header{background:#fff;padding:15px 30px;display:flex;justify-content:space-between;
+                align-items:center;border-bottom:1px solid #e0e0e0;
+                box-shadow:0 1px 3px rgba(0,0,0,.1);position:sticky;top:0;z-index:1050;min-height:60px;}
+    .page-title{font-size:20px;font-weight:600;color:#333;}
+    .menu-toggle{display:none;background:none;border:none;font-size:22px;cursor:pointer;
+                 color:#333;padding:0 6px;}
+    .content-area{padding:24px 30px;flex-grow:1;background:#f8f9fa;}
+
+    /* BUTTONS */
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;
+         font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);
+         transition:opacity .2s;white-space:nowrap;}
+    .btn:hover{opacity:.88;}
+    .btn-primary{background:var(--green);color:#fff;}
+    .btn-secondary{background:#fff;border:1px solid #ddd;color:#333;}
+    .btn-danger{background:var(--red);color:#fff;}
+    .btn-warning{background:var(--orange);color:#fff;}
+    .btn-purple{background:var(--purple);color:#fff;}
+    .btn-sm{padding:6px 13px;font-size:13px;border-radius:7px;}
+
+    /* TOOLBAR */
+    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;
+             margin-bottom:20px;background:#fff;padding:14px 18px;border-radius:10px;
+             box-shadow:0 1px 4px rgba(0,0,0,.08);flex-wrap:wrap;}
+    .toolbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;}
+    .search-wrap{position:relative;}
+    .search-input{padding:8px 36px 8px 14px;border:1px solid #ddd;border-radius:20px;
+                  width:220px;font-size:14px;outline:none;font-family:var(--font);}
+    .search-input:focus{border-color:var(--blue);}
+    .search-svg{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+                pointer-events:none;color:#aaa;}
+    .filter-select{padding:8px 12px;border:1px solid #ddd;border-radius:8px;
+                   font-size:14px;font-family:var(--font);outline:none;background:#fff;cursor:pointer;}
+
+    /* TABLE */
+    .table-wrap{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+    .table-scroll{overflow-x:auto;}
+    .data-table{width:100%;border-collapse:collapse;min-width:800px;}
+    .data-table th{background:#f8f9fa;padding:12px 14px;text-align:left;font-weight:600;
+                   color:#444;border-bottom:1px solid #e8e8e8;font-size:13px;white-space:nowrap;}
+    .data-table td{padding:12px 14px;border-bottom:1px solid #f2f2f2;font-size:13px;
+                   color:#555;vertical-align:middle;}
+    .data-table tbody tr:last-child td{border-bottom:none;}
+    .data-table tbody tr:hover{background:#f8fbff;}
+
+    /* BADGES */
+    .badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
+           padding:3px 10px;border-radius:12px;}
+    .badge-master{background:#f3e8ff;color:#5b0fa0;border:1px solid #d0a8f8;}
+    .badge-admin{background:#e8f0fe;color:#1a56db;}
+    .badge-staff{background:#f3f4f6;color:#555;}
+    .badge-active{background:#e8f5e9;color:#2e7d32;}
+    .badge-disabled{background:#fdecea;color:#c62828;}
+    .dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;}
+    .dot-green{background:#10bf39;} .dot-red{background:#e30202;}
+    .dot-purple{background:var(--purple);}
+
+    /* 3-DOT ACTION */
+    .action-btn{background:none;border:none;cursor:pointer;padding:5px 9px;border-radius:6px;
+                color:#666;transition:background .15s;display:flex;align-items:center;justify-content:center;}
+    .action-btn:hover{background:#f0f0f0;color:#222;}
+
+    /* FLOATING DROPDOWN */
+    #floatingDropdown{position:fixed;background:#fff;border:1px solid #e0e0e0;border-radius:10px;
+                      box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:9999;min-width:195px;
+                      padding:5px 0;display:none;}
+    #floatingDropdown.open{display:block;}
+    .dd-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13px;
+             cursor:pointer;color:#333;transition:background .15s;white-space:nowrap;}
+    .dd-item:hover{background:#f0f6ff;}
+    .dd-item.danger{color:var(--red);}
+    .dd-item.danger:hover{background:#fff5f5;}
+    .dd-item.warn{color:var(--orange);}
+    .dd-item.warn:hover{background:#fff8f0;}
+    .dd-item.purple{color:var(--purple);}
+    .dd-item.purple:hover{background:#faf0ff;}
+    .dd-item.locked{opacity:.35;cursor:default;pointer-events:none;}
+    .dd-sep{height:1px;background:#f0f0f0;margin:4px 0;}
+
+    /* MOBILE CARDS */
+    .mobile-cards{display:none;}
+    .staff-card{background:#fff;border-radius:12px;padding:16px;margin-bottom:10px;
+                box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid #f0f0f0;}
+    .sc-name{font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;}
+    .sc-user{font-size:12px;color:#888;margin-bottom:5px;}
+    .sc-phone{font-size:13px;color:#555;margin-bottom:6px;}
+    .sc-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px;}
+    .sc-login{font-size:11px;color:#aaa;}
+    .sc-foot{display:flex;gap:6px;margin-top:12px;padding-top:12px;
+             border-top:1px solid #f2f2f2;flex-wrap:wrap;}
+    .sc-btn{flex:1;min-width:60px;padding:7px 8px;border-radius:7px;font-size:12px;
+            font-weight:600;cursor:pointer;font-family:var(--font);border:none;
+            display:flex;align-items:center;justify-content:center;gap:4px;transition:opacity .15s;}
+    .sc-btn:hover{opacity:.82;} .sc-btn:disabled{opacity:.35;cursor:default;}
+    .sc-edit{background:#e8f0fe;color:#1a56db;} .sc-perm{background:#e8f5e9;color:#2e7d32;}
+    .sc-pw{background:#fff3e0;color:#e65100;} .sc-sess{background:#f3e5f5;color:#7b1fa2;}
+    .sc-del{background:#fdecea;color:#c62828;}
+
+    /* MODALS */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;
+                   justify-content:center;align-items:center;z-index:2000;padding:16px;}
+    .modal-overlay.open{display:flex;}
+    .modal-box{background:#fff;border-radius:14px;width:100%;max-width:540px;max-height:92vh;
+               overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.18);display:flex;flex-direction:column;}
+    .modal-box.wide{max-width:620px;} .modal-box.sm{max-width:380px;}
+    .modal-head{display:flex;justify-content:space-between;align-items:center;
+                padding:20px 24px 16px;border-bottom:1px solid #f0f0f0;
+                position:sticky;top:0;background:#fff;z-index:1;border-radius:14px 14px 0 0;}
+    .modal-title{font-size:17px;font-weight:700;color:#1a1a1a;}
+    .modal-close{background:none;border:none;font-size:20px;cursor:pointer;
+                 color:#999;padding:3px 7px;border-radius:5px;line-height:1;}
+    .modal-close:hover{background:#f0f0f0;color:#333;}
+    .modal-body{padding:20px 24px;}
+    .modal-foot{padding:16px 24px;border-top:1px solid #f0f0f0;display:flex;justify-content:flex-end;gap:10px;}
+
+    /* FORMS */
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .form-group{margin-bottom:16px;}
+    .form-label{display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:6px;}
+    .form-input{width:100%;padding:10px 13px;border:1px solid #ddd;border-radius:8px;
+                font-size:14px;font-family:var(--font);outline:none;transition:border-color .2s;color:#222;}
+    .form-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,102,204,.1);}
+    .form-hint{font-size:11px;color:#888;margin-top:4px;}
+    .form-error{font-size:11px;color:var(--red);margin-top:4px;display:none;}
+    .form-error.show{display:block;}
+
+    /* PASSWORD FIELD */
+    .pw-wrap{position:relative;}
+    .pw-wrap .form-input{padding-right:44px;}
+    .pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+               background:none;border:none;cursor:pointer;color:#999;padding:4px;
+               border-radius:4px;display:flex;align-items:center;}
+    .pw-toggle:hover{color:#555;background:#f0f0f0;}
+
+    /* USERNAME ROW */
+    .username-row{display:flex;gap:8px;}
+    .username-row .form-input{flex:1;}
+    .gen-btn{padding:10px 13px;background:#f4f4f4;border:1px solid #ddd;border-radius:8px;
+             cursor:pointer;font-size:12px;font-weight:600;color:#555;white-space:nowrap;
+             font-family:var(--font);display:flex;align-items:center;gap:5px;}
+    .gen-btn:hover{background:#e8e8e8;}
+
+    /* ROLE SELECTOR */
+    .role-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+    .role-opt{border:2px solid #e0e0e0;border-radius:10px;padding:12px 14px;cursor:pointer;
+              display:flex;align-items:center;gap:10px;transition:all .15s;}
+    .role-opt:hover{border-color:#bbb;}
+    .role-opt.sel-admin{border-color:var(--blue);background:#f0f6ff;}
+    .role-opt.sel-master{border-color:var(--purple);background:#faf0ff;}
+    .role-opt input[type=radio]{accent-color:var(--blue);width:16px;height:16px;flex-shrink:0;}
+    .role-lbl{font-size:13px;font-weight:600;color:#333;display:flex;align-items:center;gap:6px;}
+    .role-desc{font-size:11px;color:#888;margin-top:2px;}
+
+    /* STATUS TOGGLE */
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;
+                background:#f8f9fa;border-radius:8px;padding:12px 14px;margin-bottom:16px;}
+    .toggle-label{font-size:14px;font-weight:600;color:#333;}
+    .toggle-sub{font-size:12px;color:#888;margin-top:2px;}
+    .toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0;}
+    .toggle-switch input{opacity:0;width:0;height:0;}
+    .toggle-slider{position:absolute;inset:0;background:#ccc;border-radius:12px;cursor:pointer;transition:.3s;}
+    .toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;
+                           background:#fff;border-radius:50%;transition:.3s;}
+    .toggle-switch input:checked+.toggle-slider{background:#10bf39;}
+    .toggle-switch input:checked+.toggle-slider::before{transform:translateX(20px);}
+
+    /* PERMISSIONS */
+    .perm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .perm-item{display:flex;align-items:center;gap:10px;background:#f8f9fa;border-radius:8px;
+               padding:10px 12px;cursor:pointer;transition:background .15s;border:1px solid #eee;}
+    .perm-item:hover{background:#f0f6ff;border-color:#c8dcf8;}
+    .perm-item input[type=checkbox]{accent-color:var(--blue);width:16px;height:16px;
+                                    cursor:pointer;flex-shrink:0;}
+    .perm-name{font-size:13px;font-weight:600;color:#333;}
+    .perm-icon-wrap{flex-shrink:0;color:#555;}
+    .perm-sel-row{display:flex;gap:10px;margin-bottom:14px;}
+    .perm-sel-btn{font-size:12px;color:var(--blue);cursor:pointer;background:none;border:none;
+                  font-family:var(--font);font-weight:600;text-decoration:underline;}
+
+    /* NOTE BOXES */
+    .note-box{border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px;
+              display:flex;align-items:flex-start;gap:8px;line-height:1.5;}
+    .note-info{background:#e3f0ff;border:1px solid #b3d1f8;color:#0044aa;}
+    .note-warn{background:#fff8e1;border:1px solid #ffe082;color:#7a5c00;}
+    .note-master{background:#f3e8ff;border:1px solid #d0a8f8;color:#5b0fa0;}
+
+    /* PIN MODAL */
+    .pin-digits{display:flex;gap:10px;justify-content:center;margin:8px 0;}
+    .pin-inp{width:100%;padding:14px 16px;border:2px solid #ddd;border-radius:10px;
+             font-size:22px;font-family:monospace;letter-spacing:8px;text-align:center;
+             outline:none;transition:border-color .2s;color:#222;background:#fafafa;}
+    .pin-inp:focus{border-color:var(--blue);background:#fff;}
+    .pin-inp.pin-err{border-color:var(--red);animation:shake .3s;}
+    @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+
+    /* SESSIONS */
+    .sess-card{background:#f8f9fa;border-radius:12px;padding:14px 16px;margin-bottom:10px;
+               border:1px solid #eee;display:flex;gap:12px;align-items:flex-start;}
+    .sess-card:last-child{margin-bottom:0;}
+    .sess-icon{flex-shrink:0;font-size:24px;margin-top:2px;}
+    .sess-info{flex:1;}
+    .sess-device{font-size:14px;font-weight:700;color:#222;margin-bottom:3px;}
+    .sess-meta{font-size:12px;color:#888;margin-bottom:6px;}
+    .sess-badges{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+    .sess-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;
+                 display:inline-flex;align-items:center;gap:5px;}
+    .online-dot{width:7px;height:7px;border-radius:50%;background:#10bf39;
+                display:inline-block;animation:pulse 2s ease-in-out infinite;}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.6;transform:scale(.85);}}
+    .s-online{background:#e8f5e9;color:#2e7d32;}
+    .s-offline{background:#f2f2f2;color:#888;}
+    .s-force{background:#fdecea;color:#c62828;}
+    .sess-actions{display:flex;gap:6px;flex-direction:column;flex-shrink:0;}
+    .sess-end-btn{background:#fdecea;color:#c62828;border:none;padding:6px 12px;
+                  border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;
+                  font-family:var(--font);display:flex;align-items:center;gap:4px;white-space:nowrap;}
+    .sess-end-btn:hover{background:#f5c6c6;}
+    .logout-all-bar{display:flex;justify-content:flex-end;margin-bottom:14px;}
+    .no-sessions{text-align:center;padding:32px 20px;color:#aaa;}
+    .no-sessions svg{margin-bottom:12px;opacity:.4;}
+
+    /* MISC */
+    .section-divider{border:none;border-top:1px solid #f0f0f0;margin:18px 0;}
+    .empty-state{text-align:center;padding:50px 20px;color:#aaa;}
+    .empty-text{font-size:15px;font-weight:500;} .empty-sub{font-size:13px;margin-top:5px;}
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid #ddd;
+             border-top-color:#0066cc;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .protected-tag{font-size:10px;color:var(--purple);font-weight:700;
+                   background:#f3e8ff;padding:2px 7px;border-radius:5px;margin-left:6px;}
+
+    /* TOAST */
+    #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+           background:#1a1a1a;color:#fff;padding:11px 22px;border-radius:30px;font-size:13px;
+           font-weight:500;z-index:9998;opacity:0;pointer-events:none;
+           transition:opacity .3s,transform .3s;white-space:nowrap;}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+    #toast.terror{background:#c62828;} #toast.tsuccess{background:#2e7d32;}
+
+    /* SCROLL TOP */
+    #scrollTopBtn{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+                  background:#1a1a1a;color:#fff;border:none;border-radius:50px;padding:10px 20px;
+                  font-size:18px;cursor:pointer;z-index:1200;opacity:0;pointer-events:none;
+                  transition:opacity .3s,transform .3s;box-shadow:0 4px 14px rgba(0,0,0,.25);}
+    #scrollTopBtn.visible{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0);}
+
+    /* RESPONSIVE */
+    @media(max-width:768px){
+      .sidebar{transform:translateX(-100%);} .sidebar.active{transform:translateX(0);}
+      .menu-toggle{display:block;}
+      .main-content{margin-left:0;width:100%;}
+      .top-header{position:fixed;top:0;width:100%;z-index:1050;padding:10px 15px;}
+      .content-area{padding:12px;margin-top:60px;}
+      .table-wrap{display:none;} .mobile-cards{display:block;}
+      .search-input{width:160px;}
+      .form-row{grid-template-columns:1fr;} .perm-grid{grid-template-columns:1fr;}
+      .role-grid{grid-template-columns:1fr;}
+      .modal-overlay{align-items:flex-end;padding:0;}
+      .modal-box{border-radius:16px 16px 0 0;max-height:92vh;}
+    }
+    @media(min-width:769px){.mobile-cards{display:none !important;}}
+  </style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="appSidebar">
+  <div class="brand">SP Fashion</div>
+  <a href="dashboard.html" class="nav-link"><div class="nav-inner"><img src="icon/deshboard.svg"><span>Dashboard</span></div></a>
+  <a href="product.html"   class="nav-link"><div class="nav-inner"><img src="icon/products.svg"><span>Products</span></div></a>
+  <a href="suppliers.html" class="nav-link"><div class="nav-inner"><img src="icon/Suppliers.svg"><span>Suppliers</span></div></a>
+  <a href="staff.html"     class="nav-link active"><div class="nav-inner"><img src="icon/customer.svg"><span>Staff Members</span></div></a>
+  <a href="billing.html"   class="nav-link"><div class="nav-inner"><img src="icon/Bill.svg"><span>Billing</span></div></a>
+  <a href="invoices.html"  class="nav-link"><div class="nav-inner"><img src="icon/invoices.svg"><span>Invoices</span></div></a>
+  <a href="cashBook.html"  class="nav-link"><div class="nav-inner"><img src="icon/cashbook.svg"><span>Cash Book</span></div></a>
+  <a href="coupon.html"    class="nav-link"><div class="nav-inner"><img src="icon/coupon.svg"><span>Coupons</span></div></a>
+  <a href="settings.html"  class="nav-link"><div class="nav-inner"><img src="icon/setting.svg"><span>Settings</span></div></a>
+</aside>
+<div class="mobile-overlay" id="mobileOverlay"></div>
+
+<!-- MAIN -->
+<div class="main-content">
+  <div class="top-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="menu-toggle" id="menuToggle">&#9776;</button>
+      <h1 class="page-title">Staff Management</h1>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-purple btn-sm" id="changePinBtn" style="display:none;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          <circle cx="12" cy="16" r="1" fill="currentColor"/>
+        </svg>
+        Security PIN
+      </button>
+      <button class="btn btn-primary" id="addStaffBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Staff
+      </button>
+    </div>
+  </div>
+
+  <div class="content-area">
+    <div id="mainView">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="search-wrap">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search name / username…">
+            <svg class="search-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
+          <select id="roleFilter" class="filter-select">
+            <option value="All">All Roles</option>
+            <option value="master_admin">Master Admin</option>
+            <option value="admin">Admin</option>
+            <option value="staff">Staff</option>
+          </select>
+          <select id="statusFilter" class="filter-select">
+            <option value="All">All Status</option>
+            <option value="active">Active</option>
+            <option value="disabled">Disabled</option>
+          </select>
+        </div>
+        <div style="font-size:13px;color:#888;" id="staffCount"></div>
+      </div>
+
+      <!-- Desktop Table -->
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Name</th><th>Phone</th><th>Username</th>
+                <th>Role</th><th>Status</th><th>Last Login</th>
+                <th style="text-align:center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="staffTableBody">
+              <tr><td colspan="8" style="text-align:center;padding:30px;color:#aaa;">
+                <span class="spinner"></span> Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mobile Cards -->
+      <div class="mobile-cards" id="staffMobileCards">
+        <div class="empty-state"><span class="spinner"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FLOATING DROPDOWN -->
+<div id="floatingDropdown">
+  <div class="dd-item" id="ddEdit">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>Edit Details
+  </div>
+  <div class="dd-item" id="ddPerm">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>Permissions
+  </div>
+  <div class="dd-item warn" id="ddPw">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      <circle cx="12" cy="16" r="1" fill="currentColor"/>
+    </svg>Change Password
+  </div>
+  <div class="dd-item" id="ddSess">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor"/>
+    </svg>View Sessions
+  </div>
+  <div class="dd-sep"></div>
+  <div class="dd-item danger" id="ddDelete">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+    </svg>Delete
+  </div>
+</div>
+
+<!-- ═══ SECURITY PIN MODAL ═══ -->
+<div class="modal-overlay" id="pinModal">
+  <div class="modal-box sm">
+    <div class="modal-head">
+      <span class="modal-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9c27b0" stroke-width="2" style="vertical-align:-2px;margin-right:5px;">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        Security Verification
+      </span>
+      <button class="modal-close" onclick="cancelPin()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:#666;margin-bottom:18px;line-height:1.6;" id="pinDesc">
+        Enter the security PIN to continue this action.
+      </p>
+      <div class="form-group">
+        <label class="form-label">Security PIN</label>
+        <div class="pw-wrap">
+          <input type="password" id="pinInput" class="form-input pin-inp"
+                 placeholder="••••" maxlength="20" autocomplete="off"
+                 inputmode="numeric">
+          <button type="button" class="pw-toggle" onclick="togglePinEye()">
+            <svg id="pinEyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div class="form-error show" id="pinErr" style="display:none!important;">Incorrect PIN. Try again.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="cancelPin()">Cancel</button>
+      <button class="btn btn-purple" onclick="submitPin()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>Verify
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CHANGE SECURITY PIN MODAL ═══ -->
+<div class="modal-overlay" id="changePinModal">
+  <div class="modal-box sm">
+    <div class="modal-head">
+      <span class="modal-title">Change Security PIN</span>
+      <button class="modal-close" onclick="closeModal('changePinModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="note-box note-master" style="margin-bottom:16px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        Only master admin can change the security PIN.
+      </div>
+      <div class="form-group">
+        <label class="form-label">New PIN *</label>
+        <div class="pw-wrap">
+          <input type="password" id="newPinInput" class="form-input" placeholder="Enter new PIN"
+                 autocomplete="new-password" inputmode="numeric">
+          <button type="button" class="pw-toggle" onclick="togglePw('newPinInput',this)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div class="form-error" id="newPinErr">PIN must be at least 4 characters</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm New PIN *</label>
+        <div class="pw-wrap">
+          <input type="password" id="confirmPinInput" class="form-input" placeholder="Repeat new PIN"
+                 autocomplete="new-password" inputmode="numeric">
+          <button type="button" class="pw-toggle" onclick="togglePw('confirmPinInput',this)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div class="form-error" id="confirmPinErr">PINs do not match</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('changePinModal')">Cancel</button>
+      <button class="btn btn-purple" onclick="saveNewPin()">Save New PIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD / EDIT STAFF MODAL ═══ -->
+<div class="modal-overlay" id="staffModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title" id="staffModalTitle">Add Staff Member</span>
+      <button class="modal-close" onclick="closeModal('staffModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editStaffId">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" id="sName" class="form-input" placeholder="e.g. Ramesh Kumar">
+          <div class="form-error" id="sNameErr">Name is required</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone *</label>
+          <input type="tel" id="sPhone" class="form-input" placeholder="10-digit mobile">
+          <div class="form-error" id="sPhoneErr">Valid 10-digit phone required</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username *</label>
+        <div class="username-row">
+          <input type="text" id="sUsername" class="form-input" placeholder="e.g. ramesh_01">
+          <button type="button" class="gen-btn" onclick="generateUsername()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
+            </svg>Auto
+          </button>
+        </div>
+        <div class="form-hint">Letters, numbers, underscore only.</div>
+        <div class="form-error" id="sUsernameErr">Username already taken</div>
+      </div>
+      <div class="form-group" id="pwSection">
+        <label class="form-label">Password *</label>
+        <div class="pw-wrap">
+          <input type="password" id="sPassword" class="form-input" placeholder="Min 6 characters" autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('sPassword',this)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div class="form-error" id="sPwErr">Min 6 characters required</div>
+      </div>
+      <hr class="section-divider">
+      <div class="form-group">
+        <label class="form-label">Role *</label>
+        <div class="role-grid" id="roleGrid">
+          <label class="role-opt" id="roleOptMaster" onclick="selectRole('master_admin')">
+            <input type="radio" name="sRole" value="master_admin" id="roleMaster">
+            <div>
+              <div class="role-lbl" style="color:var(--purple);">★ Master</div>
+              <div class="role-desc">Protected · All access</div>
+            </div>
+          </label>
+          <label class="role-opt" id="roleOptAdmin" onclick="selectRole('admin')">
+            <input type="radio" name="sRole" value="admin" id="roleAdmin">
+            <div>
+              <div class="role-lbl" style="color:#1a56db;">Admin</div>
+              <div class="role-desc">Full access</div>
+            </div>
+          </label>
+          <label class="role-opt" id="roleOptStaff" onclick="selectRole('staff')">
+            <input type="radio" name="sRole" value="staff" id="roleStaff">
+            <div>
+              <div class="role-lbl">Staff</div>
+              <div class="role-desc">Limited access</div>
+            </div>
+          </label>
+        </div>
+        <div class="form-error" id="sRoleErr">Please select a role</div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Account Status</div>
+          <div class="toggle-sub" id="statusSubText">Account is Active</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="sStatus" checked onchange="updateStatusLabel()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('staffModal')">Cancel</button>
+      <button class="btn btn-primary" id="saveStaffBtn" onclick="saveStaff()">Save Staff</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CHANGE PASSWORD MODAL ═══ -->
+<div class="modal-overlay" id="pwModal">
+  <div class="modal-box sm">
+    <div class="modal-head">
+      <span class="modal-title" id="pwModalTitle">Change Password</span>
+      <button class="modal-close" onclick="closeModal('pwModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pwTargetId">
+      <div class="form-group">
+        <label class="form-label">New Password *</label>
+        <div class="pw-wrap">
+          <input type="password" id="newPwInput" class="form-input" placeholder="Min 6 characters" autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('newPwInput',this)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div class="form-error" id="newPwErr">Min 6 characters</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password *</label>
+        <div class="pw-wrap">
+          <input type="password" id="confirmPwInput" class="form-input" placeholder="Repeat password" autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('confirmPwInput',this)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div class="form-error" id="confirmPwErr">Passwords do not match</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('pwModal')">Cancel</button>
+      <button class="btn btn-warning" onclick="doChangePassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PERMISSIONS MODAL ═══ -->
+<div class="modal-overlay" id="permModal">
+  <div class="modal-box wide">
+    <div class="modal-head">
+      <span class="modal-title" id="permModalTitle">Permissions</span>
+      <button class="modal-close" onclick="closeModal('permModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="permStaffId">
+      <div class="note-box note-master" id="permNote" style="display:none;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        <span id="permNoteMsg">This account has full access by default.</span>
+      </div>
+      <div class="perm-sel-row">
+        <button class="perm-sel-btn" onclick="selectAllPerms(true)">Select All</button>
+        <button class="perm-sel-btn" onclick="selectAllPerms(false)">Deselect All</button>
+      </div>
+      <div class="perm-grid" id="permGrid"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('permModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePermissions()">Save Permissions</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SESSIONS MODAL ═══ -->
+<div class="modal-overlay" id="sessModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title" id="sessModalTitle">Login Sessions</span>
+      <button class="modal-close" onclick="closeModal('sessModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="sessStaffId">
+      <div class="logout-all-bar">
+        <button class="btn btn-danger btn-sm" onclick="logoutAllSessions()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>Force Logout All
+        </button>
+      </div>
+      <div id="sessionList"><div style="text-align:center;padding:24px;"><span class="spinner"></span></div></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('sessModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DELETE CONFIRM MODAL ═══ -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box sm">
+    <div class="modal-head">
+      <span class="modal-title">Confirm Delete</span>
+      <button class="modal-close" onclick="closeModal('deleteModal')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#e30202" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p style="font-size:14px;color:#444;line-height:1.7;">
+          Are you sure you want to delete <strong id="deleteStaffName"></strong>?<br>
+          This cannot be undone. All sessions will be removed.
+        </p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        </svg>Delete
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<button id="scrollTopBtn">&#8679;</button>
+
+<!-- ═══ AUTH MODULE ═══ -->
+<script type="module">
+import {
+  checkPageAccess, applySidebarPermissions,
+  addLogoutToSidebar, isMasterAdmin, isAdminOrAbove,
+  initSessionMonitor
+} from './auth.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore }  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+if (!checkPageAccess()) throw new Error('Access denied');
+applySidebarPermissions();
+addLogoutToSidebar();
+
+const _db = getFirestore(initializeApp({
+  apiKey:"AIzaSyCVXql_12NNa9_bUXYfWhj8Z7ZUqTyD1ak",
+  authDomain:"sp-fashion-beca2.firebaseapp.com",
+  projectId:"sp-fashion-beca2",
+  storageBucket:"sp-fashion-beca2.firebasestorage.app",
+  messagingSenderId:"734725526616",
+  appId:"1:734725526616:web:4ed1410e441789653e262d"
+}, 'staff-page'));
+
+initSessionMonitor(_db);
+
+window.__isMasterAdmin  = isMasterAdmin;
+window.__isAdminOrAbove = isAdminOrAbove;
+window.__authDb         = _db;
+</script>
+
+<!-- ═══ DATA MODULE ═══ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, getDocs, doc,
+  updateDoc, deleteDoc, getDoc, query, where, setDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const db = getFirestore(initializeApp({
+  apiKey:"AIzaSyCVXql_12NNa9_bUXYfWhj8Z7ZUqTyD1ak",
+  authDomain:"sp-fashion-beca2.firebaseapp.com",
+  projectId:"sp-fashion-beca2",
+  storageBucket:"sp-fashion-beca2.firebasestorage.app",
+  messagingSenderId:"734725526616",
+  appId:"1:734725526616:web:4ed1410e441789653e262d"
+}, 'staff-data'));
+
+/* ── Helpers ── */
+const isMasterAdmin  = () => window.__isMasterAdmin?.()  ?? false;
+const isAdminOrAbove = () => window.__isAdminOrAbove?.() ?? false;
+const currentUserId  = () => JSON.parse(localStorage.getItem('staffAuth')||'null')?.userId;
+
+const ALL_PERMS = [
+  { key:'dashboard', label:'Dashboard',   svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' },
+  { key:'products',  label:'Products',    svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>' },
+  { key:'suppliers', label:'Suppliers',   svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' },
+  { key:'billing',   label:'Billing',     svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
+  { key:'invoices',  label:'Invoices',    svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' },
+  { key:'cashbook',  label:'Cash Book',   svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>' },
+  { key:'staff',     label:'Staff Mgmt',  svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
+  { key:'coupons',   label:'Coupons',     svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>' },
+  { key:'settings',  label:'Settings',    svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' },
+];
+
+const EYE_ON  = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+const EYE_OFF = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+
+let allStaff = [], searchQ='', roleF='All', statusF='All', activeStaffId=null;
+
+/* ════════════════════════════════
+   SIDEBAR TOGGLE
+════════════════════════════════ */
+const sidebar = document.getElementById('appSidebar');
+const ovl     = document.getElementById('mobileOverlay');
+document.getElementById('menuToggle').addEventListener('click', () => {
+  const open = sidebar.classList.toggle('active');
+  ovl.classList.toggle('active', open);
+});
+ovl.addEventListener('click', () => { sidebar.classList.remove('active'); ovl.classList.remove('active'); });
+
+const sBtn = document.getElementById('scrollTopBtn');
+window.addEventListener('scroll', () => sBtn.classList.toggle('visible', window.scrollY > 300));
+sBtn.addEventListener('click', () => window.scrollTo({top:0,behavior:'smooth'}));
+
+/* ════════════════════════════════
+   TOAST
+════════════════════════════════ */
+function toast(msg, type='', ms=2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = type==='error'?'terror show':type==='success'?'tsuccess show':'show';
+  setTimeout(()=>t.className='', ms);
+}
+
+/* ════════════════════════════════
+   MODAL HELPERS
+════════════════════════════════ */
+window.closeModal = id => document.getElementById(id).classList.remove('open');
+const openModal   = id => document.getElementById(id).classList.add('open');
+document.querySelectorAll('.modal-overlay').forEach(m =>
+  m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+
+/* ════════════════════════════════
+   PASSWORD EYE TOGGLE
+════════════════════════════════ */
+window.togglePw = (inputId, btn) => {
+  const inp = document.getElementById(inputId);
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.querySelector('svg').innerHTML = show ? EYE_OFF : EYE_ON;
+};
+
+window.togglePinEye = () => {
+  const inp = document.getElementById('pinInput');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  document.getElementById('pinEyeIcon').innerHTML = show ? EYE_OFF : EYE_ON;
+};
+
+/* ════════════════════════════════
+   SECURITY PIN SYSTEM
+════════════════════════════════ */
+const DEFAULT_PIN = '8875';
+let _pinResolve = null;
+
+async function fetchPin() {
+  try {
+    const snap = await getDoc(doc(db,'appSettings','securityPin'));
+    return snap.exists() ? (snap.data().pin || DEFAULT_PIN) : DEFAULT_PIN;
+  } catch { return DEFAULT_PIN; }
+}
+
+/** Returns Promise<boolean> — resolves true if PIN correct, false on cancel */
+function verifyPin(description = 'Enter the security PIN to continue.') {
+  return new Promise(resolve => {
+    document.getElementById('pinDesc').textContent = description;
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinInput').type = 'password';
+    document.getElementById('pinEyeIcon').innerHTML = EYE_ON;
+    const errEl = document.getElementById('pinErr');
+    errEl.style.removeProperty('display');
+    errEl.classList.remove('show');
+    _pinResolve = resolve;
+    openModal('pinModal');
+    setTimeout(()=>document.getElementById('pinInput').focus(), 150);
+  });
+}
+
+window.submitPin = async () => {
+  const entered     = document.getElementById('pinInput').value.trim();
+  const correctPin  = await fetchPin();
+  const errEl       = document.getElementById('pinErr');
+
+  if (entered === correctPin) {
+    closeModal('pinModal');
+    if (_pinResolve) { _pinResolve(true); _pinResolve=null; }
+  } else {
+    errEl.classList.add('show');
+    const inp = document.getElementById('pinInput');
+    inp.value='';
+    inp.classList.add('pin-err');
+    setTimeout(()=>inp.classList.remove('pin-err'), 350);
+    inp.focus();
+  }
+};
+
+window.cancelPin = () => {
+  closeModal('pinModal');
+  if (_pinResolve) { _pinResolve(false); _pinResolve=null; }
+};
+
+// Enter key on PIN input
+document.getElementById('pinInput').addEventListener('keydown', e => {
+  if(e.key==='Enter') window.submitPin();
+});
+
+/* ── Change Security PIN ── */
+document.getElementById('changePinBtn').addEventListener('click', async () => {
+  const ok = await verifyPin('Enter your current security PIN first.');
+  if (!ok) return;
+  document.getElementById('newPinInput').value='';
+  document.getElementById('confirmPinInput').value='';
+  document.getElementById('newPinErr').classList.remove('show');
+  document.getElementById('confirmPinErr').classList.remove('show');
+  openModal('changePinModal');
+});
+
+window.saveNewPin = async () => {
+  const newPin = document.getElementById('newPinInput').value.trim();
+  const conPin = document.getElementById('confirmPinInput').value.trim();
+  let valid = true;
+  if (newPin.length < 4) { document.getElementById('newPinErr').classList.add('show'); valid=false; }
+  else { document.getElementById('newPinErr').classList.remove('show'); }
+  if (newPin !== conPin) { document.getElementById('confirmPinErr').classList.add('show'); valid=false; }
+  else { document.getElementById('confirmPinErr').classList.remove('show'); }
+  if (!valid) return;
+
+  try {
+    await setDoc(doc(db,'appSettings','securityPin'), {
+      pin: newPin,
+      updatedAt: new Date().toISOString(),
+      updatedBy: currentUserId(),
+    });
+    closeModal('changePinModal');
+    toast('Security PIN updated!','success');
+  } catch(e) { console.error(e); toast('Failed to save PIN','error'); }
+};
+
+/* ════════════════════════════════
+   HASH PASSWORD
+════════════════════════════════ */
+async function hashPw(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function fmtDate(s) {
+  if (!s) return '—';
+  const d = s?.toDate ? s.toDate() : new Date(s);
+  if (isNaN(d)) return '—';
+  return d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+
+function timeAgo(iso) {
+  if (!iso) return 'Never';
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff/60000);
+  if (m < 1)  return 'Just now';
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m/60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h/24);
+  return `${d}d ago`;
+}
+
+function isSessionOnline(s) {
+  return s.active===true && !s.forceLogout && s.lastSeen &&
+         (Date.now() - new Date(s.lastSeen).getTime()) < 3*60*1000;
+}
+
+/* ════════════════════════════════
+   FLOATING DROPDOWN
+════════════════════════════════ */
+const floatDD = document.getElementById('floatingDropdown');
+
+function showDropdown(staffId, anchorEl) {
+  activeStaffId = staffId;
+  const s   = allStaff.find(x=>x.id===staffId);
+  const isMa = s?.role === 'master_admin';
+  const isSelf = currentUserId() === staffId;
+
+  // Master admin cannot be deleted
+  const delItem = document.getElementById('ddDelete');
+  delItem.classList.toggle('locked', isMa);
+  delItem.title = isMa ? 'Master admin cannot be deleted' : '';
+
+  floatDD.classList.add('open');
+  const rect = anchorEl.getBoundingClientRect();
+  let top  = rect.bottom + window.scrollY + 4;
+  let left = rect.right  + window.scrollX - 195;
+  if (left < 8) left = 8;
+  if (rect.bottom + 230 > window.innerHeight) top = rect.top + window.scrollY - 230;
+  floatDD.style.top  = top  + 'px';
+  floatDD.style.left = left + 'px';
+}
+
+function hideDropdown() { floatDD.classList.remove('open'); activeStaffId=null; }
+
+document.getElementById('ddEdit').onclick   = () => { const id=activeStaffId; hideDropdown(); openEditStaff(id); };
+document.getElementById('ddPerm').onclick   = () => { const id=activeStaffId; hideDropdown(); openPermissions(id); };
+document.getElementById('ddPw').onclick     = () => { const id=activeStaffId; hideDropdown(); openChangePw(id); };
+document.getElementById('ddSess').onclick   = () => { const id=activeStaffId; hideDropdown(); openSessions(id); };
+document.getElementById('ddDelete').onclick = () => {
+  const id=activeStaffId; hideDropdown();
+  const s=allStaff.find(x=>x.id===id);
+  if(s) confirmDelete(id,s.name,s.role);
+};
+
+document.addEventListener('click', e => {
+  if(!floatDD.contains(e.target) && !e.target.closest('.action-btn')) hideDropdown();
+});
+window.addEventListener('scroll', hideDropdown, true);
+
+/* ════════════════════════════════
+   SHOW SECURITY PIN BUTTON FOR MASTER ADMIN
+════════════════════════════════ */
+if (isMasterAdmin()) {
+  document.getElementById('changePinBtn').style.display='';
+}
+
+/* ════════════════════════════════
+   LOAD & RENDER STAFF
+════════════════════════════════ */
+async function loadStaff() {
+  try {
+    const snap = await getDocs(collection(db,'staff'));
+    allStaff = snap.docs.map(d=>({id:d.id,...d.data()}));
+  } catch(e) { console.error(e); toast('Failed to load staff','error'); }
+  renderStaff();
+}
+
+function roleBadge(role) {
+  if (role==='master_admin') return `<span class="badge badge-master"><span class="dot dot-purple"></span> Master Admin</span>`;
+  if (role==='admin')        return `<span class="badge badge-admin">Admin</span>`;
+  return `<span class="badge badge-staff">Staff</span>`;
+}
+
+function renderStaff() {
+  const tbody  = document.getElementById('staffTableBody');
+  const mobile = document.getElementById('staffMobileCards');
+  tbody.innerHTML=''; mobile.innerHTML='';
+
+  const list = allStaff.filter(s => {
+    const q = searchQ.toLowerCase();
+    const mq = !q||s.name.toLowerCase().includes(q)||(s.phone||'').includes(q)||(s.username||'').toLowerCase().includes(q);
+    return mq && (roleF==='All'||s.role===roleF) && (statusF==='All'||s.status===statusF);
+  });
+
+  document.getElementById('staffCount').textContent = `${list.length} member${list.length!==1?'s':''}`;
+
+  if (!list.length) {
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:44px;color:#aaa;">No staff found.</td></tr>';
+    mobile.innerHTML='<div class="empty-state"><div class="empty-text">No staff found</div></div>';
+    return;
+  }
+
+  list.forEach((s,i) => {
+    const rb   = roleBadge(s.role);
+    const sb   = s.status!=='disabled'
+      ? `<span class="badge badge-active"><span class="dot dot-green"></span> Active</span>`
+      : `<span class="badge badge-disabled"><span class="dot dot-red"></span> Disabled</span>`;
+    const isMa = s.role==='master_admin';
+    const isSelf = currentUserId()===s.id;
+
+    // Desktop row
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td style="color:#bbb;font-weight:500;">${i+1}</td>
+      <td><strong style="color:#1a1a1a;">${s.name}</strong>${isMa?'<span class="protected-tag">★ Protected</span>':''}</td>
+      <td>${s.phone||'—'}</td>
+      <td style="font-family:monospace;font-size:13px;color:#666;">@${s.username||'—'}</td>
+      <td>${rb}</td>
+      <td>${sb}</td>
+      <td style="font-size:12px;color:#888;">${fmtDate(s.lastLogin)}</td>
+      <td style="text-align:center;">
+        <button class="action-btn" data-id="${s.id}" title="Actions">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+          </svg>
+        </button>
+      </td>`;
+    tbody.appendChild(tr);
+    tr.querySelector('.action-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      if(activeStaffId===s.id&&floatDD.classList.contains('open')){hideDropdown();return;}
+      showDropdown(s.id, e.currentTarget);
+    });
+
+    // Mobile card
+    const card = document.createElement('div');
+    card.className='staff-card';
+    card.innerHTML=`
+      <div class="sc-name">${s.name}${isMa?'<span class="protected-tag">★</span>':''}</div>
+      <div class="sc-user">@${s.username||'—'}</div>
+      <div class="sc-phone">📞 ${s.phone||'—'}</div>
+      <div class="sc-badges">${rb} ${sb}</div>
+      <div class="sc-login">Last login: ${fmtDate(s.lastLogin)}</div>
+      <div class="sc-foot">
+        <button class="sc-btn sc-edit" onclick="openEditStaff('${s.id}')">Edit</button>
+        <button class="sc-btn sc-perm" onclick="openPermissions('${s.id}')">Perms</button>
+        <button class="sc-btn sc-pw" onclick="openChangePw('${s.id}')">Password</button>
+        <button class="sc-btn sc-sess" onclick="openSessions('${s.id}')">Sessions</button>
+        ${!isMa?`<button class="sc-btn sc-del" onclick="confirmDelete('${s.id}','${s.name.replace(/'/g,"\\'")}','${s.role}')">Del</button>`:''}
+      </div>`;
+    mobile.appendChild(card);
+  });
+}
+
+document.getElementById('searchInput').addEventListener('input', e=>{searchQ=e.target.value;renderStaff();});
+document.getElementById('roleFilter').addEventListener('change', e=>{roleF=e.target.value;renderStaff();});
+document.getElementById('statusFilter').addEventListener('change', e=>{statusF=e.target.value;renderStaff();});
+
+/* ════════════════════════════════
+   FORM HELPERS
+════════════════════════════════ */
+function clearForm() {
+  ['sName','sPhone','sUsername','sPassword'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelectorAll('.form-error').forEach(e=>e.classList.remove('show'));
+  document.querySelectorAll('input[name="sRole"]').forEach(r=>r.checked=false);
+  document.querySelectorAll('.role-opt').forEach(o=>o.classList.remove('sel-admin','sel-master'));
+  document.getElementById('sStatus').checked=true;
+  updateStatusLabel();
+}
+
+window.updateStatusLabel = () => {
+  document.getElementById('statusSubText').textContent=
+    document.getElementById('sStatus').checked?'Account is Active':'Account is Disabled';
+};
+
+window.selectRole = role => {
+  const map={master_admin:'roleMaster',admin:'roleAdmin',staff:'roleStaff'};
+  const optMap={master_admin:'roleOptMaster',admin:'roleOptAdmin',staff:'roleOptStaff'};
+  document.getElementById(map[role]).checked=true;
+  document.querySelectorAll('.role-opt').forEach(o=>o.classList.remove('sel-admin','sel-master'));
+  const cls=role==='master_admin'?'sel-master':'sel-admin';
+  if(role!=='staff') document.getElementById(optMap[role]).classList.add(cls);
+};
+
+window.generateUsername = () => {
+  const base=document.getElementById('sName').value.trim().toLowerCase()
+    .replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'')||'user';
+  document.getElementById('sUsername').value=base+'_'+(Math.floor(Math.random()*900)+100);
+};
+
+/* ════════════════════════════════
+   ADD STAFF
+════════════════════════════════ */
+document.getElementById('addStaffBtn').addEventListener('click', async () => {
+  if (!isAdminOrAbove()) { toast('Only admins can add staff','error'); return; }
+  const ok = await verifyPin('Enter security PIN to add a new staff member.');
+  if (!ok) return;
+  clearForm();
+  document.getElementById('staffModalTitle').textContent='Add Staff Member';
+  document.getElementById('editStaffId').value='';
+  document.getElementById('pwSection').style.display='';
+  document.getElementById('saveStaffBtn').textContent='Save Staff';
+  document.getElementById('roleOptMaster').style.display=isMasterAdmin()?'':'none';
+  openModal('staffModal');
+});
+
+/* ════════════════════════════════
+   SAVE STAFF
+════════════════════════════════ */
+window.saveStaff = async () => {
+  const editId   = document.getElementById('editStaffId').value;
+  const isEdit   = !!editId;
+  const name     = document.getElementById('sName').value.trim();
+  const phone    = document.getElementById('sPhone').value.trim().replace(/\D/g,'');
+  const username = document.getElementById('sUsername').value.trim().toLowerCase();
+  const password = document.getElementById('sPassword').value;
+  const role     = document.querySelector('input[name="sRole"]:checked')?.value;
+  const status   = document.getElementById('sStatus').checked?'active':'disabled';
+
+  if(isEdit){
+    const target=allStaff.find(x=>x.id===editId);
+    if(target?.role==='master_admin'&&!isMasterAdmin()){toast('Only master admin can edit this account','error');return;}
+  }
+
+  let valid=true;
+  const se=(id,show,msg)=>{const el=document.getElementById(id);el.classList.toggle('show',show);if(msg&&show)el.textContent=msg;};
+  se('sNameErr',!name,'Name is required');                        if(!name) valid=false;
+  se('sPhoneErr',phone.length!==10,'Valid 10-digit phone needed'); if(phone.length!==10) valid=false;
+  se('sUsernameErr',!username,'Username is required');             if(!username) valid=false;
+  se('sRoleErr',!role,'Please select a role');                     if(!role) valid=false;
+  if(!isEdit){se('sPwErr',password.length<6,'Min 6 characters'); if(password.length<6) valid=false;}
+  if(!valid){toast('Please fix the errors','error');return;}
+
+  const others=allStaff.filter(s=>s.id!==editId);
+  if(others.some(s=>s.username===username)){se('sUsernameErr',true,'Username already taken');return;}
+  if(others.some(s=>s.phone===phone)){se('sPhoneErr',true,'Phone already registered');return;}
+
+  const btn=document.getElementById('saveStaffBtn');
+  btn.disabled=true; btn.textContent='Saving…';
+  try {
+    const allP=['dashboard','products','suppliers','billing','invoices','cashbook','staff','coupons','settings'];
+    if(!isEdit){
+      const data={name,phone,username,role,status,
+        passwordHash:await hashPw(password),
+        createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),
+        permissions:(role==='admin'||role==='master_admin')?Object.fromEntries(allP.map(p=>[p,true])):{dashboard:true}};
+      await addDoc(collection(db,'staff'),data);
+      toast('Staff member added!','success');
+    } else {
+      await updateDoc(doc(db,'staff',editId),{name,phone,username,role,status,updatedAt:new Date().toISOString()});
+      toast('Staff updated!','success');
+    }
+    closeModal('staffModal');
+    await loadStaff();
+  } catch(e){console.error(e);toast('Failed to save','error');}
+  finally{btn.disabled=false;btn.textContent=isEdit?'Update Staff':'Save Staff';}
+};
+
+/* ════════════════════════════════
+   EDIT STAFF (PIN required)
+════════════════════════════════ */
+window.openEditStaff = async id => {
+  if(!isAdminOrAbove()){toast('Permission denied','error');return;}
+  const s=allStaff.find(x=>x.id===id);if(!s)return;
+  if(s.role==='master_admin'&&!isMasterAdmin()){toast('Only master admin can edit this account','error');return;}
+
+  const ok = await verifyPin(`Enter security PIN to edit ${s.name}.`);
+  if(!ok) return;
+
+  clearForm();
+  document.getElementById('editStaffId').value=id;
+  document.getElementById('sName').value=s.name||'';
+  document.getElementById('sPhone').value=s.phone||'';
+  document.getElementById('sUsername').value=s.username||'';
+  document.getElementById('sStatus').checked=s.status!=='disabled';
+  updateStatusLabel();
+  if(s.role) selectRole(s.role);
+  document.getElementById('pwSection').style.display='none';
+  document.getElementById('staffModalTitle').textContent='Edit Staff Member';
+  document.getElementById('saveStaffBtn').textContent='Update Staff';
+  document.getElementById('roleOptMaster').style.display=isMasterAdmin()?'':'none';
+  openModal('staffModal');
+};
+
+/* ════════════════════════════════
+   CHANGE PASSWORD (PIN required)
+════════════════════════════════ */
+window.openChangePw = async id => {
+  const isSelf=currentUserId()===id;
+  // Must be master_admin OR changing own password
+  if(!isMasterAdmin()&&!isSelf){toast('Only master admin can change others\' passwords','error');return;}
+
+  const s=allStaff.find(x=>x.id===id);if(!s)return;
+
+  const ok=await verifyPin(`Enter security PIN to change password for ${s.name}.`);
+  if(!ok) return;
+
+  document.getElementById('pwTargetId').value=id;
+  document.getElementById('pwModalTitle').textContent=`Change Password — ${s.name}`;
+  document.getElementById('newPwInput').value='';
+  document.getElementById('confirmPwInput').value='';
+  document.getElementById('newPwErr').classList.remove('show');
+  document.getElementById('confirmPwErr').classList.remove('show');
+  openModal('pwModal');
+};
+
+window.doChangePassword = async () => {
+  const id  = document.getElementById('pwTargetId').value;
+  const pw  = document.getElementById('newPwInput').value;
+  const cpw = document.getElementById('confirmPwInput').value;
+  let valid=true;
+  if(pw.length<6){document.getElementById('newPwErr').classList.add('show');valid=false;}
+  else{document.getElementById('newPwErr').classList.remove('show');}
+  if(pw!==cpw){document.getElementById('confirmPwErr').classList.add('show');valid=false;}
+  else{document.getElementById('confirmPwErr').classList.remove('show');}
+  if(!valid) return;
+  try{
+    await updateDoc(doc(db,'staff',id),{passwordHash:await hashPw(pw),updatedAt:new Date().toISOString()});
+    closeModal('pwModal');
+    toast('Password updated!','success');
+  }catch(e){console.error(e);toast('Failed to update password','error');}
+};
+
+/* ════════════════════════════════
+   PERMISSIONS (PIN required)
+════════════════════════════════ */
+window.openPermissions = async id => {
+  if(!isAdminOrAbove()){toast('Permission denied','error');return;}
+  const s=allStaff.find(x=>x.id===id);if(!s)return;
+
+  const ok=await verifyPin(`Enter security PIN to edit permissions for ${s.name}.`);
+  if(!ok) return;
+
+  document.getElementById('permStaffId').value=id;
+  document.getElementById('permModalTitle').textContent=`Permissions — ${s.name}`;
+  const isSuperRole=s.role==='admin'||s.role==='master_admin';
+  const note=document.getElementById('permNote');
+  note.style.display=isSuperRole?'':'none';
+  if(isSuperRole){
+    document.getElementById('permNoteMsg').textContent=
+      s.role==='master_admin'?'★ Master Admin always has full access.':'Admin has full access by default.';
+  }
+  const grid=document.getElementById('permGrid');
+  grid.innerHTML='';
+  const perms=s.permissions||{};
+  ALL_PERMS.forEach(p=>{
+    const checked=isSuperRole?true:!!perms[p.key];
+    const lbl=document.createElement('label');
+    lbl.className='perm-item';
+    lbl.innerHTML=`<input type="checkbox" data-key="${p.key}" ${checked?'checked':''} ${isSuperRole?'disabled':''}>
+      <span class="perm-icon-wrap">${p.svg}</span>
+      <span class="perm-name">${p.label}</span>`;
+    grid.appendChild(lbl);
+  });
+  openModal('permModal');
+};
+
+window.selectAllPerms=val=>{
+  document.querySelectorAll('#permGrid input[type=checkbox]:not(:disabled)').forEach(c=>c.checked=val);
+};
+
+window.savePermissions=async()=>{
+  const id=document.getElementById('permStaffId').value;
+  const s=allStaff.find(x=>x.id===id);
+  if(!s||s.role==='admin'||s.role==='master_admin'){closeModal('permModal');return;}
+  const perms={};
+  document.querySelectorAll('#permGrid input[type=checkbox]').forEach(c=>{perms[c.dataset.key]=c.checked;});
+  try{
+    await updateDoc(doc(db,'staff',id),{permissions:perms,updatedAt:new Date().toISOString()});
+    allStaff=allStaff.map(x=>x.id===id?{...x,permissions:perms}:x);
+    closeModal('permModal');
+    toast('Permissions saved!','success');
+  }catch{toast('Failed to save permissions','error');}
+};
+
+/* ════════════════════════════════
+   SESSIONS — with online status + force logout
+════════════════════════════════ */
+window.openSessions = async id => {
+  const s=allStaff.find(x=>x.id===id);if(!s)return;
+  document.getElementById('sessStaffId').value=id;
+  document.getElementById('sessModalTitle').textContent=`Sessions — ${s.name}`;
+  document.getElementById('sessionList').innerHTML='<div style="text-align:center;padding:24px;"><span class="spinner"></span></div>';
+  openModal('sessModal');
+  await renderSessions(id);
+};
+
+async function renderSessions(staffId) {
+  const listEl = document.getElementById('sessionList');
+  try {
+    const snap = await getDocs(
+      query(collection(db,'sessions'), where('userId','==',staffId))
+    );
+    // Sort newest first
+    const sessions = snap.docs
+      .map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(b.loginTime||'').localeCompare(a.loginTime||''))
+      .slice(0,5); // show max 5
+
+    if (!sessions.length) {
+      listEl.innerHTML=`<div class="no-sessions">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 12px;">
+          <rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor"/>
+        </svg>
+        <p>No login sessions found.<br>This account hasn't logged in yet.</p>
+      </div>`;
+      return;
+    }
+
+    listEl.innerHTML = sessions.map(sess => {
+      const online = isSessionOnline(sess);
+      const forced = sess.forceLogout === true;
+      const isMob  = sess.isMobile || /mobile|android|iphone|ipad/i.test(sess.userAgent||'');
+      const icon   = isMob ? '📱' : '💻';
+
+      let statusBadge;
+      if (forced)      statusBadge=`<span class="sess-status s-force">⛔ Force Logged Out</span>`;
+      else if (online) statusBadge=`<span class="sess-status s-online"><span class="online-dot"></span> Online Now</span>`;
+      else             statusBadge=`<span class="sess-status s-offline">● Last seen: ${timeAgo(sess.lastSeen)}</span>`;
+
+      const logoutBtn = (!forced && sess.active!==false) ? `
+        <button class="sess-end-btn" onclick="forceLogoutSession('${sess.id}','${staffId}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Force Logout
+        </button>` : '';
+
+      return `<div class="sess-card">
+        <div class="sess-icon">${icon}</div>
+        <div class="sess-info">
+          <div class="sess-device">${sess.device||'Unknown Device'}</div>
+          <div class="sess-meta">
+            Login: ${fmtDate(sess.loginTime)}
+            ${sess.logoutTime ? ' · Ended: '+fmtDate(sess.logoutTime) : ''}
+          </div>
+          <div class="sess-badges">
+            ${statusBadge}
+            ${sess.browser?`<span style="font-size:11px;color:#999;background:#f0f0f0;padding:2px 8px;border-radius:8px;">${sess.browser}</span>`:''}
+          </div>
+        </div>
+        <div class="sess-actions">${logoutBtn}</div>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    console.error(e);
+    listEl.innerHTML='<p style="color:#e30202;text-align:center;padding:20px;">Failed to load sessions.</p>';
+  }
+}
+
+window.forceLogoutSession = async (sessId, staffId) => {
+  try {
+    await updateDoc(doc(db,'sessions',sessId),{
+      active: false,
+      forceLogout: true,
+      logoutTime: new Date().toISOString(),
+    });
+    toast('Session terminated. User will be logged out shortly.','success');
+    await renderSessions(staffId);
+  } catch { toast('Failed to terminate session','error'); }
+};
+
+window.logoutAllSessions = async () => {
+  const staffId=document.getElementById('sessStaffId').value;
+  try {
+    const snap=await getDocs(query(collection(db,'sessions'),where('userId','==',staffId),where('active','==',true)));
+    await Promise.all(snap.docs.map(d=>updateDoc(doc(db,'sessions',d.id),{
+      active:false,forceLogout:true,logoutTime:new Date().toISOString()
+    })));
+    toast('All sessions force-logged out.','success');
+    await renderSessions(staffId);
+  } catch { toast('Failed','error'); }
+};
+
+/* ════════════════════════════════
+   DELETE (PIN required)
+════════════════════════════════ */
+window.confirmDelete = async (id, name, role) => {
+  if (role==='master_admin'){toast('Master admin cannot be deleted','error');return;}
+  if (!isAdminOrAbove()){toast('Permission denied','error');return;}
+
+  const ok=await verifyPin(`Enter security PIN to delete "${name}".`);
+  if(!ok) return;
+
+  document.getElementById('deleteStaffName').textContent=name;
+  document.getElementById('confirmDeleteBtn').onclick=()=>deleteStaff(id);
+  openModal('deleteModal');
+};
+
+async function deleteStaff(id) {
+  const target=allStaff.find(x=>x.id===id);
+  if(target?.role==='master_admin'){toast('Master admin cannot be deleted','error');closeModal('deleteModal');return;}
+  try{
+    // Force logout all sessions first
+    const sesSnap=await getDocs(query(collection(db,'sessions'),where('userId','==',id)));
+    await Promise.all(sesSnap.docs.map(d=>deleteDoc(doc(db,'sessions',d.id))));
+    await deleteDoc(doc(db,'staff',id));
+    allStaff=allStaff.filter(s=>s.id!==id);
+    closeModal('deleteModal');
+    renderStaff();
+    toast('Staff member deleted','success');
+  }catch{toast('Failed to delete','error');}
+}
+
+/* ── Init ── */
+loadStaff();
+</script>
+</body>
+</html>

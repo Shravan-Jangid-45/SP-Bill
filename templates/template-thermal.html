@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Slip - SP Fashion</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    :root{--slip-width:80mm;--base-font:12px;}
+    @page{size:var(--slip-width) auto;margin:3mm 3mm;}
+    body{width:var(--slip-width);font-family:"DM Sans","Inter",sans-serif;font-size:var(--base-font);color:#111;background:#fff;padding:6px 8px;}
+    .slip-header{text-align:center;margin-bottom:5px;}
+    .slip-header h2{font-size:15px;font-weight:700;letter-spacing:1px;}
+    .slip-header p{font-size:10.5px;color:#333;line-height:1.5;}
+    .divider{border:none;border-top:1px dashed #555;margin:5px 0;}
+    .solid-divider{border:none;border-top:1px solid #222;margin:4px 0;}
+    .meta-row{display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px;}
+    .meta-label{font-weight:300;}
+    .items-head{display:flex;border-bottom:1px dashed #555;padding:3px 0;font-weight:600;font-size:9.5px;margin-top:4px;}
+    .col-sn{width:16px;}
+    .col-item{flex:1;}
+    .col-qty{width:30px;text-align:center;}
+    .col-rate{width:42px;text-align:right;}
+    .col-amt{width:46px;text-align:right;}
+    .item-row{padding:4px 0;border-bottom:0.5px solid #ddd;}
+    .item-main{display:flex;align-items:baseline;}
+    .item-sn{font-size:9.5px;min-width:16px;}
+    .item-name{font-size:10px;font-weight:500;flex:1;overflow:hidden;}
+    .item-qty{width:30px;text-align:center;font-size:9.5px;}
+    .item-rate{width:42px;text-align:right;font-size:9.5px;}
+    .item-amt{width:46px;text-align:right;font-size:9.5px;font-weight:700;}
+    .item-bc{font-size:9px;color:#777;padding-left:16px;margin-top:1px;}
+    .summary-row{display:flex;justify-content:space-between;font-size:10px;padding:2px 0;}
+    .summary-bold{font-size:11px;font-weight:700;}
+    .barcode-area{text-align:center;margin:7px 0 3px;}
+    .barcode-svg{display:block;margin:0 auto;}
+    .barcode-text{font-size:9px;letter-spacing:1.5px;margin-top:2px;font-family:monospace;}
+    .slip-footer{text-align:center;font-size:10.5px;font-weight:600;margin-top:7px;letter-spacing:0.5px;}
+    @media print{body{width:var(--slip-width);}@page{size:var(--slip-width) auto;margin:3mm 3mm;}}
+  </style>
+</head>
+<body>
+  <div class="slip-header">
+    <h2 id="tpl-shop-name">SP FASHION</h2>
+    <p id="tpl-shop-addr">Meethi Beri (Nokhada) Barmer</p>
+    <p id="tpl-shop-phone">8000478785</p>
+  </div>
+  <div class="meta-row"><span><span class="meta-label">Bill No. </span><b id="tpl-bill-no">SP00000</b></span></div>
+  <div class="meta-row">
+    <span><span class="meta-label">Name: </span><span id="tpl-cust-name">CUSTOMER</span></span>
+    <span><span class="meta-label">Time: </span><span id="tpl-time"></span></span>
+  </div>
+  <div class="meta-row">
+    <span><span class="meta-label">Mob: </span><span id="tpl-cust-mob"></span></span>
+    <span><span class="meta-label">Date: </span><span id="tpl-date">DD/MM/YYYY</span></span>
+  </div>
+  <div class="items-head">
+    <span class="col-sn">#</span>
+    <span class="col-item">ITEM</span>
+    <span class="col-qty">QTY</span>
+    <span class="col-rate" id="head-rate">RATE</span>
+    <span class="col-amt">AMT</span>
+  </div>
+  <div id="tpl-items-list"></div>
+  <hr class="solid-divider">
+  <div class="summary-row">
+    <span>Items: <b id="tpl-total-items">0</b></span>
+    <span>Sub Total: <b id="tpl-subtotal">₹0.00</b></span>
+  </div>
+  <div class="summary-row summary-bold">
+    <span>Total:</span>
+    <span id="tpl-total">₹0.00</span>
+  </div>
+  <div class="summary-row" id="row-coupon" style="display:none;color:#7b2ff7;">
+    <span>Coupon (<span id="tpl-coupon-code"></span>):</span>
+    <span id="tpl-coupon-disc" style="font-weight:700;"></span>
+  </div>
+  <div class="summary-row" id="row-final" style="display:none;color:#e65c00;">
+    <span>Final Amt:</span><span id="tpl-final" style="font-weight:700;"></span>
+  </div>
+  <div class="summary-row" id="row-received" style="display:none;">
+    <span>Received:</span><span id="tpl-received"></span>
+  </div>
+  <div class="summary-row" id="row-due" style="display:none;color:#e30202;">
+    <span>Due:</span><span id="tpl-due" style="font-weight:700;"></span>
+  </div>
+  <div class="summary-row" id="row-status" style="display:none;">
+    <span>Status:</span><span id="tpl-status" style="font-weight:700;"></span>
+  </div>
+  <div class="barcode-area">
+    <svg id="tpl-barcode-svg" class="barcode-svg" height="38" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="barcode-text" id="tpl-barcode-text"></div>
+  </div>
+  <div class="slip-footer">*** Thank You Visit Again ***</div>
+
+<script>
+/* ── Code 128 B barcode encoder ── */
+(function(){
+  const C128B_PATTERNS=['11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000','10011000100','10001100100','11001001000','11001000100','11000100100','10110011100','10011011100','10011001110','10111001100','10011101100','10011100110','11001110010','11001011100','11001001110','11011100100','11001110100','11101101110','11101001100','11100101100','11100100110','11101100100','11100110100','11100110010','11011011000','11011000110','11000110110','10100011000','10001011000','10001000110','10110001000','10001101000','10001100010','11010001000','11000101000','11000100010','10110111000','10110001110','10001101110','10111011000','10111000110','10001110110','11101110110','11010001110','11000101110','11011101000','11011100010','11011101110','11101011000','11101000110','11100010110','11101101000','11101100010','11100011010','11101111010','11001000010','11110001010','10100110000','10100001100','10010110000','10010000110','10000101100','10000100110','10110010000','10110000100','10011010000','10011000010','10000110100','10000110010','11000010010','11001010000','11110111010','11000010100','10001111010','10100111100','10010111100','10010011110','10111100100','10011110100','10011110010','11110100100','11110010100','11110010010','11011011110','11011110110','11110110110','10101111000','10100011110','10001011110','10111101000','10111100010','11110101000','11110100010','10111011110','10111101110','11101011110','11110101110','11010000100','11010010000','11010011100','1100011101011'];
+  const CHARS=' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+  window.drawCode128=function(svgEl,text,widthPx){
+    const START_B=104,STOP=106;
+    let vals=[START_B],checksum=START_B;
+    for(let i=0;i<text.length;i++){
+      const idx=CHARS.indexOf(text[i]);
+      if(idx<0){const n=parseInt(text[i],10);if(!isNaN(n)){vals.push(n+16);checksum+=(n+16)*(i+1);}}
+      else{vals.push(idx);checksum+=idx*(i+1);}
+    }
+    vals.push(checksum%103);vals.push(STOP);
+    const bars=vals.map(v=>C128B_PATTERNS[v]||'').join('');
+    svgEl.innerHTML='';svgEl.setAttribute('width',widthPx);
+    const bw=widthPx/bars.length;let x=0;
+    for(let i=0;i<bars.length;i++){
+      if(bars[i]==='1'){
+        const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+        r.setAttribute('x',x.toFixed(2));r.setAttribute('y',0);
+        r.setAttribute('width',(bw+0.3).toFixed(2));r.setAttribute('height',38);
+        r.setAttribute('fill','#000');svgEl.appendChild(r);
+      }
+      x+=bw;
+    }
+  };
+})();
+
+/* ── Helpers ── */
+function fmt(n){
+  const v=parseFloat(n||0);
+  return '₹'+(v%1===0?v.toFixed(2):v.toFixed(2));
+}
+function fmtN(n){const f=parseFloat(n||0);return f%1===0?f.toString():parseFloat(f.toFixed(2)).toString();}
+
+function setSlipWidth(size){
+  document.documentElement.style.setProperty('--slip-width',size==='57mm'?'57mm':'80mm');
+  document.documentElement.style.setProperty('--base-font',size==='57mm'?'10.5px':'12px');
+  document.body.style.width=size==='57mm'?'57mm':'80mm';
+}
+
+/* ── Example data (used when no printBillData in localStorage) ── */
+const EXAMPLE={
+  customerName:'Shravan Kumar',customerPhone:'8000351905',
+  billNumber:'SP056923',date:'25/10/2025',time:'10:11 PM',
+  thermalSize:'80mm',status:'paid',
+  totalAmount:290,effectiveTotal:260,
+  receivedAmount:0,dueAmount:0,finalPayment:null,
+  couponCode:null,couponDiscount:null,
+  items:[
+    {name:'Note Book',barcode:'8902519002617',qty:2,rate:30,amount:60,originalRate:35},
+    {name:'Garment 05',barcode:'SP23563615696',qty:4,rate:50,amount:200,originalRate:50}
+  ]
+};
+
+function loadAndRender(){
+  let data={};
+  try{data=JSON.parse(localStorage.getItem('printBillData')||'{}');}catch(e){}
+  if(!data.items||!data.items.length) data=EXAMPLE;
+
+  const settings=JSON.parse(localStorage.getItem('shopSettings')||'{}');
+  const io=settings.invoiceOptions||{};
+  const showRate    = io.showProductRate    !== false;
+  const showStatus  = io.showBillStatus     !== false;
+  const showFinal   = io.showFinalPayment   !== false;
+  const showRcv     = io.showReceivedAmount !== false;
+  const showDue     = io.showDueAmount      !== false;
+
+  setSlipWidth(data.thermalSize||settings.thermalSize||'80mm');
+
+  /* ── Shop info ── */
+  if(settings.shopName)    document.getElementById('tpl-shop-name').textContent=settings.shopName;
+  if(settings.shopAddress) document.getElementById('tpl-shop-addr').textContent=settings.shopAddress;
+  if(settings.shopPhone)   document.getElementById('tpl-shop-phone').textContent=settings.shopPhone;
+
+  /* ── Bill meta ── */
+  document.getElementById('tpl-bill-no').textContent   = data.billNumber||'SP00000';
+  document.getElementById('tpl-cust-name').textContent = data.customerName||'Customer';
+  document.getElementById('tpl-cust-mob').textContent  = data.customerPhone||'';
+  document.getElementById('tpl-date').textContent      = data.date||new Date().toLocaleDateString('en-GB');
+  document.getElementById('tpl-time').textContent      = data.time||'';
+
+  if(!showRate) document.getElementById('head-rate').style.display='none';
+
+  /* ── Items ── */
+  const items = data.items||[];
+  let html='';
+  items.forEach((it,i)=>{
+    // item.rate  = display rate (actual billing rate; product coupon already embedded by billing.html)
+    // item.amount = display amount
+    const dispRate = parseFloat(it.rate||0);
+    const dispAmt  = parseFloat(it.amount||0);
+    html+=`<div class="item-row">
+      <div class="item-main">
+        <span class="item-sn">${i+1}.</span>
+        <span class="item-name">${it.name||''}</span>
+        <span class="item-qty">${fmtN(it.qty)}</span>
+        <span class="item-rate" ${showRate?'':'style="display:none;"'}>${dispRate%1===0?dispRate.toFixed(0):dispRate.toFixed(1)}</span>
+        <span class="item-amt">${dispAmt.toFixed(2)}</span>
+      </div>
+      ${it.barcode?`<div class="item-bc">${it.barcode}</div>`:''}
+    </div>`;
+  });
+  document.getElementById('tpl-items-list').innerHTML=html;
+
+  /* ── Amounts ──
+    data.totalAmount   = Sub Total (originalRate × qty, set by billing.html)
+    data.effectiveTotal= Total     (actual/updated rates × qty)
+    data.couponCode    = coupon code string (bill-level coupon only; null for product coupon)
+    data.couponDiscount= bill-level coupon discount amount
+    data.finalPayment  = net payable after coupon+negotiation (null if no discount)
+  ── */
+  const totalItems  = items.reduce((s,it)=>s+(parseFloat(it.qty)||0),0);
+
+  // Sub Total = original rates × qty
+  const subTotalAmt = parseFloat(data.totalAmount)  || items.reduce((s,it)=>s+(parseFloat(it.amount)||0),0);
+
+  // Bill Total = actual rates × qty (product coupon embedded in item.rate already)
+  const billTotal   = parseFloat(data.effectiveTotal) || subTotalAmt;
+
+  // Bill-level coupon (flat% or cash OFF on total)
+  const couponCode  = data.couponCode   || null;
+  const couponDisc  = parseFloat(data.couponDiscount||0);
+  const hasCoupon   = !!(couponCode && couponDisc > 0);
+
+  // Final payable (already accounts for coupon and/or negotiation)
+  // billing.html sets this to null if no discount at all
+  const fpRaw = data.finalPayment;
+  const fp    = (fpRaw !== null && fpRaw !== undefined && fpRaw !== '' && parseFloat(fpRaw) > 0)
+                  ? parseFloat(fpRaw) : null;
+
+  const rcv    = parseFloat(data.receivedAmount||0);
+  const due    = parseFloat(data.dueAmount||0);
+  const status = (data.status||'paid').toUpperCase();
+
+  /* ── Sub Total row ──
+     Show when originalRates differ from billing rates (rates were negotiated) OR coupon exists.
+     Hide when everything is identical (clean bill, no coupon, no negotiation).
+  ── */
+  document.getElementById('tpl-total-items').textContent = fmtN(totalItems);
+
+  const subTotalRow = document.getElementById('tpl-subtotal').closest('.summary-row') ||
+                      document.getElementById('tpl-subtotal').parentElement;
+  const ratesEdited = Math.abs(subTotalAmt - billTotal) > 0.005;
+  const needSubtotalRow = ratesEdited || hasCoupon || (fp !== null);
+
+  if(needSubtotalRow){
+    subTotalRow.style.display = 'flex';
+    document.getElementById('tpl-subtotal').textContent = fmt(subTotalAmt);
+    document.getElementById('tpl-total').textContent    = fmt(billTotal);
+  } else {
+    // Simple bill — hide Sub Total, only show single Total
+    subTotalRow.style.display = 'none';
+    document.getElementById('tpl-total').textContent    = fmt(billTotal);
+  }
+
+  /* ── Coupon row ── */
+  if(hasCoupon){
+    document.getElementById('row-coupon').style.display = 'flex';
+    document.getElementById('tpl-coupon-code').textContent = couponCode;
+    document.getElementById('tpl-coupon-disc').textContent = '-'+fmt(couponDisc);
+  }
+
+  /* ── Final Amt row ──
+     Show when there IS a net discount (coupon and/or negotiation).
+     fp comes from billing.html as the net payable amount.
+  ── */
+  if(showFinal && fp !== null){
+    document.getElementById('row-final').style.display = 'flex';
+    document.getElementById('tpl-final').textContent   = fmt(fp);
+  }
+
+  /* ── Received / Due / Status ── */
+  if(showRcv && rcv > 0){
+    document.getElementById('row-received').style.display = 'flex';
+    document.getElementById('tpl-received').textContent   = fmt(rcv);
+  }
+  if(showDue && due > 0){
+    document.getElementById('row-due').style.display = 'flex';
+    document.getElementById('tpl-due').textContent   = fmt(due);
+  }
+  if(showStatus){
+    document.getElementById('row-status').style.display = 'flex';
+    const sel = document.getElementById('tpl-status');
+    sel.textContent  = status;
+    sel.style.color  = status==='PAID'?'#10bf39':'#e30202';
+  }
+
+  /* ── Bill No barcode ── */
+  const billNo = data.billNumber||'SP00000';
+  document.getElementById('tpl-barcode-text').textContent = billNo;
+  const barcodeW = ((data.thermalSize||settings.thermalSize||'80mm')==='57mm') ? 155 : 210;
+  try{ window.drawCode128(document.getElementById('tpl-barcode-svg'), billNo, barcodeW); }
+  catch(e){ console.warn('Barcode err:',e); }
+}
+
+loadAndRender();
+window.addEventListener('load', ()=> setTimeout(()=> window.print(), 450));
+</script>
+</body>
+</html>

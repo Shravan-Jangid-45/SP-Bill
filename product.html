@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products — SP Fashion</title>
+
+    <!-- =========================
+         EXTERNAL STYLESHEETS
+    ========================= -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- =========================
+         CORE STYLES
+    ========================= -->
+    <style>
+        :root {
+            --sidebar-bg: #1a1a1a;
+            --accent-green: #10bf39;
+            --accent-red: #e30202;
+            --accent-blue: #007bff;
+            --accent-orange: #e65c00;
+            --font: "DM Sans", "Inter", sans-serif;
+            --text-primary: #333;
+            --text-secondary: #555;
+            --text-muted: #666;
+            --border-light: #e0e0e0;
+            --border-lighter: #f0f0f0;
+            --bg-page: #f5f5f5;
+            --bg-content: #f8f9fa;
+            --bg-white: #ffffff;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+            --radius-xl: 12px;
+            --transition-fast: 0.2s;
+            --transition-smooth: 0.3s ease-in-out;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-page);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .hidden { display: none !important; }
+        .desktop-only { display: block; }
+        .mobile-only { display: none; }
+
+        /* =========================
+           MAIN APP LAYOUT
+        ========================= */
+        .app { display: flex; width: 100%; height: 100vh; }
+
+        /* =========================
+           SIDEBAR
+        ========================= */
+        .sidebar {
+            background: var(--sidebar-bg);
+            color: white;
+            width: 200px;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh;
+            z-index: 1100;
+            overflow-y: auto;
+            transition: transform var(--transition-smooth);
+        }
+
+        .brand {
+            font-size: 18px; font-weight: 700;
+            text-align: center; color: white;
+            margin-bottom: 30px; letter-spacing: 0.5px;
+        }
+
+        .nav-link { text-decoration: none; color: white; display: block; margin-bottom: 5px; }
+        .nav-inner {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 20px; font-size: 14px;
+            transition: background var(--transition-fast);
+            border-left: 3px solid transparent;
+        }
+        .nav-inner img { width: 16px; height: 16px; flex-shrink: 0; }
+
+        .nav-link:hover .nav-inner { background: #333; }
+        .nav-link.active .nav-inner {
+            background: #0066cc;
+            border-left: 3px solid #fff;
+        }
+
+        .nav-pending-badge {
+            background: var(--accent-red); color: white;
+            border-radius: 50%; min-width: 18px; height: 18px;
+            font-size: 10px; font-weight: 700;
+            display: none; align-items: center; justify-content: center;
+            margin-left: auto; padding: 0 4px;
+        }
+
+        .mobile-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1099;
+            opacity: 0; visibility: hidden;
+            transition: opacity var(--transition-smooth), visibility var(--transition-smooth);
+        }
+        .mobile-overlay.active { opacity: 1; visibility: visible; }
+
+        /* =========================
+           MAIN CONTENT
+        ========================= */
+        .main-content {
+            margin-left: 200px;
+            width: calc(100% - 200px);
+            background: var(--bg-white);
+            display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden; min-height: 0;
+            transition: margin-left var(--transition-smooth), width var(--transition-smooth);
+        }
+
+        /* =========================
+           TOP HEADER
+        ========================= */
+        .top-header {
+            background: var(--bg-white);
+            padding: 15px 30px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm); flex-shrink: 0; gap: 15px;
+        }
+        .page-title { font-size: 20px; font-weight: 600; color: var(--text-primary); }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-right { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+
+        .menu-toggle { display: none; background: none; border: none; font-size: 20px; cursor: pointer; color: #333; padding: 4px 8px; }
+
+        .icon-btn {
+            width: 35px; height: 35px;
+            background: #1c1c1c; border: none; border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: background var(--transition-fast); position: relative;
+        }
+        .icon-btn img { width: 20px; height: 20px; }
+        .icon-btn.active { background: var(--accent-green); }
+        .icon-btn:hover { background: #333; }
+        .icon-btn.active:hover { background: #0da832; }
+
+        .notif-badge {
+            position: absolute; top: -4px; right: -4px;
+            background: var(--accent-red); color: white;
+            border-radius: 50%; width: 17px; height: 17px;
+            font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700;
+        }
+
+        .mobile-add-btn {
+            width: 35px; height: 35px;
+            background: #000; border: none; border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+        .mobile-add-btn img { width: 20px; height: 20px; }
+
+        /* =========================
+           CONTENT AREA
+        ========================= */
+        .content-area {
+            padding: 20px 30px; flex-grow: 1;
+            background: var(--bg-content); overflow-y: auto; min-height: 0;
+        }
+
+        /* =========================
+           SEARCH & FILTER BAR
+        ========================= */
+        .search-filters-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; background: var(--bg-white);
+            padding: 15px 20px; height: 60px;
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); gap: 20px;
+        }
+        .search-section { display: flex; align-items: center; gap: 15px; }
+        .search-box { position: relative; }
+        .search-input {
+            padding: 8px 40px 8px 15px; border: 1px solid #ddd;
+            border-radius: 20px; width: 250px; font-size: 14px; font-family: var(--font);
+            outline: none; transition: border-color var(--transition-fast);
+        }
+        .search-input:focus { border-color: var(--accent-green); }
+        .search-icon {
+            position: absolute; right: 12px; top: 50%;
+            transform: translateY(-50%); width: 16px; height: 16px; opacity: 0.6; pointer-events: none;
+        }
+
+        .filters-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 15px; border: 1px solid #ddd;
+            background: var(--bg-white); border-radius: var(--radius-md);
+            cursor: pointer; font-size: 14px; position: relative; font-family: var(--font);
+            transition: background var(--transition-fast);
+        }
+        .filters-btn:hover { background: #f5f5f5; }
+        .filter-dropdown {
+            position: absolute; top: 100%; left: 0;
+            background: var(--bg-white); border: 1px solid #ddd;
+            border-radius: var(--radius-md); box-shadow: var(--shadow-md);
+            min-width: 180px; z-index: 1000; display: none;
+        }
+        .filter-dropdown.show { display: block; }
+        .filter-option {
+            padding: 10px 15px; cursor: pointer;
+            border-bottom: 1px solid var(--border-lighter); font-size: 14px;
+            transition: background var(--transition-fast);
+        }
+        .filter-option:hover { background: var(--bg-content); }
+        .filter-option:last-child { border-bottom: none; }
+
+        .action-section { display: flex; align-items: center; gap: 15px; }
+        .category-toggle { display: flex; gap: 4px; }
+        .category-btn {
+            padding: 6px 14px; border: none; background: transparent;
+            color: #888; font-size: 14px; font-weight: 500; cursor: pointer;
+            border-radius: var(--radius-sm); transition: all var(--transition-fast);
+            font-family: var(--font); border-bottom: 2px solid transparent;
+        }
+        .category-btn.active {
+            color: var(--accent-green); font-weight: 700;
+            border-bottom: 2px solid var(--accent-green);
+        }
+        .category-btn:hover:not(.active) { color: var(--text-primary); }
+
+        .new-product-btn {
+            color: var(--accent-green); font-weight: 600; font-size: 14px;
+            cursor: pointer; display: flex; align-items: center; gap: 5px;
+            padding: 8px 15px; border: 1px solid var(--accent-green);
+            border-radius: var(--radius-md); background: var(--bg-white);
+            transition: background var(--transition-fast); font-family: var(--font); white-space: nowrap;
+        }
+        .new-product-btn:hover { background: #f0f8f0; }
+
+        .pending-badge-btn {
+            color: var(--accent-orange); font-weight: 600; font-size: 14px;
+            cursor: pointer; display: none; align-items: center; gap: 5px;
+            padding: 8px 15px; border: 1px solid var(--accent-orange);
+            border-radius: var(--radius-md); background: var(--bg-white);
+            transition: background var(--transition-fast); font-family: var(--font); white-space: nowrap;
+        }
+        .pending-badge-btn:hover { background: #fff8f0; }
+
+        /* =========================
+           DESKTOP PRODUCT TABLE
+        ========================= */
+        .table-container {
+            background: var(--bg-white); border-radius: var(--radius-lg);
+            overflow: hidden; box-shadow: var(--shadow-sm);
+        }
+        .product-table { width: 100%; border-collapse: collapse; }
+        .product-table th {
+            background: var(--bg-content); padding: 12px 8px; text-align: left;
+            font-weight: 600; color: var(--text-primary); border-bottom: 1px solid var(--border-light);
+            font-size: 13px; white-space: nowrap;
+        }
+        .product-table td {
+            padding: 12px 8px; border-bottom: 1px solid var(--border-lighter);
+            font-size: 13px; color: var(--text-secondary);
+        }
+        .product-table tbody tr { transition: background var(--transition-fast); }
+        .product-table tbody tr:hover { background: var(--bg-content); }
+
+        .table-actions { display: flex; gap: 5px; align-items: center; }
+        .edit-btn, .print-btn {
+            padding: 5px 10px; background: var(--bg-white);
+            border-radius: var(--radius-sm); cursor: pointer; font-size: 11px;
+            font-weight: 500; font-family: var(--font); transition: background var(--transition-fast);
+        }
+        .edit-btn { border: 1px solid var(--accent-green); color: var(--accent-green); }
+        .edit-btn:hover { background: #f0f8f0; }
+        .print-btn { border: 1px solid var(--accent-blue); color: var(--accent-blue); }
+        .print-btn:hover { background: #e6f3ff; }
+
+        /* =========================
+           GARMENT CARD GRID
+        ========================= */
+        .garment-grid-container {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px; padding: 20px 0;
+        }
+        .garment-card {
+            background: var(--bg-white); border-radius: var(--radius-lg);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; flex-direction: column;
+            overflow: hidden; transition: box-shadow var(--transition-fast);
+        }
+        .garment-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .garment-card-header {
+            padding: 10px 15px; border-bottom: 1px solid var(--border-lighter);
+            font-size: 18px; font-weight: 600; color: var(--text-primary);
+        }
+        .garment-card-main { padding: 15px; display: flex; align-items: center; gap: 15px; }
+        .garment-card-image {
+            width: 100px; height: 100px; object-fit: cover;
+            border-radius: var(--radius-md); border: 1px solid #eee; flex-shrink: 0; background: #fafafa;
+        }
+        .garment-card-details { flex-grow: 1; font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+        .garment-card-details div { display: flex; justify-content: space-between; gap: 8px; }
+        .garment-card-details strong { color: var(--text-primary); margin-left: 8px; white-space: nowrap; }
+        .garment-card-actions { display: flex; gap: 10px; padding: 0 15px 15px; justify-content: flex-end; }
+
+        /* =========================
+           SUMMARY FOOTER
+        ========================= */
+        .table-footer {
+            background: var(--bg-white); padding: 15px 20px;
+            display: flex; justify-content: space-between; border-top: 1px solid var(--border-light);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 20px;
+            font-size: 14px; color: var(--text-muted); flex-wrap: wrap; gap: 10px;
+        }
+        .table-footer strong { color: var(--text-primary); }
+
+        /* =========================
+           MODALS
+        ========================= */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: none; justify-content: center; align-items: center;
+            z-index: 2000; padding: 16px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--bg-white); border-radius: var(--radius-xl); padding: 30px;
+            width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+            position: relative; box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 20px; font-weight: 600; color: var(--text-primary); }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+        .close-btn:hover { color: #000; }
+
+        /* =========================
+           FORM ELEMENTS
+        ========================= */
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; margin-bottom: 5px; font-weight: 500; color: var(--text-primary); font-size: 14px; }
+        .form-input {
+            width: 100%; padding: 10px 15px; border: 1px solid #ddd;
+            border-radius: var(--radius-md); font-size: 14px; font-family: var(--font);
+            outline: none; transition: border-color var(--transition-fast);
+        }
+        .form-input:focus { border-color: var(--accent-green); }
+        .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 30px; }
+
+        .btn {
+            padding: 8px 15px; border: none; border-radius: var(--radius-md);
+            font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font);
+            transition: opacity var(--transition-fast), background var(--transition-fast); white-space: nowrap;
+        }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-primary { background: var(--accent-green); color: white; }
+        .btn-primary:hover:not(:disabled) { background: #0da832; }
+        .btn-secondary { background: var(--bg-content); color: var(--text-primary); border: 1px solid #ddd; }
+        .btn-secondary:hover:not(:disabled) { background: #e9ecef; }
+        .btn-blue { background: var(--accent-blue); color: white; }
+        .btn-blue:hover:not(:disabled) { background: #0069d9; }
+
+        .image-upload-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+        .image-preview {
+            max-width: 120px; max-height: 120px; margin-top: 10px;
+            border-radius: var(--radius-md); border: 1px solid #ddd; object-fit: cover;
+        }
+        .upload-progress {
+            display: none; align-items: center; gap: 8px;
+            padding: 8px 12px; background: #e6f3ff; border-radius: var(--radius-md);
+            font-size: 13px; color: #0066cc; margin-top: 8px;
+        }
+        .upload-progress.show { display: flex; }
+
+        /* =========================
+           CROP MODAL
+        ========================= */
+        #cropperModalOverlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            display: none; justify-content: center; align-items: center;
+            z-index: 9999; padding: 16px;
+        }
+        #cropperModalOverlay.show { display: flex; }
+        .cropper-modal-box {
+            background: var(--bg-white); border-radius: 14px; padding: 22px 22px 18px;
+            width: 100%; max-width: 600px; max-height: 92vh;
+            display: flex; flex-direction: column; box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+        }
+        .cropper-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        #cropperContainer {
+            width: 100%; height: clamp(240px, 50vh, 420px);
+            overflow: hidden; border-radius: var(--radius-lg); background: #111;
+            flex-shrink: 0; margin-bottom: 14px;
+        }
+        .cropper-modal-footer { display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
+        .cropper-modal { opacity: 0.65 !important; }
+        .cropper-view-box, .cropper-face { outline: 0; }
+
+        /* =========================
+           CAMERA MODAL
+        ========================= */
+        .camera-container { text-align: center; position: relative; }
+        #video { width: 100%; max-width: 400px; height: 300px; border: 1px solid #ddd; border-radius: var(--radius-lg); object-fit: cover; }
+        .camera-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 200px; height: 100px; border: 2px solid var(--accent-green);
+            border-radius: var(--radius-lg); pointer-events: none;
+        }
+        .camera-overlay::before {
+            content: 'Align barcode here'; position: absolute; top: -28px; left: 50%;
+            transform: translateX(-50%); background: rgba(16,191,57,0.85);
+            color: white; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 12px; white-space: nowrap;
+        }
+        .scan-result { margin-top: 15px; padding: 10px; background: #d4edda; color: #155724; border-radius: var(--radius-sm); display: none; }
+        .camera-controls { margin-top: 15px; display: flex; gap: 10px; justify-content: center; }
+
+        /* =========================
+           LOADING SPINNER & ALERTS
+        ========================= */
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top-color: var(--accent-green); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .alert { padding: 12px 15px; border-radius: var(--radius-md); margin-bottom: 15px; font-size: 14px; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-info    { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+        /* =========================
+           MOBILE PRODUCT CARDS
+        ========================= */
+        .product-card {
+            background: var(--bg-white); border-radius: var(--radius-lg);
+            padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .product-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .product-name { font-weight: 600; font-size: 16px; color: var(--text-primary); }
+        .product-price { font-weight: 600; font-size: 16px; color: var(--accent-green); }
+        .product-details { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: var(--text-muted); flex-wrap: wrap; gap: 4px; }
+        .product-actions { display: flex; justify-content: flex-end; gap: 10px; }
+        .mobile-edit-btn, .mobile-print-btn {
+            padding: 6px 15px; border: 1px solid; border-radius: var(--radius-sm);
+            cursor: pointer; font-size: 12px; font-weight: 500; font-family: var(--font); background: white;
+        }
+        .mobile-edit-btn { border-color: var(--accent-green); color: var(--accent-green); }
+        .mobile-print-btn { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+        /* =========================
+           RESPONSIVE – MOBILE
+        ========================= */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .menu-toggle { display: block; }
+            .main-content { margin-left: 0; width: 100%; }
+            .top-header { padding: 10px 15px; }
+            .content-area { padding: 15px; }
+            .search-filters-bar { flex-direction: column; gap: 12px; padding: 15px; height: auto; }
+            .search-section, .action-section { width: 100%; justify-content: space-between; }
+            .search-input { width: 100%; }
+            .garment-grid-container { grid-template-columns: 1fr; }
+            .garment-card-image { width: 80px; height: 80px; }
+            .modal { width: 95%; margin: 10px; padding: 20px; }
+            .desktop-only { display: none !important; }
+            .mobile-only { display: block !important; }
+            .mobile-only.hidden { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+
+    <!-- =========================
+         SIDEBAR
+    ========================= -->
+    <aside class="sidebar" id="appSidebar">
+        <div class="brand">SP Fashion</div>
+
+        <a href="dashboard.html" class="nav-link">
+            <div class="nav-inner"><img src="icon/deshboard.svg" alt="Dashboard"><span>Dashboard</span></div>
+        </a>
+        <a href="product.html" class="nav-link active">
+            <div class="nav-inner"><img src="icon/products.svg" alt="Products"><span>Products</span><span class="nav-pending-badge" id="sidebarPendingBadge"></span></div>
+        </a>
+        <a href="suppliers.html" class="nav-link">
+            <div class="nav-inner"><img src="icon/Suppliers.svg" alt="Suppliers"><span>Suppliers</span></div>
+        </a>
+        <a href="staff.html" class="nav-link">
+            <div class="nav-inner"><img src="icon/customer.svg" alt="Staff"><span>Staff Members</span></div>
+        </a>
+        <a href="billing.html" class="nav-link">
+            <div class="nav-inner"><img src="icon/Bill.svg" alt="Billing"><span>Billing</span></div>
+        </a>
+        <a href="invoices.html" class="nav-link">
+            <div class="nav-inner"><img src="icon/invoices.svg" alt="Invoices"><span>Invoices</span></div>
+        </a>
+        <a href="cashBook.html" class="nav-link">
+            <div class="nav-inner"><img src="icon/cashbook.svg" alt="Cash Book"><span>Cash Book</span></div>
+        </a>
+        <a href="coupon.html" class="nav-link">
+            <div class="nav-inner"><img src="icon/coupon.svg" alt="Coupons"><span>Coupons</span></div>
+        </a>
+        <a href="settings.html" class="nav-link">
+            <div class="nav-inner"><img src="icon/setting.svg" alt="Settings"><span>Settings</span></div>
+        </a>
+    </aside>
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <!-- =========================
+         MAIN CONTENT
+    ========================= -->
+    <div class="main-content">
+
+        <!-- =========================
+             TOP HEADER
+        ========================= -->
+        <div class="top-header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menuToggle" aria-label="Open menu">☰</button>
+                <h1 class="page-title">Products</h1>
+            </div>
+            <div class="header-right">
+                <button class="icon-btn" id="pendingNotifBtn" title="Pending Product Requests" onclick="showPendingRequestsModal()" style="display:none;">
+                    <img src="icon/notification.svg" alt="Notifications">
+                    <span class="notif-badge" id="pendingNotifCount"></span>
+                </button>
+                <button class="icon-btn" id="barcodeBtn" title="USB Barcode Scanner"><img src="icon/barcode.svg" alt="USB Scanner"></button>
+                <button class="icon-btn" id="cameraBtn" title="Camera Scanner"><img src="icon/camera-barcode.svg" alt="Camera"></button>
+                <button class="icon-btn" id="barcodePrintBtn" title="Print Barcode Labels" onclick="openBarcodePrintPageSafe()">
+                    <img src="icon/print.svg" alt="Print">
+                </button>
+                <button class="mobile-add-btn mobile-only" id="mobileNewProductBtn" title="Add New Product">
+                    <img src="icon/add.svg" alt="Add">
+                </button>
+            </div>
+        </div>
+
+        <!-- =========================
+             CONTENT AREA
+        ========================= -->
+        <div class="content-area">
+
+            <!-- =========================
+                 SEARCH & FILTER BAR
+            ========================= -->
+            <div class="search-filters-bar">
+                <div class="search-section">
+                    <div class="search-box">
+                        <input type="text" class="search-input" id="searchInput" placeholder="Search Product">
+                        <span class="search-icon"><img src="icon/search.svg" alt="Search"></span>
+                    </div>
+                    <div class="filters-btn" id="filtersBtn">
+                        <span>Filters</span>
+                        <img src="icon/filter.svg" width="20" alt="Filter">
+                        <div class="filter-dropdown" id="filterDropdown">
+                            <div class="filter-option" data-filter="all">All Products</div>
+                            <div class="filter-option" data-filter="high-stock">High Stock Items</div>
+                            <div class="filter-option" data-filter="zero-stock">Zero Stock Items</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="action-section">
+                    <div class="category-toggle">
+                        <button class="category-btn active" id="readymadeBtn" data-category="readymade">Readymade</button>
+                        <button class="category-btn"        id="generalBtn"   data-category="general">General</button>
+                        <button class="category-btn"        id="garmentsBtn"  data-category="garments">Garments</button>
+                    </div>
+                    <button class="new-product-btn desktop-only" id="newProductBtn">+ NEW PRODUCT</button>
+                    <button class="pending-badge-btn desktop-only" id="pendingBadgeBtn" style="display:none;">
+                        Pending (<span id="pendingCount">0</span>)
+                    </button>
+                </div>
+            </div>
+
+            <!-- =========================
+                 SUMMARY FOOTER
+            ========================= -->
+            <div class="table-footer" id="tableFooter"></div>
+
+            <!-- =========================
+                 DESKTOP PRODUCT TABLE
+            ========================= -->
+            <div class="table-container desktop-only" id="readymadeTableContainer">
+                <table class="product-table">
+                    <thead>
+                        <tr>
+                            <th>Barcode</th><th>SP Barcode</th><th id="thProductName">Product Name</th>
+                            <th id="thStock">Stock</th><th id="thMrp">MRP</th><th id="thRate">Rate</th>
+                            <th id="thPurchRate">Purch. Rate</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- =========================
+                 GARMENT CARD GRID
+            ========================= -->
+            <div id="garmentGridContainer" class="garment-grid-container hidden"></div>
+
+            <!-- =========================
+                 MOBILE PRODUCT CARDS
+            ========================= -->
+            <div id="mobileProductCards" class="mobile-only hidden"></div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================
+     PRODUCT MODAL
+========================= -->
+<div class="modal-overlay" id="productModalOverlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modalTitle">Add New Product</h2>
+            <button class="close-btn" onclick="closeProductModal()">&times;</button>
+        </div>
+        <form id="productForm" novalidate>
+            <div id="alertContainer"></div>
+            <input type="hidden" id="productCategoryInput">
+
+            <div class="form-group" id="categorySelectGroup">
+                <label class="form-label">Category</label>
+                <select class="form-input" id="categorySelect">
+                    <option value="readymade">Readymade</option>
+                    <option value="general">General</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="barcodeGroup">
+                <label class="form-label" for="barcodeInput">Barcode</label>
+                <input type="text" class="form-input" id="barcodeInput" autocomplete="off">
+            </div>
+
+            <div class="form-group hidden" id="imageUploadGroup">
+                <label class="form-label">Product Image</label>
+                <input type="file" id="imageFileInput" class="hidden" accept="image/*">
+                <input type="file" id="imageCaptureInput" class="hidden" accept="image/*" capture="environment">
+                <div class="image-upload-controls">
+                    <button type="button" class="btn btn-secondary" id="uploadFileBtn">Upload File</button>
+                    <button type="button" class="btn btn-secondary" id="capturePhotoBtn">Use Camera</button>
+                </div>
+                <img id="imagePreview" src="" alt="Preview" class="hidden image-preview">
+                <input type="hidden" id="cloudinaryImageUrl">
+                <div class="upload-progress" id="uploadProgress">
+                    <span class="loading"></span>
+                    <span id="uploadProgressText">Uploading to cloud…</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="productNameInput">Product Name</label>
+                <input type="text" class="form-input" id="productNameInput">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" id="stockLabel" for="stockInput">Stock</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="number" class="form-input" id="stockInput" min="0" required style="flex:1;">
+                    <div class="hidden" id="unitGroup" style="flex-shrink:0;">
+                        <select class="form-input" id="unitSelect" style="width:90px; padding:10px 8px;">
+                            <option value="meter">Meter</option>
+                            <option value="pcs">Pcs</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" id="mrpLabel" for="mrpInput">MRP (₹)</label>
+                <input type="number" class="form-input" id="mrpInput" min="0" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" id="rateLabel" for="rateInput">Rate (₹)</label>
+                <input type="number" class="form-input" id="rateInput" min="0" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" id="purchRateLabel" for="purchasingRateInput">Purchasing Rate (₹)</label>
+                <input type="number" class="form-input" id="purchasingRateInput" min="0" step="0.01">
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="saveBtn">
+                    <span id="saveBtnText">Save Product</span>
+                    <span id="saveBtnLoading" class="loading hidden"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========================
+     CROP MODAL
+========================= -->
+<div id="cropperModalOverlay">
+    <div class="cropper-modal-box">
+        <div class="cropper-modal-header">
+            <h2>Crop Image</h2>
+            <button type="button" id="cropperCloseBtn">&times;</button>
+        </div>
+        <div id="cropperContainer">
+            <img id="cropImage" src="" alt="Crop preview">
+        </div>
+        <div class="cropper-modal-footer">
+            <button type="button" class="btn btn-secondary" id="cropperCloseBtn2">Cancel</button>
+            <button type="button" class="btn btn-primary" id="cropBtn">✓ Crop &amp; Continue</button>
+        </div>
+    </div>
+</div>
+
+<!-- =========================
+     CAMERA MODAL
+========================= -->
+<div class="modal-overlay" id="cameraModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title">Scan Barcode</h2>
+            <button class="close-btn" onclick="closeCameraModal()">&times;</button>
+        </div>
+        <div class="camera-container">
+            <div style="position:relative; display:inline-block;">
+                <video id="video" autoplay playsinline></video>
+                <div class="camera-overlay"></div>
+            </div>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <div id="scanResult" class="scan-result">
+                <strong>Scanned:</strong> <span id="scannedBarcode"></span>
+            </div>
+            <div class="camera-controls">
+                <button id="scanNextBtn" class="btn btn-primary">Scan Product</button>
+                <button id="finishScanBtn" class="btn btn-secondary">Close Scanner</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================
+     EXTERNAL SCRIPTS
+========================= -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<!-- =========================
+     APPLICATION SCRIPTS
+========================= -->
+<script type="module">
+    'use strict';
+
+    // =========================
+    // FIREBASE & CLOUDINARY CONFIG
+    // =========================
+    const firebaseConfig = {
+        apiKey: 'AIzaSyCVXql_12NNa9_bUXYfWhj8Z7ZUqTyD1ak',
+        authDomain: 'sp-fashion-beca2.firebaseapp.com',
+        projectId: 'sp-fashion-beca2',
+        storageBucket: 'sp-fashion-beca2.appspot.com',
+        messagingSenderId: '734725526616',
+        appId: '1:734725526616:web:4ed1410e441789653e262d',
+    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
+
+    const CLOUDINARY = {
+        cloudName: 'df0aitccb',
+        uploadPreset: 'SP_Fashion',
+        folder: 'sp-fashion/products',
+    };
+
+    // =========================
+    // APP STATE
+    // =========================
+    let allProducts = [];
+    let filteredProducts = [];
+    let currentCategory = 'readymade';
+    let currentFilter = 'all';
+    let editingProductId = null;
+
+    let cropper = null;
+    let pendingImageBlob = null;
+
+    let barcodeReaderActive = false;
+    let barcodeInputBuffer = '';
+    let barcodeTimeout = null;
+    let cameraStream = null;
+    let cameraScannerActive = false;
+
+    const barcodeIndex = new Map();
+    const spBarcodeIndex = new Map();
+
+    // =========================
+    // DOM REFERENCES (populated on DOMContentLoaded)
+    // =========================
+    let productTableBody, mobileProductCards, garmentGridContainer;
+    let readymadeTableContainer, tableFooter, searchInput;
+    let productModalOverlay, productForm;
+    let alertContainer, barcodeGroup, imageUploadGroup;
+    let mobileOverlay, cameraModal;
+    let cropperModalOverlay, cropImage, cloudinaryImageUrl, imagePreview;
+
+    // Shortcut element getter
+    const el = (id) => document.getElementById(id);
+
+    // =========================
+    // INITIALIZATION
+    // =========================
+    document.addEventListener('DOMContentLoaded', () => {
+        productTableBody = el('productTableBody');
+        mobileProductCards = el('mobileProductCards');
+        garmentGridContainer = el('garmentGridContainer');
+        readymadeTableContainer = el('readymadeTableContainer');
+        tableFooter = el('tableFooter');
+        searchInput = el('searchInput');
+        productModalOverlay = el('productModalOverlay');
+        productForm = el('productForm');
+        alertContainer = el('alertContainer');
+        barcodeGroup = el('barcodeGroup');
+        imageUploadGroup = el('imageUploadGroup');
+        mobileOverlay = el('mobileOverlay');
+        cameraModal = el('cameraModal');
+        cropperModalOverlay = el('cropperModalOverlay');
+        cropImage = el('cropImage');
+        cloudinaryImageUrl = el('cloudinaryImageUrl');
+        imagePreview = el('imagePreview');
+
+        initEventListeners();
+        setupUSBBarcodeScanner();
+        setupModalForCategory(currentCategory);
+        loadProducts();
+    });
+
+    // =========================
+    // UTILITY FUNCTIONS
+    // =========================
+    function addListener(id, event, handler) {
+        const element = el(id);
+        if (element) element.addEventListener(event, handler);
+    }
+
+    function formatNumber(num) {
+        if (num === null || num === undefined) return '0';
+        const f = parseFloat(num);
+        if (isNaN(f)) return '0';
+        return f % 1 === 0 ? String(f) : String(parseFloat(f.toFixed(2)));
+    }
+
+    function spDisplay(code) {
+        if (!code) return '';
+        const c = String(code).replace(/\*/g, '').trim();
+        return c.startsWith('SP') ? c : 'SP' + c;
+    }
+
+    // =========================
+    // IMAGE PROCESSING
+    // =========================
+    async function compressCanvasToBlob(canvas, maxKB = 250) {
+        return new Promise(resolve => {
+            const maxBytes = maxKB * 1024;
+            let quality = 0.92;
+            function attempt() {
+                canvas.toBlob(blob => {
+                    if (!blob) { resolve(null); return; }
+                    if (blob.size <= maxBytes || quality <= 0.10) {
+                        resolve(blob);
+                    } else {
+                        quality = Math.max(quality - 0.08, 0.10);
+                        attempt();
+                    }
+                }, 'image/jpeg', quality);
+            }
+            attempt();
+        });
+    }
+
+    async function uploadToCloudinary(blob) {
+        if (CLOUDINARY.cloudName === 'YOUR_CLOUD_NAME') {
+            throw new Error('Cloudinary is not configured.');
+        }
+        const form = new FormData();
+        form.append('file', blob, 'product.jpg');
+        form.append('upload_preset', CLOUDINARY.uploadPreset);
+        form.append('folder', CLOUDINARY.folder);
+
+        // **FIXED: Correct template literal closing**
+        const res = await fetch(
+            `https://api.cloudinary.com/v1_1/${CLOUDINARY.cloudName}/image/upload`,
+            { method: 'POST', body: form }
+        );
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error?.message || `Cloudinary upload failed (HTTP ${res.status})`);
+        }
+        return (await res.json()).secure_url;
+    }
+
+    function openCropperModal(src) {
+        if (!cropImage || !cropperModalOverlay) return;
+        cropImage.src = src;
+        cropperModalOverlay.classList.add('show');
+        if (cropper) { cropper.destroy(); cropper = null; }
+        cropper = new Cropper(cropImage, {
+            aspectRatio: 1, viewMode: 2, autoCropArea: 0.85,
+            responsive: true, checkOrientation: true, background: false,
+            toggleDragModeOnDblclick: false,
+        });
+    }
+
+    function closeCropperModal() {
+        if (cropper) { cropper.destroy(); cropper = null; }
+        cropperModalOverlay?.classList.remove('show');
+        if (cropImage) cropImage.src = '';
+    }
+
+    function handleImageSelected(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            showAlert('Please select a valid image file.', 'error');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = ev => openCropperModal(ev.target.result);
+        reader.readAsDataURL(file);
+        e.target.value = null;
+    }
+
+    async function cropAndSaveImage() {
+        if (!cropper) return;
+        const cropBtn = el('cropBtn');
+        if (cropBtn) { cropBtn.textContent = 'Processing…'; cropBtn.disabled = true; }
+        try {
+            const canvas = cropper.getCroppedCanvas({ width: 800, height: 800, imageSmoothingQuality: 'high' });
+            const blob = await compressCanvasToBlob(canvas, 250);
+            if (!blob) throw new Error('Image compression failed.');
+            pendingImageBlob = blob;
+            if (imagePreview) {
+                imagePreview.src = URL.createObjectURL(blob);
+                imagePreview.classList.remove('hidden');
+            }
+            if (cloudinaryImageUrl) cloudinaryImageUrl.value = '';
+            closeCropperModal();
+            showNotification(`Image ready (${(blob.size/1024).toFixed(1)} KB)`, 'success');
+        } catch (err) {
+            showAlert('Image processing error: ' + err.message, 'error');
+        } finally {
+            if (cropBtn) { cropBtn.textContent = '✓ Crop & Continue'; cropBtn.disabled = false; }
+        }
+    }
+
+    function resetImageInputs() {
+        pendingImageBlob = null;
+        if (cloudinaryImageUrl) cloudinaryImageUrl.value = '';
+        if (imagePreview) { imagePreview.src = ''; imagePreview.classList.add('hidden'); }
+    }
+
+    // =========================
+    // EVENT LISTENERS
+    // =========================
+    function initEventListeners() {
+        addListener('menuToggle', 'click', openMobileSidebar);
+        addListener('mobileOverlay', 'click', closeMobileSidebar);
+        addListener('unitSelect', 'change', () => setupModalForCategory('garments'));
+
+        addListener('readymadeBtn', 'click', handleCategorySwitch);
+        addListener('generalBtn', 'click', handleCategorySwitch);
+        addListener('garmentsBtn', 'click', handleCategorySwitch);
+
+        addListener('pendingBadgeBtn', 'click', showPendingRequestsModal);
+        addListener('newProductBtn', 'click', openNewProductModal);
+        addListener('mobileNewProductBtn', 'click', openNewProductModal);
+
+        addListener('searchInput', 'input', () => filterProducts());
+        addListener('filtersBtn', 'click', (e) => {
+            e.stopPropagation();
+            el('filterDropdown')?.classList.toggle('show');
+        });
+        document.querySelectorAll('.filter-option').forEach(opt => opt.addEventListener('click', handleFilterChange));
+
+        addListener('barcodeBtn', 'click', toggleUSBScanner);
+        addListener('cameraBtn', 'click', openCameraModal);
+        addListener('scanNextBtn', 'click', () => {
+            if (!cameraScannerActive) startCameraScanning();
+            else showNotification('Scanning…', 'info');
+        });
+        addListener('finishScanBtn', 'click', () => { stopCameraScanning(); closeCameraModal(); });
+
+        if (productForm) productForm.addEventListener('submit', handleFormSubmit);
+
+        productModalOverlay?.addEventListener('click', e => { if (e.target === productModalOverlay) closeProductModal(); });
+        cameraModal?.addEventListener('click', e => {
+            if (e.target === cameraModal) { stopCameraScanning(); closeCameraModal(); }
+        });
+        document.addEventListener('click', () => el('filterDropdown')?.classList.remove('show'));
+
+        addListener('uploadFileBtn', 'click', () => el('imageFileInput')?.click());
+        addListener('capturePhotoBtn', 'click', () => el('imageCaptureInput')?.click());
+        addListener('imageFileInput', 'change', handleImageSelected);
+        addListener('imageCaptureInput', 'change', handleImageSelected);
+
+        addListener('cropBtn', 'click', cropAndSaveImage);
+        addListener('cropperCloseBtn', 'click', closeCropperModal);
+        addListener('cropperCloseBtn2', 'click', closeCropperModal);
+    }
+
+    // =========================
+    // SIDEBAR
+    // =========================
+    function openMobileSidebar() {
+        el('appSidebar')?.classList.add('active');
+        mobileOverlay?.classList.add('active');
+    }
+    function closeMobileSidebar() {
+        el('appSidebar')?.classList.remove('active');
+        mobileOverlay?.classList.remove('active');
+    }
+
+    // =========================
+    // CATEGORY SWITCH
+    // =========================
+    function handleCategorySwitch(e) {
+        currentCategory = e.currentTarget.dataset.category;
+        const isGarments = currentCategory === 'garments';
+        el('readymadeBtn')?.classList.toggle('active', currentCategory === 'readymade');
+        el('generalBtn')?.classList.toggle('active', currentCategory === 'general');
+        el('garmentsBtn')?.classList.toggle('active', currentCategory === 'garments');
+
+        if (el('thStock')) el('thStock').textContent = isGarments ? 'Stock (mtr)' : 'Stock';
+        if (el('thMrp')) el('thMrp').textContent = isGarments ? 'MRP / mtr' : 'MRP';
+        if (el('thRate')) el('thRate').textContent = isGarments ? 'Rate / mtr' : 'Rate';
+        if (el('thPurchRate')) el('thPurchRate').textContent = isGarments ? 'Purch. Rate / mtr' : 'Purch. Rate';
+
+        readymadeTableContainer?.classList.toggle('hidden', isGarments);
+        garmentGridContainer?.classList.toggle('hidden', !isGarments);
+        if (mobileProductCards) {
+            mobileProductCards.classList.toggle('hidden', isGarments);
+            mobileProductCards.style.display = isGarments ? 'none' : '';
+        }
+        filterProducts();
+    }
+
+    // =========================
+    // FIREBASE LOADING
+    // =========================
+    function loadProducts() {
+        db.collection('products').onSnapshot(snapshot => {
+            allProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            allProducts.sort((a, b) => {
+                const aMs = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : new Date(a.createdAt).getTime() || 0;
+                const bMs = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : new Date(b.createdAt).getTime() || 0;
+                return bMs - aMs;
+            });
+            rebuildBarcodeIndexes();
+            filterProducts();
+            updatePendingBadge();
+        }, err => {
+            console.error('loadProducts error:', err);
+            showNotification('Error loading products: ' + err.message, 'error');
+        });
+    }
+
+    // =========================
+    // PENDING BADGE
+    // =========================
+    function updatePendingBadge() {
+        const pending = JSON.parse(localStorage.getItem('pendingProducts') || '[]');
+        const count = pending.length;
+        const bell = el('pendingNotifBtn');
+        const bellCnt = el('pendingNotifCount');
+        if (bell) {
+            bell.style.display = count > 0 ? 'flex' : 'none';
+            if (bellCnt) bellCnt.textContent = count > 0 ? count : '';
+        }
+        const btn = el('pendingBadgeBtn');
+        const cnt = el('pendingCount');
+        if (btn && cnt) {
+            btn.style.display = count > 0 ? 'flex' : 'none';
+            cnt.textContent = count;
+        }
+        const sidebarBadge = el('sidebarPendingBadge');
+        if (sidebarBadge) {
+            sidebarBadge.style.display = count > 0 ? 'flex' : 'none';
+            sidebarBadge.textContent = count > 0 ? count : '';
+        }
+    }
+
+    function showPendingRequestsModal() {
+        const pending = JSON.parse(localStorage.getItem('pendingProducts') || '[]');
+        const m = document.createElement('div');
+        m.className = 'modal-overlay show';
+        m.id = '_pendingModal';
+        const items = pending.length === 0
+            ? '<p style="color:#888;text-align:center;padding:20px;">No pending requests.</p>'
+            : pending.map(p => `
+                <div style="display:flex;align-items:center;justify-content:space-between;background:#fff8f0;border:1px solid #ffd5a8;border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+                    <div>
+                        <div style="font-weight:600;color:#e65c00;">📦 ${p.barcode}</div>
+                        <div style="font-size:11px;color:#999;">${new Date(p.createdAt).toLocaleString('en-IN')}</div>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-primary" style="font-size:12px;padding:5px 12px;" onclick="openQuickAddFromPending('${p.barcode}')">+ Add Product</button>
+                        <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;" onclick="removePendingItem('${p.barcode}')">✕</button>
+                    </div>
+                </div>`).join('');
+        m.innerHTML = `
+            <div class="modal" style="max-width:480px;">
+                <div class="modal-header">
+                    <h2 class="modal-title">📋 Pending Product Requests</h2>
+                    <button class="close-btn" onclick="document.getElementById('_pendingModal').remove()">&times;</button>
+                </div>
+                <p style="font-size:13px;color:#888;margin-bottom:12px;">These barcodes were scanned in billing but not found in products.</p>
+                <div id="_pendingItems">${items}</div>
+            </div>`;
+        document.body.appendChild(m);
+        m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+    }
+
+    window.removePendingItem = function(barcode) {
+        const pending = JSON.parse(localStorage.getItem('pendingProducts') || '[]');
+        localStorage.setItem('pendingProducts', JSON.stringify(pending.filter(p => p.barcode !== barcode)));
+        el('_pendingModal')?.remove();
+        updatePendingBadge();
+    };
+
+    window.openQuickAddFromPending = function(barcode) {
+        el('_pendingModal')?.remove();
+        currentCategory = 'readymade';
+        el('readymadeBtn')?.classList.add('active');
+        el('generalBtn')?.classList.remove('active');
+        el('garmentsBtn')?.classList.remove('active');
+        openNewProductModal();
+        setTimeout(() => {
+            const bi = el('barcodeInput');
+            if (bi) { bi.value = barcode; bi.focus(); }
+        }, 100);
+    };
+
+    // =========================
+    // BARCODE INDEXES
+    // =========================
+    function rebuildBarcodeIndexes() {
+        barcodeIndex.clear();
+        spBarcodeIndex.clear();
+        allProducts.forEach(p => {
+            if (p.barcode) barcodeIndex.set(p.barcode.trim(), p);
+            if (p.spBarcode) spBarcodeIndex.set(p.spBarcode.trim(), p);
+        });
+    }
+
+    // =========================
+    // FILTERING & RENDERING
+    // =========================
+    function filterProducts() {
+        let results;
+        // Strict category filtering
+        if (currentCategory === 'garments') results = allProducts.filter(p => p.category === 'garments');
+        else if (currentCategory === 'general') results = allProducts.filter(p => p.category === 'general');
+        else results = allProducts.filter(p => !p.category || p.category === 'readymade'); // readymade + legacy
+
+        const term = searchInput?.value.toLowerCase().trim() || '';
+        if (term) {
+            results = results.filter(p =>
+                p.productName?.toLowerCase().includes(term) ||
+                p.barcode?.toLowerCase().includes(term) ||
+                p.spBarcode?.toLowerCase().includes(term)
+            );
+        }
+        if (currentFilter === 'zero-stock') results = results.filter(p => p.stock === 0);
+        else if (currentFilter === 'high-stock') results = [...results].sort((a, b) => b.stock - a.stock);
+        else results.sort((a, b) => (a.productName || '').localeCompare(b.productName || ''));
+
+        filteredProducts = results;
+        renderProducts();
+    }
+
+    function handleFilterChange(e) {
+        currentFilter = e.currentTarget.dataset.filter;
+        document.querySelectorAll('.filter-option').forEach(o => o.style.fontWeight = 'normal');
+        e.currentTarget.style.fontWeight = 'bold';
+        el('filterDropdown')?.classList.remove('show');
+        filterProducts();
+    }
+
+    function renderProducts() {
+        const isGarments = currentCategory === 'garments';
+        readymadeTableContainer?.classList.toggle('hidden', isGarments);
+        garmentGridContainer?.classList.toggle('hidden', !isGarments);
+        if (mobileProductCards) {
+            mobileProductCards.classList.toggle('hidden', isGarments);
+            mobileProductCards.style.display = isGarments ? 'none' : '';
+        }
+
+        if (isGarments) renderGarmentGrid();
+        else {
+            renderDesktopTable();
+            renderMobileCards();
+        }
+        updateSummary();
+    }
+
+    function renderDesktopTable() {
+        if (!productTableBody) return;
+        const settings = JSON.parse(localStorage.getItem('shopSettings') || '{}');
+        const showPurchRate = settings.showPurchasingRate !== false;
+        if (el('thPurchRate')) el('thPurchRate').style.display = showPurchRate ? '' : 'none';
+
+        if (!filteredProducts.length) {
+            productTableBody.innerHTML = `<tr><td colspan="${showPurchRate ? 8 : 7}" style="text-align:center;padding:20px;">No products found.</td></tr>`;
+            return;
+        }
+        productTableBody.innerHTML = '';
+        filteredProducts.forEach(p => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${p.barcode || '—'}</td>
+                <td>${p.spBarcode || ''}</td>
+                <td>${p.productName || 'N/A'}</td>
+                <td>${formatNumber(p.stock)}</td>
+                <td>₹${formatNumber(p.mrp)}</td>
+                <td>₹${formatNumber(p.rate)}</td>
+                <td style="display:${showPurchRate ? '' : 'none'}">₹${formatNumber(p.purchasingRate || 0)}</td>
+                <td><div class="table-actions">
+                    <button class="edit-btn" onclick="editProduct('${p.id}')">Edit</button>
+                    <button class="print-btn" onclick="openBarcodePrintPage('${p.id}')">Print</button>
+                </div></td>`;
+            productTableBody.appendChild(row);
+        });
+    }
+
+    function renderMobileCards() {
+        if (!mobileProductCards) return;
+        if (!filteredProducts.length) {
+            mobileProductCards.innerHTML = '<div class="product-card" style="text-align:center;">No products found.</div>';
+            return;
+        }
+        mobileProductCards.innerHTML = '';
+        filteredProducts.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.innerHTML = `
+                <div class="product-card-header">
+                    <span class="product-name">${p.productName || 'N/A'}</span>
+                    <span class="product-price">₹${formatNumber(p.rate)}</span>
+                </div>
+                <div class="product-details">
+                    <span>MRP: ₹${formatNumber(p.mrp)}</span>
+                    <span>Stock: ${formatNumber(p.stock)}</span>
+                </div>
+                <div class="product-details">
+                    <span>Barcode: ${p.barcode || '—'}</span>
+                    <span>SP: ${p.spBarcode || ''}</span>
+                </div>
+                <div class="product-actions">
+                    <button class="mobile-edit-btn" onclick="editProduct('${p.id}')">Edit</button>
+                    <button class="mobile-print-btn" onclick="openBarcodePrintPage('${p.id}')">Print</button>
+                </div>`;
+            mobileProductCards.appendChild(card);
+        });
+    }
+
+    function renderGarmentGrid() {
+        if (!garmentGridContainer) return;
+        if (!filteredProducts.length) {
+            garmentGridContainer.innerHTML = '<div class="garment-card" style="text-align:center;grid-column:1/-1;padding:20px;">No garments found.</div>';
+            return;
+        }
+        const settings = JSON.parse(localStorage.getItem('shopSettings') || '{}');
+        const showPR = settings.showPurchasingRate !== false;
+        garmentGridContainer.innerHTML = '';
+        filteredProducts.forEach(p => {
+            const imgSrc = p.imageUrl || p.base64Image || 'https://placehold.co/100x100/e0e0e0/555?text=No+Image';
+            const unitLabel = p.unit === 'pcs' ? 'pcs' : 'mtr';
+            const card = document.createElement('div');
+            card.className = 'garment-card';
+            card.innerHTML = `
+                <div class="garment-card-header">${p.productName || 'N/A'}</div>
+                <div class="garment-card-main">
+                    <img src="${imgSrc}" alt="${p.productName || 'Garment'}" class="garment-card-image"
+                         onerror="this.onerror=null;this.src='https://placehold.co/100x100/e0e0e0/555?text=No+Image';">
+                    <div class="garment-card-details">
+                        <div><span>SP Barcode:</span><strong>${p.spBarcode || ''}</strong></div>
+                        <div><span>MRP:</span><strong>₹${formatNumber(p.mrp)} / ${unitLabel}</strong></div>
+                        <div><span>Rate:</span><strong>₹${formatNumber(p.rate)} / ${unitLabel}</strong></div>
+                        ${showPR ? `<div><span>Purch. Rate:</span><strong>₹${formatNumber(p.purchasingRate || 0)}</strong></div>` : ''}
+                        <div><span>Stock:</span><strong>${formatNumber(p.stock)} ${unitLabel}</strong></div>
+                    </div>
+                </div>
+                <div class="garment-card-actions">
+                    <button class="edit-btn" onclick="editProduct('${p.id}')">Edit</button>
+                    <button class="print-btn" onclick="openBarcodePrintPage('${p.id}')">Print</button>
+                </div>`;
+            garmentGridContainer.appendChild(card);
+        });
+    }
+
+    function updateSummary() {
+        const totalProducts = filteredProducts.length;
+        const totalStock = filteredProducts.reduce((s, p) => s + (p.stock || 0), 0);
+        const totalAmount = filteredProducts.reduce((s, p) => s + ((p.rate || 0) * (p.stock || 0)), 0);
+        const totalPurchase = filteredProducts.reduce((s, p) => s + ((p.purchasingRate || 0) * (p.stock || 0)), 0);
+        const settings = JSON.parse(localStorage.getItem('shopSettings') || '{}');
+        const showPurchRate = settings.showPurchasingRate !== false;
+
+        const prGroup = el('purchasingRateInput')?.closest('.form-group');
+        if (prGroup) prGroup.style.display = showPurchRate ? '' : 'none';
+
+        let unit = '';
+        if (currentCategory === 'garments') {
+            const hasMeter = filteredProducts.some(p => !p.unit || p.unit === 'meter');
+            const hasPcs = filteredProducts.some(p => p.unit === 'pcs');
+            unit = hasMeter && hasPcs ? ' (mtr/pcs)' : hasPcs ? ' pcs' : ' mtr';
+        }
+        if (tableFooter) {
+            tableFooter.innerHTML = `
+                <span>Total Products: <strong>${totalProducts}</strong></span>
+                <span>Total Stock: ${formatNumber(totalStock)}${unit}</span>
+                <span>Total Amount: ₹${formatNumber(totalAmount)}</span>
+                ${showPurchRate ? `<span>Total Purchase: ₹${formatNumber(totalPurchase)}</span>` : ''}`;
+        }
+    }
+
+    // =========================
+    // PRODUCT MODAL
+    // =========================
+    function setupModalForCategory(cat) {
+        const isGarments = cat === 'garments';
+        el('unitGroup')?.classList.toggle('hidden', !isGarments);
+        const unit = isGarments ? (el('unitSelect')?.value || 'meter') : '';
+        const isMeter = unit === 'meter';
+        if (el('stockLabel')) el('stockLabel').innerHTML = isGarments ? (isMeter ? 'Stock <sup>(meters)</sup>' : 'Stock <sup>(pcs)</sup>') : 'Stock';
+        if (el('mrpLabel'))   el('mrpLabel').innerHTML   = isGarments ? (isMeter ? 'MRP / meter (₹)' : 'MRP / pcs (₹)') : 'MRP (₹)';
+        if (el('rateLabel'))  el('rateLabel').innerHTML  = isGarments ? (isMeter ? 'Rate / meter (₹)' : 'Rate / pcs (₹)') : 'Rate (₹)';
+        if (el('purchRateLabel')) el('purchRateLabel').innerHTML = isGarments ? (isMeter ? 'Purchasing Rate / meter (₹)' : 'Purchasing Rate / pcs (₹)') : 'Purchasing Rate (₹)';
+
+        barcodeGroup?.classList.toggle('hidden', isGarments);
+        imageUploadGroup?.classList.toggle('hidden', !isGarments);
+        el('categorySelectGroup')?.classList.toggle('hidden', isGarments);
+        if (isGarments && el('barcodeInput')) el('barcodeInput').value = '';
+    }
+
+    function openNewProductModal() {
+        editingProductId = null;
+        productForm?.reset();
+        resetImageInputs();
+        const cat = currentCategory === 'garments' ? 'garments' : currentCategory;
+        if (el('productCategoryInput')) el('productCategoryInput').value = cat;
+        if (el('categorySelect') && cat !== 'garments') el('categorySelect').value = cat;
+        if (el('modalTitle')) el('modalTitle').textContent = 'Add New Product';
+        if (el('saveBtnText')) el('saveBtnText').textContent = 'Save Product';
+        setupModalForCategory(cat);
+        clearAlerts();
+        productModalOverlay?.classList.add('show');
+        (cat !== 'garments' ? el('barcodeInput') : el('productNameInput'))?.focus();
+    }
+    window.openNewProductModal = openNewProductModal;
+
+    window.editProduct = function(productId) {
+        const product = allProducts.find(p => p.id === productId);
+        if (!product) return;
+        editingProductId = productId;
+        productForm?.reset();
+        resetImageInputs();
+        const cat = product.category || 'readymade';
+        if (el('productCategoryInput')) el('productCategoryInput').value = cat;
+        setupModalForCategory(cat);
+        if (el('modalTitle')) el('modalTitle').textContent = 'Edit Product';
+        if (el('saveBtnText')) el('saveBtnText').textContent = 'Update Product';
+
+        el('barcodeInput').value = product.barcode || '';
+        el('productNameInput').value = product.productName || '';
+        el('stockInput').value = product.stock;
+        el('mrpInput').value = product.mrp;
+        el('rateInput').value = product.rate;
+        el('purchasingRateInput').value = product.purchasingRate || '';
+
+        if (cat === 'garments') {
+            if (el('unitSelect')) el('unitSelect').value = product.unit || 'meter';
+            setupModalForCategory(cat);
+            const img = product.imageUrl || product.base64Image || '';
+            if (img && imagePreview) { imagePreview.src = img; imagePreview.classList.remove('hidden'); }
+            if (cloudinaryImageUrl) cloudinaryImageUrl.value = product.imageUrl || '';
+        }
+        clearAlerts();
+        productModalOverlay?.classList.add('show');
+    };
+
+    function closeProductModal() {
+        productModalOverlay?.classList.remove('show');
+        productForm?.reset();
+        resetImageInputs();
+        editingProductId = null;
+        clearAlerts();
+    }
+    window.closeProductModal = closeProductModal;
+
+    // =========================
+    // SP BARCODE GENERATION
+    // =========================
+    async function generateNextSPBarcode() {
+        const snap = await db.collection('products').orderBy('spBarcode', 'desc').get();
+        let maxNum = 0;
+        snap.forEach(doc => {
+            const raw = (doc.data().spBarcode || '').replace(/\*/g, '');
+            const num = raw.startsWith('SP') ? parseInt(raw.substring(2), 10) : parseInt(raw, 10);
+            if (!isNaN(num) && num > maxNum) maxNum = num;
+        });
+        return String(maxNum + 1).padStart(6, '0');
+    }
+
+    async function generateNextGarmentName() {
+        const snap = await db.collection('products').where('category', '==', 'garments').orderBy('createdAt', 'desc').get();
+        let maxNum = 0;
+        snap.forEach(doc => {
+            const name = doc.data().productName || '';
+            if (name.startsWith('GARMENT')) {
+                const n = parseInt(name.substring(7), 10);
+                if (!isNaN(n) && n > maxNum) maxNum = n;
+            }
+        });
+        return 'GARMENT' + String(maxNum + 1).padStart(2, '0');
+    }
+
+    // =========================
+    // FORM SUBMIT
+    // =========================
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const saveBtn = el('saveBtn');
+        const saveBtnText = el('saveBtnText');
+        const saveBtnLoad = el('saveBtnLoading');
+        if (saveBtn) saveBtn.disabled = true;
+        if (saveBtnText) saveBtnText.classList.add('hidden');
+        if (saveBtnLoad) saveBtnLoad.classList.remove('hidden');
+
+        const cat = el('productCategoryInput')?.value || 'readymade';
+        const finalCat = cat === 'garments' ? 'garments' : (el('categorySelect')?.value || cat);
+        const formData = {
+            productName: el('productNameInput')?.value.trim() || '',
+            stock: parseFloat(el('stockInput')?.value) || 0,
+            mrp: parseFloat(el('mrpInput')?.value) || 0,
+            rate: parseFloat(el('rateInput')?.value) || 0,
+            purchasingRate: parseFloat(el('purchasingRateInput')?.value) || 0,
+            category: finalCat,
+            updatedAt: new Date().toISOString(),
+        };
+
+        try {
+            if (finalCat !== 'garments') {
+                formData.barcode = el('barcodeInput')?.value.trim() || '';
+                if (formData.barcode && !editingProductId) {
+                    const dup = allProducts.find(p => p.barcode === formData.barcode);
+                    if (dup) throw new Error('A product with this barcode already exists.');
+                }
+            } else {
+                formData.barcode = '';
+                formData.unit = el('unitSelect')?.value || 'meter';
+                if (!formData.productName) formData.productName = await generateNextGarmentName();
+
+                if (pendingImageBlob) {
+                    el('uploadProgress')?.classList.add('show');
+                    if (el('uploadProgressText')) el('uploadProgressText').textContent = 'Uploading image to cloud…';
+                    formData.imageUrl = await uploadToCloudinary(pendingImageBlob);
+                    el('uploadProgress')?.classList.remove('show');
+                    pendingImageBlob = null;
+                } else if (el('cloudinaryImageUrl')?.value) {
+                    formData.imageUrl = el('cloudinaryImageUrl').value;
+                } else if (editingProductId) {
+                    const existing = allProducts.find(p => p.id === editingProductId);
+                    if (existing?.imageUrl) formData.imageUrl = existing.imageUrl;
+                    if (existing?.base64Image && !formData.imageUrl) formData.base64Image = existing.base64Image;
+                } else {
+                    throw new Error('Image is required for new Garment products.');
+                }
+            }
+
+            if (editingProductId) {
+                await db.collection('products').doc(editingProductId).update(formData);
+                showNotification('Product updated!', 'success');
+            } else {
+                formData.spBarcode = await generateNextSPBarcode();
+                formData.createdAt = new Date().toISOString();
+                formData.salesCount = 0;
+                await db.collection('products').add(formData);
+                showNotification('Product added! SP Barcode: ' + formData.spBarcode, 'success');
+            }
+            setTimeout(closeProductModal, 1400);
+        } catch (err) {
+            console.error('Save error:', err);
+            showAlert(err.message || 'Error saving product.', 'error');
+            el('uploadProgress')?.classList.remove('show');
+        } finally {
+            if (saveBtn) saveBtn.disabled = false;
+            if (saveBtnText) saveBtnText.classList.remove('hidden');
+            if (saveBtnLoad) saveBtnLoad.classList.add('hidden');
+        }
+    }
+
+    // =========================
+    // BARCODE PRINT
+    // =========================
+    window.openBarcodePrintPage = function(productId) {
+        window._lastPrintProductId = productId;
+        const base = window.location.href.replace(/\/[^/]*$/, '/');
+        window.open(base + 'barcode-print.html?productId=' + encodeURIComponent(productId), '_blank');
+    };
+    window.openBarcodePrintPageSafe = function() {
+        const base = window.location.href.replace(/\/[^/]*$/, '/');
+        window.open(base + 'barcode-print.html', '_blank');
+    };
+
+    // =========================
+    // USB BARCODE SCANNER
+    // =========================
+    function setupUSBBarcodeScanner() {
+        document.addEventListener('keydown', handleUSBBarcodeInput);
+    }
+    function toggleUSBScanner() {
+        barcodeReaderActive = !barcodeReaderActive;
+        el('barcodeBtn')?.classList.toggle('active', barcodeReaderActive);
+        showNotification(barcodeReaderActive ? 'USB Scanner activated' : 'USB Scanner deactivated', barcodeReaderActive ? 'success' : 'info');
+    }
+
+    function handleUSBBarcodeInput(e) {
+        if (!barcodeReaderActive) return;
+        if (e.target.tagName === 'TEXTAREA' || (e.target.tagName === 'INPUT' && e.target.id !== 'barcodeInput')) return;
+        if (e.key === 'Enter' || e.key === 'Tab') {
+            e.preventDefault();
+            if (barcodeInputBuffer.length >= 3) processScannedBarcode(barcodeInputBuffer, 'USB');
+            barcodeInputBuffer = '';
+            return;
+        }
+        if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            barcodeInputBuffer += e.key;
+            clearTimeout(barcodeTimeout);
+            barcodeTimeout = setTimeout(() => {
+                if (barcodeInputBuffer.length >= 3) processScannedBarcode(barcodeInputBuffer, 'USB');
+                barcodeInputBuffer = '';
+            }, 100);
+        }
+    }
+
+    // =========================
+    // CAMERA SCANNER
+    // =========================
+    async function openCameraModal() {
+        cameraModal?.classList.add('show');
+        if (el('scanResult')) el('scanResult').style.display = 'none';
+        if (el('scannedBarcode')) el('scannedBarcode').textContent = '';
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+            });
+            if (el('video')) el('video').srcObject = cameraStream;
+            startCameraScanning();
+        } catch (err) {
+            showNotification('Cannot access camera.', 'error');
+            closeCameraModal();
+        }
+    }
+    window.openCameraModal = openCameraModal;
+
+    function startCameraScanning() {
+        if (!cameraStream || cameraScannerActive) return;
+        cameraScannerActive = true;
+        const scanBtn = el('scanNextBtn');
+        if (scanBtn) { scanBtn.textContent = 'Scanning…'; scanBtn.disabled = true; }
+        Quagga.init({
+            inputStream: {
+                name: 'Live', type: 'LiveStream',
+                target: el('video'),
+                constraints: { width: 640, height: 480, facingMode: 'environment' },
+            },
+            decoder: { readers: ['code_128_reader','ean_reader','ean_8_reader','code_39_reader','upc_reader','upc_e_reader'] },
+            locator: { patchSize: 'medium', halfSample: true },
+            numOfWorkers: navigator.hardwareConcurrency || 2,
+            locate: true,
+        }, err => {
+            if (err) {
+                cameraScannerActive = false;
+                if (scanBtn) { scanBtn.textContent = 'Scan Product'; scanBtn.disabled = false; }
+                showNotification('Scanner init failed: ' + err.message, 'error');
+                return;
+            }
+            Quagga.start();
+        });
+
+        Quagga.onDetected(data => {
+            if (!cameraScannerActive || !data.codeResult?.code) return;
+            processScannedBarcode(data.codeResult.code, 'Camera');
+            stopCameraScanning();
+            closeCameraModal();
+            if (el('scannedBarcode')) el('scannedBarcode').textContent = data.codeResult.code;
+            if (el('scanResult')) el('scanResult').style.display = 'block';
+            setTimeout(() => {
+                if (el('scanResult')) el('scanResult').style.display = 'none';
+                if (scanBtn) { scanBtn.textContent = 'Scan Product'; scanBtn.disabled = false; }
+            }, 2000);
+        });
+
+        Quagga.onProcessed(result => {
+            const ctx = Quagga.canvas?.ctx?.overlay;
+            const canvas = Quagga.canvas?.dom?.overlay;
+            if (!result || !ctx || !canvas) return;
+            if (result.boxes) { /* draw boxes */ }
+        });
+    }
+
+    function stopCameraScanning() {
+        cameraScannerActive = false;
+        try { Quagga.stop(); } catch (_) {}
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(t => { try { t.stop(); } catch (_) {} });
+            cameraStream = null;
+        }
+        const btn = el('scanNextBtn');
+        if (btn) { btn.textContent = 'Scan Product'; btn.disabled = false; }
+    }
+
+    function closeCameraModal() {
+        stopCameraScanning();
+        cameraModal?.classList.remove('show');
+    }
+    window.closeCameraModal = closeCameraModal;
+
+    // =========================
+    // SHARED BARCODE PROCESSING
+    // =========================
+    function playBeep() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.frequency.value = 1800; osc.type = 'sine';
+            gain.gain.setValueAtTime(0.4, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+            osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.18);
+        } catch (_) {}
+    }
+
+    function processScannedBarcode(barcode, source) {
+        console.log(`[Scanner:${source}] ${barcode}`);
+        const product = barcodeIndex.get(barcode.trim()) || spBarcodeIndex.get(barcode.trim());
+        if (product) {
+            playBeep();
+            closeCameraModal();
+            populateFormFromProduct(product);
+            showNotification(`✓ Found: ${product.productName}`, 'success');
+        } else {
+            closeCameraModal();
+            openNewProductModal();
+            const bi = el('barcodeInput');
+            if (bi) { bi.value = barcode; bi.focus(); }
+            showNotification(`New barcode: ${barcode}`, 'info');
+        }
+    }
+
+    function populateFormFromProduct(product) {
+        editingProductId = product.id;
+        productForm?.reset();
+        resetImageInputs();
+        const cat = product.category || 'readymade';
+        if (el('productCategoryInput')) el('productCategoryInput').value = cat;
+        setupModalForCategory(cat);
+        if (el('modalTitle')) el('modalTitle').textContent = 'Edit Product';
+        if (el('saveBtnText')) el('saveBtnText').textContent = 'Update Product';
+        el('barcodeInput').value = product.barcode || '';
+        el('productNameInput').value = product.productName || '';
+        el('stockInput').value = product.stock || 0;
+        el('mrpInput').value = product.mrp || 0;
+        el('rateInput').value = product.rate || 0;
+        el('purchasingRateInput').value = product.purchasingRate || '';
+        if (cat === 'garments') {
+            const img = product.imageUrl || product.base64Image || '';
+            if (img && imagePreview) { imagePreview.src = img; imagePreview.classList.remove('hidden'); }
+            if (cloudinaryImageUrl) cloudinaryImageUrl.value = product.imageUrl || '';
+        }
+        clearAlerts();
+        productModalOverlay?.classList.add('show');
+    }
+
+    // =========================
+    // NOTIFICATIONS & ALERTS
+    // =========================
+    function showNotification(message, type = 'info') {
+        const colors = { success: '#10bf39', error: '#e30202', info: '#007bff' };
+        if (!document.getElementById('toastStyle')) {
+            const style = document.createElement('style');
+            style.id = 'toastStyle';
+            style.textContent = `@keyframes toastSlideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}@keyframes toastSlideDown{from{transform:translateX(-50%) translateY(0);opacity:1}to{transform:translateX(-50%) translateY(20px);opacity:0}}`;
+            document.head.appendChild(style);
+        }
+        const toast = document.createElement('div');
+        toast.style.cssText = `position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:8px;color:white;font-weight:500;font-size:14px;z-index:10000;max-width:360px;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.22);background:${colors[type]||colors.info};font-family:var(--font);animation:toastSlideUp 0.28s ease-out`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'toastSlideDown 0.25s ease-in forwards';
+            setTimeout(() => toast.remove(), 260);
+        }, 2800);
+    }
+
+    function showAlert(message, type) {
+        if (!alertContainer) return;
+        clearAlerts();
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.textContent = message;
+        alertContainer.appendChild(alert);
+        if (type === 'success' || type === 'info') setTimeout(() => alert.remove(), 3000);
+    }
+
+    function clearAlerts() {
+        if (alertContainer) alertContainer.innerHTML = '';
+    }
+
+    // =========================
+    // AUTH INTEGRATION
+    // =========================
+    import { checkPageAccess, applySidebarPermissions, addLogoutToSidebar } from './auth.js';
+    if (!checkPageAccess()) throw new Error('Access denied');
+    applySidebarPermissions();
+    addLogoutToSidebar();
+</script>
+
+<!-- =========================
+     AUTH GUARD
+========================= -->
+<script>
+(function(){
+    try {
+        var d = JSON.parse(localStorage.getItem('staffAuth') || 'null');
+        if (!d || !d.userId) { location.href = 'login.html?redirect=billing.html'; return; }
+    } catch(e) { location.href = 'login.html'; return; }
+    var o = document.createElement('div');
+    o.id = '__auth_guard__';
+    o.style.cssText = 'position:fixed;inset:0;background:#000;z-index:99999;';
+    document.documentElement.appendChild(o);
+})();
+</script>
+</body>
+</html>

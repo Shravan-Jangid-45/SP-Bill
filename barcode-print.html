@@ -1,0 +1,2324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Barcode Label Printing – SP Fashion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+
+  <style>
+/* ================================================================
+   RESET & CSS VARIABLES
+================================================================ */
+:root {
+  --primary:    #007bff;
+  --green:      #10bf39;
+  --red:        #e30202;
+  --font:       "DM Sans", "Inter", sans-serif;
+  --border:     #e0e0e0;
+  --bg-light:   #f8f9fa;
+  --bg-app:     #f0f0f0;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg-app);
+  height: 100vh;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+/* ================================================================
+   RESPONSIVE VISIBILITY HELPERS
+================================================================ */
+.mobile-only  { display: none; }
+.desktop-only { display: flex; }
+
+@media (max-width: 768px) {
+  .mobile-only  { display: flex !important; }
+  .desktop-only { display: none !important; }
+}
+
+/* ================================================================
+   APP SHELL
+================================================================ */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ================================================================
+   TOP HEADER
+================================================================ */
+.bp-header {
+  background: white;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  z-index: 10;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.bp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.back-to-products-btn {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.2s;
+}
+.back-to-products-btn:hover {
+  background: #f0f0f0;
+}
+.back-to-products-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.bp-header-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+/* Short title shown only on mobile */
+.hd-short { display: none; }
+.hd-full  { display: inline; }
+
+@media (max-width: 768px) {
+  .hd-short { display: inline; }
+  .hd-full  { display: none; }
+  .bp-header { padding: 8px 12px; }
+  .bp-header-title { font-size: 14px; }
+  .back-to-products-btn { padding: 4px 8px; font-size: 11px; }
+}
+
+/* Mobile icon buttons (print + download) */
+.bp-header-actions { display: flex; align-items: center; gap: 8px; }
+
+.mob-icon-btn {
+  width: 36px;
+  height: 36px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+.mob-icon-btn:last-child { background: var(--green); }
+.mob-icon-btn svg        { width: 18px; height: 18px; }
+.mob-icon-btn:hover      { opacity: 0.82; }
+
+/* ================================================================
+   THREE-COLUMN BODY
+================================================================ */
+.bp-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ================================================================
+   LEFT PANEL — Product Selection
+================================================================ */
+.bp-left {
+  width: 300px;
+  flex-shrink: 0;
+  background: white;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.bp-left-top {
+  padding: 12px 14px 0;
+  flex-shrink: 0;
+}
+
+.select-products-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 10px;
+}
+
+/* Category Tabs */
+.category-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.cat-tab-btn {
+  flex: 1;
+  padding: 5px 0;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.cat-tab-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.cat-tab-btn:hover:not(.active) {
+  background: #f5f5f5;
+}
+
+.bp-search-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.bp-search-input {
+  flex: 1;
+  padding: 7px 12px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 12px;
+  font-family: var(--font);
+  outline: none;
+  min-width: 120px;
+}
+.bp-search-input:focus { border-color: var(--primary); }
+
+.bp-sort-select {
+  padding: 7px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  background: white;
+  outline: none;
+}
+
+.btn-select-all-stock {
+  padding: 7px 10px;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-select-all-stock.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.btn-select-all-stock .toggle-indicator {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Product list table header */
+.product-list-header {
+  display: grid;
+  grid-template-columns: 22px 1fr 80px 44px 44px;
+  gap: 4px;
+  padding: 6px 14px;
+  background: var(--bg-light);
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+  font-size: 11px;
+  font-weight: 700;
+  color: #666;
+  flex-shrink: 0;
+}
+.product-list-header span     { text-align: center; }
+.product-list-header .plh-detail  { text-align: left; color: var(--red); }
+.product-list-header .plh-barcode { color: var(--red); }
+
+/* Product list scroll area */
+.product-list-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Individual product row */
+.product-row {
+  display: grid;
+  grid-template-columns: 22px 1fr 80px 44px 44px;
+  gap: 4px;
+  padding: 7px 14px;
+  border-bottom: 1px solid #f3f3f3;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 11.5px;
+}
+.product-row:hover            { background: var(--bg-light); }
+.product-row.selected         { background: #e6f3ff; }
+.product-row input[type="checkbox"] { cursor: pointer; accent-color: var(--primary); }
+.product-row .pr-name         { font-weight: 500; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.product-row.selected .pr-name{ color: var(--primary); }
+.product-row .pr-barcode      { font-size: 10px; color: #888; text-align: center; }
+.product-row .pr-rate         { text-align: center; color: #333; font-weight: 500; }
+.product-row .pr-stock        { text-align: center; color: var(--green); font-weight: 600; }
+
+/* Product count footer */
+.bp-left-footer {
+  padding: 10px 14px;
+  border-top: 1px solid #e8e8e8;
+  background: var(--bg-light);
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   CENTER PANEL — Preview
+================================================================ */
+.bp-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #ffffff;
+  min-width: 0;
+}
+
+/* ----------------------------------------------------------------
+   TOOLBAR: Zoom [slider] 100%  Reset    Total Barcode: 25
+---------------------------------------------------------------- */
+.bp-center-toolbar {
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.zoom-label {
+  font-size: 12px;
+  color: #555;
+  flex-shrink: 0;
+}
+
+.zoom-slider {
+  flex: 1;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.zoom-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  min-width: 38px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.zoom-reset-btn {
+  padding: 4px 9px;
+  font-size: 11px;
+  border: 1px solid #bbb;
+  border-radius: 5px;
+  background: white;
+  cursor: pointer;
+  font-family: var(--font);
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.zoom-reset-btn:hover { background: #f0f0f0; }
+
+/* Divider between reset and total */
+.toolbar-divider {
+  width: 1px;
+  height: 18px;
+  background: #ddd;
+  flex-shrink: 0;
+}
+
+.total-barcode-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Preview scroll area */
+.preview-scroll {
+  flex: 1;
+  overflow: auto;
+  background: #ffffff;
+  position: relative;
+}
+
+#previewSizer {
+  display: flex;
+  justify-content: center;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+#previewContainer {
+  transform-origin: top center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Empty state message */
+.preview-empty {
+  color: #aaaaaa;
+  font-size: 15px;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* ----------------------------------------------------------------
+   DESKTOP NAVIGATION BAR (product info + copies navigator)
+---------------------------------------------------------------- */
+.bp-nav-bar {
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.nav-arrow-btn {
+  padding: 5px 12px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.nav-arrow-btn:hover    { background: #f0f0f0; }
+.nav-arrow-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.nav-info-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  background: var(--bg-light);
+  border-radius: 6px;
+  font-size: 12px;
+  overflow: hidden;
+}
+.nav-pname { font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
+.nav-spcode { color: #555; white-space: nowrap; }
+.nav-stock-badge {
+  background: var(--red);
+  color: white;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.nav-copies-wrap  { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.nav-copies-label { font-size: 11px; color: #666; white-space: nowrap; }
+.nav-copies-input {
+  width: 46px;
+  padding: 3px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--font);
+  text-align: center;
+  outline: none;
+}
+.nav-copies-input:focus { border-color: var(--primary); }
+
+/* ================================================================
+   MOBILE PRODUCT DETAIL BAR (preview tab — mobile only)
+   Shows: [◄]  [product info + copies]  [►]
+================================================================ */
+.mob-product-bar {
+  display: none; /* shown via media query on mobile */
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+/* Info pill: name + barcode + stock badge */
+.mob-product-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-light);
+  border-radius: 8px;
+  padding: 6px 10px;
+  overflow: hidden;
+}
+
+.mob-prod-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.mob-prod-barcode {
+  font-size: 10px;
+  color: #888;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mob-stock-badge {
+  background: var(--red);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Copies control */
+.mob-copies-block {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  background: var(--bg-light);
+  border-radius: 8px;
+  padding: 5px 8px;
+}
+
+.mob-copies-lbl {
+  font-size: 10px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.mob-copies-inp {
+  width: 44px;
+  padding: 3px 5px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font);
+  text-align: center;
+  outline: none;
+  color: #1a1a1a;
+}
+.mob-copies-inp:focus { border-color: var(--primary); }
+
+/* Small arrow buttons for mobile product bar */
+.mob-nav-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: var(--font);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  color: #444;
+}
+.mob-nav-btn:hover    { background: #f0f0f0; }
+.mob-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Show the mobile bar only on mobile */
+@media (max-width: 768px) {
+  .mob-product-bar { display: flex; }
+}
+
+/* ================================================================
+   RIGHT PANEL — Template Selector
+================================================================ */
+.bp-right {
+  width: 270px;
+  flex-shrink: 0;
+  background: white;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.bp-right-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.bp-right-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.template-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  background: white;
+  outline: none;
+}
+.template-select:focus { border-color: var(--primary); }
+
+/* Template image preview area */
+.template-preview-area {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.template-preview-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* Apply button */
+.apply-btn {
+  margin: 10px 16px;
+  padding: 10px;
+  width: calc(100% - 32px);
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.apply-btn:hover { background: #0da32f; }
+
+/* Footer action buttons */
+.bp-right-footer {
+  padding: 10px 16px 14px;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid #eee;
+  flex-shrink: 0;
+}
+.bp-right-footer button {
+  flex: 1;
+  padding: 8px 4px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background 0.2s;
+}
+.btn-download       { color: #333; }
+.btn-download:hover { background: #f0f0f0; }
+.btn-print          { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; }
+.btn-print:hover    { background: #005fcc !important; }
+.btn-cancel         { color: #666; }
+.btn-cancel:hover   { background: #f8f8f8; }
+
+/* ================================================================
+   LOADING OVERLAY
+================================================================ */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  font-size: 16px;
+  font-weight: 600;
+  color: #555;
+  gap: 12px;
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid #e0e0e0;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ================================================================
+   NOTIFICATION TOAST
+================================================================ */
+.notif {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  padding: 11px 18px;
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 10000;
+  max-width: 300px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  animation: snIn 0.3s ease-out;
+  font-family: var(--font);
+}
+@keyframes snIn { from { transform: translateX(110%); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ================================================================
+   PRINT AREA (screen-hidden; print-visible)
+================================================================ */
+#printArea { display: none; }
+
+/* ================================================================
+   PRINT CSS
+================================================================ */
+@media print {
+  #app       { display: none !important; }
+  #printArea { display: block !important; }
+
+  @page { size: auto; margin: 0; }
+
+  body {
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #printArea img { display: block; }
+  .page-break    { page-break-after: always; break-after: page; }
+}
+
+/* ================================================================
+   MOBILE RESPONSIVE  (≤ 768px)
+================================================================ */
+@media (max-width: 768px) {
+
+  /* App shell: leave room for tab bar */
+  #app { padding-bottom: 56px; }
+
+  /* Body: stacking context so panels can overlay */
+  .bp-body {
+    flex-direction: column;
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* All panels: full-area, hidden by default */
+  .bp-left, .bp-center, .bp-right {
+    position: absolute !important;
+    inset: 0;
+    width: 100% !important;
+    border: none !important;
+    display: none !important;
+    flex-direction: column;
+  }
+
+  /* Active panel becomes visible */
+  .bp-left.mob-active   { display: flex !important; }
+  .bp-center.mob-active { display: flex !important; }
+  .bp-right.mob-active  { display: flex !important; overflow-y: auto; }
+
+  /* Products panel */
+  .bp-left-top          { padding: 10px 12px 0; }
+  .product-list-scroll  { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .bp-left-footer       { font-size: 13px; }
+
+  /* Center toolbar: make it compact */
+  .bp-center-toolbar {
+    padding: 8px 10px;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  /* Hide desktop nav bar on mobile */
+  .bp-nav-bar { display: none; }
+
+  /* Preview scroll */
+  .preview-scroll { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Template panel */
+  .bp-right-header       { padding: 12px 14px 10px; }
+  .template-preview-area { flex: 1; min-height: 160px; }
+  .apply-btn             { margin: 8px 14px; width: calc(100% - 28px); }
+  .bp-right-footer       { padding: 8px 14px 14px; }
+
+  /* Notification: centered above tab bar */
+  .notif {
+    top: auto !important;
+    bottom: 66px;
+    right: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    white-space: nowrap;
+    animation: notifMob 0.28s ease-out !important;
+  }
+  @keyframes notifMob {
+    from { transform: translateX(-50%) translateY(14px); opacity: 0; }
+    to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+  }
+}
+
+/* ================================================================
+   MOBILE TAB BAR
+================================================================ */
+.mob-tab-bar {
+  display: none; /* shown only on mobile via media query */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: white;
+  border-top: 1px solid var(--border);
+  z-index: 200;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+}
+
+@media (max-width: 768px) {
+  .mob-tab-bar { display: flex; }
+}
+
+/* Inner flex container: space-between for left / center / right layout */
+.mob-tab-bar-inner {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  width: 100%;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+/* Base tab button */
+.mob-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 600;
+  color: #999;
+  transition: color 0.2s;
+  padding: 6px 14px;
+  position: relative;
+  border-radius: 8px;
+  min-width: 60px;
+}
+.mob-tab svg    { width: 20px; height: 20px; flex-shrink: 0; }
+.mob-tab.active { color: var(--primary); }
+
+/* Preview center tab — same style as other tabs, no special background */
+.mob-tab-preview {
+  background: none;
+  color: #999;
+}
+
+/* Products tab badge (selected count) */
+.mob-tab-badge {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  background: var(--red);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <span>Loading products…</span>
+</div>
+
+<!-- ================================================================
+     APP SHELL
+================================================================ -->
+<div id="app" style="display:none;">
+
+  <!-- ============================================================
+       TOP HEADER
+  ============================================================ -->
+  <header class="bp-header">
+    <div class="bp-header-left">
+      <button class="back-to-products-btn" onclick="goBackToProducts()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        <span>Back</span>
+      </button>
+      <span class="bp-header-title">
+        <span class="hd-full">Barcode Label Printing</span>
+        <span class="hd-short">SP Labels</span>
+      </span>
+    </div>
+
+    <!-- Mobile only: print + download icon buttons -->
+    <div class="bp-header-actions">
+      <button class="mob-icon-btn mobile-only" onclick="printLabels()" title="Print">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <polyline points="6 9 6 2 18 2 18 9"/>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+      </button>
+      <button class="mob-icon-btn mobile-only" onclick="downloadCurrentLabel()" title="Download">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       BODY: THREE COLUMNS
+  ============================================================ -->
+  <div class="bp-body">
+
+    <!-- ── LEFT PANEL: Product Selection ── -->
+    <div class="bp-left" id="bp-left-panel">
+
+      <div class="bp-left-top">
+        <div class="select-products-title">Select Products</div>
+
+        <!-- Category Tabs -->
+        <div class="category-tabs">
+          <button class="cat-tab-btn active" data-cat="readymade">Readymade</button>
+          <button class="cat-tab-btn" data-cat="general">General</button>
+          <button class="cat-tab-btn" data-cat="garments">Garments</button>
+        </div>
+
+        <div class="bp-search-row">
+          <input
+            type="text"
+            class="bp-search-input"
+            id="searchInput"
+            placeholder="Search Bill"
+            oninput="filterProductList()"
+          >
+          <select class="bp-sort-select" id="sortSelect" onchange="filterProductList()">
+            <option value="latest">Latest</option>
+            <option value="az">A→Z</option>
+            <option value="za">Z→A</option>
+            <option value="stock">Stock</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 8px;">
+          <button class="btn-select-all-stock" id="stockToggleBtn" onclick="toggleStockMode()">
+            <span class="toggle-indicator">☐</span> Full Stock Mode
+          </button>
+        </div>
+      </div>
+
+      <div class="product-list-header">
+        <input type="checkbox" id="selectAllChk" onchange="toggleSelectAll(this.checked)">
+        <span class="plh-detail">Detail</span>
+        <span class="plh-barcode">Barcode</span>
+        <span>Rate</span>
+        <span>Stock</span>
+      </div>
+
+      <div class="product-list-scroll" id="productList">
+        <!-- rows injected by JS -->
+      </div>
+
+      <div class="bp-left-footer" id="selectedCount">Selected Products : 0</div>
+    </div>
+
+    <!-- ── CENTER PANEL: Preview ── -->
+    <div class="bp-center" id="bp-center-panel">
+
+      <!-- ============================================================
+           MOBILE PRODUCT DETAIL BAR (mobile-only, above zoom toolbar)
+           Shows current product info + label copy count editor
+      ============================================================ -->
+      <div class="mob-product-bar" id="mobProductBar">
+        <button class="mob-nav-btn" id="mobNavPrevBtn" onclick="navPrev()" disabled>◄</button>
+        <div class="mob-product-info" id="mobProductInfo">
+          <span class="mob-prod-name" style="color:#aaa;font-weight:400;">Select a product</span>
+        </div>
+        <div class="mob-copies-block" id="mobCopiesBlock" style="display:none;">
+          <span class="mob-copies-lbl">Copies</span>
+          <input class="mob-copies-inp" id="mobCopiesInput" type="number" min="1" max="9999" value="1">
+        </div>
+        <button class="mob-nav-btn" id="mobNavNextBtn" onclick="navNext()" disabled>►</button>
+      </div>
+
+      <!-- ============================================================
+           TOOLBAR: Zoom [slider] 100%  Reset  |  Total Barcode: 25
+      ============================================================ -->
+      <div class="bp-center-toolbar">
+        <span class="zoom-label">Zoom</span>
+        <input
+          type="range"
+          class="zoom-slider"
+          id="zoomSlider"
+          min="50"
+          max="500"
+          value="100"
+          oninput="setZoom(this.value)"
+        >
+        <span class="zoom-value" id="zoomValueLabel">100%</span>
+        <button class="zoom-reset-btn" onclick="setZoom(100)">Reset</button>
+        <div class="toolbar-divider"></div>
+        <span class="total-barcode-label" id="totalBarcodeLabel">Total Barcode: 0</span>
+      </div>
+
+      <!-- Preview content -->
+      <div class="preview-scroll" id="previewScroll">
+        <div class="preview-empty" id="previewEmpty">
+          No Product Selected.<br>
+          <small style="font-size:12px;opacity:.7;">Check Products From The Products Tab</small>
+        </div>
+        <div id="previewSizer">
+          <div id="previewContainer"></div>
+        </div>
+      </div>
+
+      <!-- Desktop-only navigation bar (product info + copies) -->
+      <div class="bp-nav-bar desktop-only" id="navBar">
+        <button class="nav-arrow-btn" id="navPrevBtn" onclick="navPrev()" disabled>◄ Back</button>
+        <div class="nav-info-box" id="navInfoBox">
+          <span style="font-size:11px;color:#aaa;">Select a product to start</span>
+        </div>
+        <button class="nav-arrow-btn" id="navNextBtn" onclick="navNext()" disabled>Next ►</button>
+      </div>
+    </div>
+
+    <!-- ── RIGHT PANEL: Template Selector ── -->
+    <div class="bp-right" id="bp-right-panel">
+
+      <div class="bp-right-header">
+        <div class="bp-right-title">Barcode Template</div>
+        <select class="template-select" id="templateSelect" onchange="updateTemplatePreview()">
+          <option value="38x25">Barcode 38×25mm</option>
+          <option value="50x25-2up">50×25mm (2-UP, 107mm roll)</option>
+          <option value="75x35">75×35mm</option>
+          <option value="a4-65">A4 – 65 Labels (42×23mm)</option>
+          <option value="a4-48">A4 – 48 Labels (48×24mm)</option>
+          <option value="100x25-land">100×25mm Landscape</option>
+          <option value="100x15-land">100×15mm Landscape (SP Fashion)</option>
+        </select>
+      </div>
+
+      <!-- Image-based template preview (SVG files loaded via src path) -->
+      <div class="template-preview-area" id="templatePreviewArea">
+        <img
+          class="template-preview-img"
+          id="templatePreviewImg"
+          src="templates/38x25.svg"
+          alt="Template Preview"
+          onerror="this.style.display='none'; document.getElementById('templatePreviewFallback').style.display='flex';"
+        >
+        <div id="templatePreviewFallback" style="display:none;flex-direction:column;align-items:center;gap:8px;color:#bbb;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="9" y1="9" x2="9" y2="21"/>
+          </svg>
+          <span style="font-size:12px;">Preview not available</span>
+        </div>
+      </div>
+
+      <button class="apply-btn" onclick="applyTemplate()">Apply</button>
+
+      <div class="bp-right-footer">
+        <button class="btn-download" onclick="downloadCurrentLabel()">Download</button>
+        <button class="btn-print"    onclick="printLabels()">Print</button>
+        <button class="btn-cancel"   onclick="window.close()">Cancel</button>
+      </div>
+    </div>
+
+  </div><!-- /.bp-body -->
+
+  <!-- ============================================================
+       MOBILE TAB BAR
+       Layout: [Products]   [Preview]   [Template]
+  ============================================================ -->
+  <nav class="mob-tab-bar" id="mobTabBar">
+    <div class="mob-tab-bar-inner">
+
+      <!-- Tab: Products (left) -->
+      <button class="mob-tab active" id="mobTab-products" onclick="mobSwitchTab('products')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        <span>Products</span>
+        <span class="mob-tab-badge" id="mobBadge" style="display:none;">0</span>
+      </button>
+
+      <!-- Tab: Preview (center) -->
+      <button class="mob-tab mob-tab-preview" id="mobTab-preview" onclick="mobSwitchTab('preview')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="18" rx="2"/>
+          <line x1="8"  y1="8"  x2="16" y2="8"/>
+          <line x1="6"  y1="12" x2="18" y2="12"/>
+          <line x1="8"  y1="16" x2="13" y2="16"/>
+        </svg>
+        <span>Preview</span>
+      </button>
+
+      <!-- Tab: Template (right) -->
+      <button class="mob-tab" id="mobTab-template" onclick="mobSwitchTab('template')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="3"  y1="9"  x2="21" y2="9"/>
+          <line x1="9"  y1="9"  x2="9"  y2="21"/>
+        </svg>
+        <span>Template</span>
+      </button>
+
+    </div>
+  </nav>
+
+</div><!-- /#app -->
+
+<!-- Print area: hidden on screen, rendered during window.print() -->
+<div id="printArea"></div>
+
+
+<!-- ================================================================
+     FIREBASE + APPLICATION SCRIPT
+================================================================ -->
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/* ================================================================
+   FIREBASE CONFIGURATION
+================================================================ */
+const firebaseConfig = typeof __firebase_config !== 'undefined'
+  ? JSON.parse(__firebase_config)
+  : {
+      apiKey:            "AIzaSyCVXql_12NNa9_bUXYfWhj8Z7ZUqTyD1ak",
+      authDomain:        "sp-fashion-beca2.firebaseapp.com",
+      projectId:         "sp-fashion-beca2",
+      storageBucket:     "sp-fashion-beca2.appspot.com",
+      messagingSenderId: "734725526616",
+      appId:             "1:734725526616:web:4ed1410e441789653e262d",
+    };
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db          = getFirestore(firebaseApp);
+
+/* ================================================================
+   APPLICATION STATE
+================================================================ */
+let allProducts     = [];   // Full product list from Firestore
+let filteredList    = [];   // Currently displayed (filtered/sorted) list
+let selectedMap     = {};   // { productId: { product, copies } }
+let navIndex        = 0;    // Index into selectedArray for nav bar
+let currentTemplate = '38x25';
+let currentZoom     = 100;
+let currentCategory = 'readymade'; // 'readymade', 'general', 'garments'
+
+// Toggle mode for "Full Stock" – determines copies when selecting a product
+let useFullStockMode = false;
+
+/* ================================================================
+   URL PARAMETER: auto-select a product
+================================================================ */
+const urlParams     = new URLSearchParams(window.location.search);
+const autoProductId = urlParams.get('productId');
+
+/* ================================================================
+   TEMPLATE CONFIG  (all dimensions in mm)
+================================================================ */
+const TEMPLATES = {
+
+  '38x25': {
+    name: '38×25mm Roll',
+    isA4: false, cols: 1,
+    rollW: 41,  rollH: 25,
+    labelW: 38, labelH: 25,
+    marginL: 1.5, marginR: 1.5,
+    gapV: 2.5,
+    layout: 'portrait',
+  },
+
+  '50x25-2up': {
+    name: '50×25mm 2-UP (107mm roll)',
+    isA4: false, cols: 2,
+    rollW: 107, rollH: 25,
+    labelW: 50, labelH: 25,
+    marginL: 2, marginR: 2, gapH: 3,
+    gapV: 3,
+    layout: 'portrait',
+  },
+
+  '75x35': {
+    name: '75×35mm Roll',
+    isA4: false, cols: 1,
+    rollW: 80,  rollH: 35,
+    labelW: 75, labelH: 35,
+    marginL: 2.5, marginR: 2.5,
+    gapV: 3,
+    layout: 'portrait',
+  },
+
+  'a4-65': {
+    name: 'A4 – 65 Labels (38×20mm)',
+    isA4: true, cols: 5, rows: 13,
+    labelW: 38, labelH: 20,
+    pageW: 210, pageH: 297,
+    marginTop: 8.5, marginBottom: 8.5, marginLeft: 6, marginRight: 6,
+    gapX: 2, gapY: 1.5,
+  },
+
+  'a4-48': {
+    name: 'A4 – 48 Labels (48×22mm)',
+    isA4: true, cols: 4, rows: 12,
+    labelW: 48, labelH: 22,
+    pageW: 210, pageH: 297,
+    marginTop: 7, marginBottom: 7, marginLeft: 4.5, marginRight: 4.5,
+    gapX: 3, gapY: 1.5,
+  },
+
+  '100x25-land': {
+    name: '100×25mm Landscape',
+    isA4: false, cols: 1,
+    rollW: 100, rollH: 25,
+    labelW: 100, labelH: 25,
+    marginL: 0, marginR: 0,
+    gapV: 2,
+    layout: 'landscape',
+  },
+
+  '100x15-land': {
+    name: '100×15mm Landscape (SP Fashion)',
+    isA4: false, cols: 1,
+    rollW: 100, rollH: 15,
+    labelW: 100, labelH: 15,
+    marginL: 0, marginR: 0,
+    gapV: 2,
+    layout: 'landscape-spfashion',
+  },
+};
+
+/* ================================================================
+   TEMPLATE PREVIEW IMAGE PATHS
+   SVG files should be placed in a /templates/ folder.
+   Each key matches a TEMPLATES key.
+================================================================ */
+const TEMPLATE_PREVIEW_PATHS = {
+  '38x25':        'icon/38_25.svg',
+  '50x25-2up':    'icon/100_25(2up).svg',
+  '75x35':        'icon/75_35.svg',
+  'a4-65':        'icon/a4x65.svg',
+  'a4-48':        'icon/a4x48.svg',
+  '100x25-land':  'icon/100_25.svg',
+  '100x15-land':  'icon/100_15.svg',
+};
+
+/* ================================================================
+   CANVAS CONSTANTS
+================================================================ */
+const MM             = 96 / 25.4;  // px per mm at 96dpi
+const HIGH_RES_SCALE = 4;          // canvas oversampling for sharp renders
+
+/* ── createdAt normalizer: handles Firestore Timestamp / ISO string / number ── */
+function toMs(val) {
+  if (!val) return 0;
+  if (typeof val === 'object' && val.seconds) return val.seconds * 1000;
+  if (typeof val === 'string') return new Date(val).getTime() || 0;
+  if (typeof val === 'number') return val;
+  return 0;
+}
+
+/* ================================================================
+   TOGGLE FULL STOCK MODE
+================================================================ */
+window.toggleStockMode = function() {
+  useFullStockMode = !useFullStockMode;
+  const btn = document.getElementById('stockToggleBtn');
+  const indicator = btn.querySelector('.toggle-indicator');
+  if (useFullStockMode) {
+    btn.classList.add('active');
+    indicator.textContent = '☑';
+    notify('Full Stock Mode: selecting products will use full stock quantity', 'info');
+  } else {
+    btn.classList.remove('active');
+    indicator.textContent = '☐';
+    notify('Single Copy Mode: selecting products will set 1 copy', 'info');
+  }
+};
+
+/* ================================================================
+   INITIALIZE CATEGORY TAB LISTENERS
+================================================================ */
+function initCategoryTabs() {
+  document.querySelectorAll('.cat-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cat-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCategory = btn.dataset.cat;
+      filterProductList();
+    });
+  });
+}
+
+/* ================================================================
+   FIREBASE BOOT — load products in real-time
+================================================================ */
+onSnapshot(collection(db, 'products'), snapshot => {
+
+  allProducts = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  allProducts.sort((a, b) => toMs(b.createdAt) - toMs(a.createdAt));
+  initCategoryTabs(); // ensure tabs are bound after DOM ready
+  filterProductList();
+
+  // Auto-select product from URL param on first load
+  if (autoProductId && Object.keys(selectedMap).length === 0) {
+    const p = allProducts.find(x => x.id === autoProductId);
+    if (p) {
+      const copies = useFullStockMode ? Math.max(1, parseInt(p.stock) || 1) : 1;
+      selectedMap[p.id] = { product: p, copies: copies };
+      navIndex = 0;
+      renderProductList();
+      renderNavBar();
+      renderPreview();
+      if (window.innerWidth <= 768) mobSwitchTab('preview');
+    }
+  }
+
+  document.getElementById('loadingOverlay').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  updateTemplatePreview();
+
+}, err => {
+  console.error('Firestore error:', err);
+  notify('Firebase error: ' + err.message, 'error');
+  document.getElementById('loadingOverlay').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+});
+
+/* ================================================================
+   PRODUCT LIST — Filter, Sort, Render
+================================================================ */
+window.filterProductList = function() {
+  const term = document.getElementById('searchInput').value.toLowerCase();
+  const sort = document.getElementById('sortSelect').value;
+
+  let list = allProducts.filter(p => {
+    const cat = p.category || 'readymade';
+    if (currentCategory === 'garments') return cat === 'garments';
+    if (currentCategory === 'general') return cat === 'general';
+    return cat === 'readymade';
+  });
+
+  if (term) {
+    list = list.filter(p =>
+      (p.productName || '').toLowerCase().includes(term) ||
+      (p.spBarcode   || '').toLowerCase().includes(term) ||
+      (p.barcode     || '').toLowerCase().includes(term)
+    );
+  }
+
+  switch (sort) {
+    case 'az':    list.sort((a,b) => (a.productName||'').localeCompare(b.productName||'')); break;
+    case 'za':    list.sort((a,b) => (b.productName||'').localeCompare(a.productName||'')); break;
+    case 'stock': list.sort((a,b) => (b.stock||0) - (a.stock||0));                         break;
+    default:      list.sort((a,b) => toMs(b.createdAt) - toMs(a.createdAt));     break;
+  }
+
+  filteredList = list;
+  renderProductList();
+};
+
+function renderProductList() {
+  const container = document.getElementById('productList');
+  container.innerHTML = '';
+
+  filteredList.forEach(p => {
+    const spb = (p.spBarcode || '').replace(/\*/g, '');
+    const row = document.createElement('div');
+    row.className = 'product-row' + (selectedMap[p.id] ? ' selected' : '');
+    row.innerHTML = `
+      <input type="checkbox" ${selectedMap[p.id] ? 'checked' : ''} data-id="${p.id}">
+      <span class="pr-name"    title="${p.productName||''}">${p.productName || 'N/A'}</span>
+      <span class="pr-barcode">${spb}</span>
+      <span class="pr-rate">₹${fmt(p.rate)}</span>
+      <span class="pr-stock">${fmt(p.stock)}</span>
+    `;
+    // Checkbox-driven toggle
+    row.querySelector('input').addEventListener('change', e => toggleProduct(p.id, e.target.checked));
+    // Row click toggles checkbox
+    row.addEventListener('click', e => {
+      if (e.target.type === 'checkbox') return;
+      const chk = row.querySelector('input');
+      chk.checked = !chk.checked;
+      toggleProduct(p.id, chk.checked);
+    });
+    container.appendChild(row);
+  });
+
+  updateSelectedCount();
+  updateSelectAllCheckbox(); // <-- FIX: sync "Select All" checkbox state
+}
+
+// NEW: Updates the "Select All" checkbox based on current filteredList
+function updateSelectAllCheckbox() {
+  const selectAllChk = document.getElementById('selectAllChk');
+  if (!selectAllChk) return;
+  if (filteredList.length === 0) {
+    selectAllChk.checked = false;
+    selectAllChk.indeterminate = false;
+    return;
+  }
+  const allSelected = filteredList.every(p => selectedMap[p.id]);
+  const noneSelected = filteredList.every(p => !selectedMap[p.id]);
+  selectAllChk.checked = allSelected;
+  selectAllChk.indeterminate = !allSelected && !noneSelected;
+}
+
+function toggleProduct(productId, checked) {
+  const p = allProducts.find(x => x.id === productId);
+  if (!p) return;
+
+  if (checked) {
+    // Determine copies based on toggle mode
+    const stockQty = Math.max(1, parseInt(p.stock) || 1);
+    const copies = useFullStockMode ? stockQty : 1;
+    selectedMap[productId] = { product: p, copies: copies };
+    navIndex = getSelectedArray().findIndex(x => x.product.id === productId);
+    if (navIndex < 0) navIndex = 0;
+  } else {
+    delete selectedMap[productId];
+    const arr = getSelectedArray();
+    if (navIndex >= arr.length) navIndex = Math.max(0, arr.length - 1);
+  }
+
+  // Sync checkbox visual in list
+  const chk = document.querySelector(`#productList .product-row input[data-id="${productId}"]`);
+  if (chk) chk.closest('.product-row').classList.toggle('selected', checked);
+
+  renderNavBar();
+  renderPreview();
+  updateSelectedCount();
+  updateTotal();
+  updateSelectAllCheckbox(); // <-- FIX: update after individual toggle
+
+  // Mobile: auto-switch to preview on first selection
+  if (window.innerWidth <= 768 && checked && Object.keys(selectedMap).length === 1) {
+    mobSwitchTab('preview');
+  }
+}
+
+window.toggleSelectAll = function(checked) {
+  filteredList.forEach(p => {
+    if (checked) {
+      const stockQty = Math.max(1, parseInt(p.stock) || 1);
+      const copies = useFullStockMode ? stockQty : 1;
+      selectedMap[p.id] = { product: p, copies: copies };
+    } else {
+      delete selectedMap[p.id];
+    }
+  });
+  navIndex = 0;
+  renderProductList();
+  renderNavBar();
+  renderPreview();
+  updateTotal();
+};
+
+function updateSelectedCount() {
+  const n = Object.keys(selectedMap).length;
+  document.getElementById('selectedCount').textContent = 'Selected Products : ' + n;
+  updateMobileBadge(n);
+}
+
+function getSelectedArray() {
+  return Object.values(selectedMap);
+}
+
+/* ================================================================
+   NAVIGATION — cycle through selected products
+================================================================ */
+window.navPrev = function() {
+  if (navIndex > 0) {
+    navIndex--;
+    renderNavBar();
+    renderPreview();
+  }
+};
+
+window.navNext = function() {
+  const arr = getSelectedArray();
+  if (navIndex < arr.length - 1) {
+    navIndex++;
+    renderNavBar();
+    renderPreview();
+  }
+};
+
+function renderNavBar() {
+  const arr     = getSelectedArray();
+  const prevBtn = document.getElementById('navPrevBtn');
+  const nextBtn = document.getElementById('navNextBtn');
+  const infoBox = document.getElementById('navInfoBox');
+
+  // ── Desktop nav bar buttons ──
+  if (prevBtn) prevBtn.disabled = navIndex <= 0;
+  if (nextBtn) nextBtn.disabled = navIndex >= arr.length - 1;
+
+  // ── Mobile product bar buttons ──
+  const mobPrev = document.getElementById('mobNavPrevBtn');
+  const mobNext = document.getElementById('mobNavNextBtn');
+  if (mobPrev) mobPrev.disabled = navIndex <= 0;
+  if (mobNext) mobNext.disabled = navIndex >= arr.length - 1;
+
+  if (!arr.length) {
+    // Empty state for desktop
+    if (infoBox) infoBox.innerHTML = `<span style="font-size:11px;color:#aaa;">Select a product to start</span>`;
+    // Empty state for mobile
+    const mobInfo   = document.getElementById('mobProductInfo');
+    const mobCopies = document.getElementById('mobCopiesBlock');
+    if (mobInfo)   mobInfo.innerHTML = `<span class="mob-prod-name" style="color:#aaa;font-weight:400;">Select a product</span>`;
+    if (mobCopies) mobCopies.style.display = 'none';
+    return;
+  }
+
+  const item = arr[navIndex];
+  if (!item) return;
+  const p   = item.product;
+  const spb = (p.spBarcode || '').replace(/\*/g, '');
+
+  // ── Desktop nav info box ──
+  if (infoBox) {
+    infoBox.innerHTML = `
+      <span class="nav-pname" title="${p.productName||''}">${p.productName||'N/A'}</span>
+      <span class="nav-spcode">${spb}</span>
+      <span class="nav-stock-badge">STOCK ${fmt(p.stock)}</span>
+      <span class="nav-copies-wrap">
+        <span class="nav-copies-label">Label Copy</span>
+        <input class="nav-copies-input" id="navCopiesInput" type="number" min="1" max="9999" value="${item.copies}" title="Default = stock qty.">
+        <span style="font-size:10px;color:#888;">(Stock: ${fmt(p.stock)})</span>
+      </span>
+    `;
+    document.getElementById('navCopiesInput').addEventListener('input', e => {
+      const v = Math.max(1, parseInt(e.target.value) || 1);
+      item.copies  = v;
+      e.target.value = v;
+      // Sync mobile copies input
+      const mobInp = document.getElementById('mobCopiesInput');
+      if (mobInp) mobInp.value = v;
+      updateTotal();
+      renderPreview();
+    });
+  }
+
+  // ── Mobile product info bar ──
+  const mobInfo   = document.getElementById('mobProductInfo');
+  const mobCopies = document.getElementById('mobCopiesBlock');
+  const mobInp    = document.getElementById('mobCopiesInput');
+
+  if (mobInfo) {
+    mobInfo.innerHTML = `
+      <span class="mob-prod-name" title="${p.productName||''}">${p.productName||'N/A'}</span>
+      <span class="mob-prod-barcode">${spb}</span>
+      <span class="mob-stock-badge">×${fmt(p.stock)}</span>
+    `;
+  }
+
+  if (mobCopies) mobCopies.style.display = 'flex';
+
+  if (mobInp) {
+    mobInp.value = item.copies;
+    // Remove stale listeners by cloning
+    const fresh = mobInp.cloneNode(true);
+    mobInp.parentNode.replaceChild(fresh, mobInp);
+    fresh.addEventListener('input', e => {
+      const v = Math.max(1, parseInt(e.target.value) || 1);
+      item.copies    = v;
+      e.target.value = v;
+      // Sync desktop copies input
+      const deskInp = document.getElementById('navCopiesInput');
+      if (deskInp) deskInp.value = v;
+      updateTotal();
+      renderPreview();
+    });
+  }
+}
+
+/* ================================================================
+   TOTAL BARCODE COUNT
+================================================================ */
+function updateTotal() {
+  const total = getSelectedArray().reduce((sum, x) => sum + (x.copies || 1), 0);
+  const el = document.getElementById('totalBarcodeLabel');
+  if (el) el.textContent = 'Total Barcode: ' + total;
+}
+
+/* ================================================================
+   ZOOM CONTROL
+================================================================ */
+window.setZoom = function(val) {
+  currentZoom = parseInt(val);
+  document.getElementById('zoomSlider').value = currentZoom;
+  document.getElementById('zoomValueLabel').textContent = currentZoom + '%';
+  applyZoom();
+};
+
+function applyZoom() {
+  const container = document.getElementById('previewContainer');
+  const sizer     = document.getElementById('previewSizer');
+  const z = currentZoom / 100;
+
+  container.style.transform  = 'scale(' + z + ')';
+  container.style.transition = 'transform 0.12s ease-out';
+
+  requestAnimationFrame(() => {
+    const natH = container.offsetHeight;
+    const natW = container.offsetWidth;
+    sizer.style.minHeight = Math.ceil(natH * z + 48) + 'px';
+    sizer.style.minWidth  = Math.ceil(natW * z + 40) + 'px';
+    container.style.marginTop    = Math.max(0, (natH * z - natH) / 2) + 'px';
+    container.style.marginBottom = Math.max(0, (natH * z - natH) / 2) + 'px';
+  });
+}
+
+/* ================================================================
+   PREVIEW RENDERING
+================================================================ */
+async function renderPreview() {
+  const arr       = getSelectedArray();
+  const empty     = document.getElementById('previewEmpty');
+  const container = document.getElementById('previewContainer');
+
+  if (!arr.length) {
+    empty.style.display    = '';
+    container.innerHTML    = '';
+    container.style.display = 'none';
+    return;
+  }
+
+  empty.style.display    = 'none';
+  container.style.display = 'flex';
+  container.innerHTML    = '<div style="color:#888;font-size:14px;padding:30px;">Generating preview…</div>';
+
+  await new Promise(r => setTimeout(r, 40)); // Allow paint before heavy canvas work
+  container.innerHTML = '';
+
+  const tmpl    = TEMPLATES[currentTemplate];
+  const allItems = [];
+  arr.forEach(item => {
+    for (let i = 0; i < (item.copies || 1); i++) allItems.push(item);
+  });
+
+  const labelCardEls = []; // parallel to allItems for scroll-to-nav
+
+  if (tmpl.isA4) {
+    // A4 mode: render a full page canvas per chunk
+    const perPage = tmpl.cols * tmpl.rows;
+    for (let p = 0; p < allItems.length; p += perPage) {
+      const chunk = allItems.slice(p, p + perPage);
+      const img   = buildA4PageImg(chunk, tmpl);
+      img.style.cssText = `width:${tmpl.pageW}mm;height:${tmpl.pageH}mm;display:block;flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,.22);border-radius:1px;`;
+      container.appendChild(img);
+      for (let ci = 0; ci < chunk.length; ci++) labelCardEls.push(img);
+    }
+
+  } else if (tmpl.cols === 2) {
+    // 2-UP roll mode
+    for (let i = 0; i < allItems.length; i += 2) {
+      const img    = build2UpImg(allItems[i], allItems[i+1] || null, tmpl);
+      const imgWmm = tmpl.labelW * 2 + (tmpl.gapH || 0);
+      img.style.cssText = `display:block;width:${imgWmm}mm;height:${tmpl.labelH}mm;flex-shrink:0;`;
+      const card = makeRollCard(img, tmpl.rollW, tmpl.rollH, tmpl.marginL||0, tmpl.marginR||0);
+      container.appendChild(card);
+      labelCardEls.push(card);
+      if (allItems[i+1]) labelCardEls.push(card);
+    }
+
+  } else {
+    // Single-column roll or landscape
+    for (const item of allItems) {
+      const img   = buildLabelImg(item, tmpl);
+      img.style.cssText = `display:block;width:${tmpl.labelW}mm;height:${tmpl.labelH}mm;flex-shrink:0;`;
+      const rollW = (tmpl.rollW || tmpl.labelW);
+      const rollH = tmpl.rollH  || tmpl.labelH;
+      const card  = makeRollCard(img, rollW, rollH, tmpl.marginL||0, tmpl.marginR||0);
+      container.appendChild(card);
+      labelCardEls.push(card);
+    }
+  }
+
+  // Store for scroll-to-nav-label
+  window._labelCardEls  = labelCardEls;
+  window._labelAllItems = allItems;
+
+  applyZoom();
+  updateTotal();
+  requestAnimationFrame(() => scrollToNavLabel());
+}
+
+/* Wraps a label image in a roll-background card (grey = margin) */
+function makeRollCard(img, rollW, rollH, ml, mr) {
+  const card = document.createElement('div');
+  card.style.cssText = [
+    'background:#F8F8F8',
+    `width:${rollW}mm`,
+    `height:${rollH}mm`,
+    `padding-left:${ml}mm`,
+    `padding-right:${mr}mm`,
+    'box-shadow:0 2px 10px rgba(0,0,0,.18)',
+    'flex-shrink:0',
+    'box-sizing:border-box',
+    'display:flex',
+    'align-items:center',
+    'justify-content:center',
+  ].join(';');
+  card.appendChild(img);
+  return card;
+}
+
+/* Scroll preview to the currently-focused label (navIndex) */
+function scrollToNavLabel() {
+  const cards = window._labelCardEls;
+  const items = window._labelAllItems;
+  if (!cards || !items || !cards.length) return;
+
+  const arr = getSelectedArray();
+  if (!arr.length) return;
+
+  const focusProduct = arr[navIndex]?.product;
+  if (!focusProduct) return;
+
+  let flatIdx = items.findIndex(it => it.product.id === focusProduct.id);
+  if (flatIdx < 0) flatIdx = 0;
+
+  const targetCard = cards[flatIdx];
+  if (!targetCard) return;
+
+  // Remove previous highlight
+  document.querySelectorAll('.label-focused').forEach(el => {
+    el.classList.remove('label-focused');
+    el.style.outline = '';
+  });
+
+  // Highlight focused card
+  targetCard.style.outline      = '3px solid var(--primary)';
+  targetCard.style.outlineOffset = '2px';
+  targetCard.classList.add('label-focused');
+
+  // Smooth-scroll to centre card in viewport
+  const scrollEl     = document.getElementById('previewScroll');
+  const cardCenterY  = targetCard.offsetTop + targetCard.offsetHeight / 2;
+  const scrollTarget = cardCenterY * (currentZoom / 100) - scrollEl.clientHeight / 2;
+  scrollEl.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
+}
+
+/* ================================================================
+   CANVAS LABEL RENDERING
+================================================================ */
+
+/**
+ * Draw a single label onto an existing 2D canvas context.
+ * @param {CanvasRenderingContext2D} ctx  - Pre-scaled context
+ * @param {object} item                   - { product }
+ * @param {number} x, y                   - Top-left in logical px
+ * @param {number} wPx, hPx              - Label size in logical px
+ * @param {string} layout                 - 'portrait' | 'landscape' | 'landscape-spfashion'
+ */
+function drawLabel(ctx, item, x, y, wPx, hPx, layout) {
+  // SP prefix: stored as "000001" (new) or "SP000001" (old)
+  const rawCode = (item.product.spBarcode || '000001').replace(/\*/g, '');
+  // bv = actual barcode data (WITHOUT SP) — used for JsBarcode lines
+  const bv        = rawCode.startsWith('SP') ? rawCode.substring(2) : rawCode;
+  // bvDisplay = text shown below barcode (WITH SP prefix)
+  const bvDisplay = 'SP' + bv;
+  const name  = item.product.productName || '';
+  const price = fmt(item.product.rate);
+
+  ctx.save();
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(x, y, wPx, hPx);
+
+  // Truncate text that overflows maxW, appending ellipsis
+  function truncate(text, maxW) {
+    let t = text;
+    while (ctx.measureText(t).width > maxW && t.length > 1) t = t.slice(0, -1);
+    return t === text ? text : t + '\u2026';
+  }
+
+  if (layout === 'landscape-spfashion') {
+    // ── 100×15mm: 65mm content | 35mm blank (right) ──
+    const mmPx      = wPx / 100;
+    const contentW  = 65 * mmPx;
+    const infoW     = 32.5 * mmPx;
+    const bcAreaW   = 32.5 * mmPx;
+    const padX      = 1.5 * mmPx;
+    const padT      = 1.2 * mmPx;
+    const padB      = 1.2 * mmPx;
+    const contentH  = hPx - padT - padB;
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#000';
+
+    const shopFs = Math.max(4, Math.round(contentH * 0.26));
+    ctx.font = '900 ' + shopFs + 'px Arial';
+    const shopY = y + padT + shopFs;
+    ctx.fillText(truncate('SP FASHION', infoW - padX * 2), x + padX, shopY);
+
+    const divY = shopY + contentH * 0.10;
+    ctx.beginPath();
+    ctx.moveTo(x + padX, divY);
+    ctx.lineTo(x + infoW - padX, divY);
+    ctx.strokeStyle = '#aaa'; ctx.lineWidth = 0.3; ctx.stroke();
+
+    const prodFs = Math.max(3.5, Math.round(contentH * 0.20));
+    ctx.font = '500 ' + prodFs + 'px Inter, Arial';
+    ctx.fillStyle = '#111';
+    ctx.fillText(truncate(name, infoW - padX * 2), x + padX, divY + prodFs + contentH * 0.06);
+
+    const priceFs = Math.max(4, Math.round(contentH * 0.23));
+    ctx.font = '700 ' + priceFs + 'px Inter, Arial';
+    ctx.fillStyle = '#000';
+    ctx.fillText('Rs : \u20b9' + price, x + padX, y + hPx - padB - 1);
+
+    // Barcode column
+    const bcAreaX = x + infoW;
+    const bcPad   = 1 * mmPx;
+    const bcW     = bcAreaW - bcPad * 2;
+    const bcH     = contentH * 0.60;
+    const bcY     = y + padT + (contentH - bcH - contentH * 0.20) * 0.4;
+    const bcc = document.createElement('canvas');
+    bcc.width  = Math.round(bcW * HIGH_RES_SCALE);
+    bcc.height = Math.round(bcH * HIGH_RES_SCALE);
+    try {
+      JsBarcode(bcc, bv, { format: 'CODE128', displayValue: false, margin: 0,
+        width:  Math.max(1, Math.floor(bcc.width / (bv.length * 11))),
+        height: bcc.height });
+      ctx.drawImage(bcc, bcAreaX + bcPad, bcY, bcW, bcH);
+    } catch(e) {}
+
+    const codeFs = Math.max(3, Math.round(contentH * 0.17));
+    ctx.font = '500 ' + codeFs + 'px Inter, Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(bvDisplay, bcAreaX + bcAreaW / 2, y + hPx - padB - 0.5);
+
+  } else if (layout === 'landscape') {
+    // ── 100×25mm: 43% info | 57% barcode ──
+    const mmPx    = wPx / 100;
+    const padX    = 2 * mmPx;
+    const padT    = 2 * mmPx;
+    const padB    = 2 * mmPx;
+    const leftW   = wPx * 0.43;
+    const rightW  = wPx - leftW;
+    const contentH = hPx - padT - padB;
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#000';
+
+    const shopFs = Math.max(5, Math.round(contentH * 0.20));
+    ctx.font = '900 ' + shopFs + 'px Arial';
+    ctx.fillText(truncate('SP FASHION', leftW - padX * 2), x + padX, y + padT + shopFs);
+
+    const divY = y + padT + shopFs + contentH * 0.08;
+    ctx.beginPath();
+    ctx.moveTo(x + padX, divY); ctx.lineTo(x + leftW - padX, divY);
+    ctx.strokeStyle = '#bbb'; ctx.lineWidth = 0.4; ctx.stroke();
+
+    const prodFs = Math.max(4, Math.round(contentH * 0.17));
+    ctx.font = '500 ' + prodFs + 'px Inter, Arial';
+    ctx.fillStyle = '#222';
+    ctx.fillText(truncate(name, leftW - padX * 2), x + padX, divY + prodFs + contentH * 0.06);
+
+    const priceFs = Math.max(5, Math.round(contentH * 0.19));
+    ctx.font = '700 ' + priceFs + 'px Inter, Arial';
+    ctx.fillStyle = '#000';
+    ctx.fillText('Rs : \u20b9' + price, x + padX, y + hPx - padB - 1);
+
+    const bcX = x + leftW + padX * 0.5;
+    const bcW = rightW - padX * 1.5;
+    const bcH = contentH * 0.60;
+    const bcY = y + padT + (contentH - bcH - contentH * 0.18) / 2;
+    const bcc = document.createElement('canvas');
+    bcc.width  = Math.round(bcW * HIGH_RES_SCALE);
+    bcc.height = Math.round(bcH * HIGH_RES_SCALE);
+    try {
+      JsBarcode(bcc, bv, { format: 'CODE128', displayValue: false, margin: 0,
+        width:  Math.max(1, Math.floor(bcc.width / (bv.length * 11))),
+        height: bcc.height });
+      ctx.drawImage(bcc, bcX, bcY, bcW, bcH);
+    } catch(e) {}
+
+    const codeFs = Math.max(4, Math.round(contentH * 0.15));
+    ctx.font = '500 ' + codeFs + 'px Inter, Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(bvDisplay, bcX + bcW / 2, y + hPx - padB - 1);
+
+  } else {
+    // ── Portrait (all roll + A4 labels) ──
+    const padX  = wPx * 0.055;
+    const padT  = hPx * 0.055;
+    const padB  = hPx * 0.065;
+    const inner = hPx - padT - padB;
+
+    const shopFs = Math.max(5, Math.round(inner * 0.13));
+    ctx.font = '900 ' + shopFs + 'px Arial';
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
+    const titleY = y + padT + shopFs;
+    ctx.fillText('SP FASHION', x + wPx / 2, titleY);
+
+    const bcW = wPx - padX * 2;
+    const bcH = inner * 0.34;
+    const bcX = x + padX;
+    const bcY = titleY + inner * 0.05;
+    const bcc = document.createElement('canvas');
+    bcc.width  = Math.round(bcW * HIGH_RES_SCALE);
+    bcc.height = Math.round(bcH * HIGH_RES_SCALE);
+    try {
+      JsBarcode(bcc, bv, { format: 'CODE128', displayValue: false, margin: 0,
+        width:  Math.max(1, Math.floor(bcc.width / (bv.length * 11))),
+        height: bcc.height });
+      ctx.drawImage(bcc, bcX, bcY, bcW, bcH);
+    } catch(e) {}
+
+    const codeFs = Math.max(4, Math.round(inner * 0.11));
+    ctx.font = '600 ' + codeFs + 'px Inter, Arial';
+    ctx.textAlign = 'center';
+    const codeY = bcY + bcH + codeFs + inner * 0.03;
+    ctx.fillText(bvDisplay, x + wPx / 2, codeY);
+
+    const lineY = codeY + inner * 0.04;
+    ctx.beginPath();
+    ctx.moveTo(x + padX, lineY); ctx.lineTo(x + wPx - padX, lineY);
+    ctx.strokeStyle = '#666'; ctx.lineWidth = 0.35; ctx.stroke();
+
+    const nameFs = Math.max(4, Math.round(inner * 0.105));
+    ctx.font = '500 ' + nameFs + 'px Inter, Arial';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#111';
+    ctx.fillText(truncate(name, wPx - padX * 2), x + padX, lineY + nameFs + inner * 0.04);
+
+    const priceFs = Math.max(5, Math.round(inner * 0.115));
+    ctx.font = '700 ' + priceFs + 'px Inter, Arial';
+    ctx.fillStyle = '#000';
+    ctx.fillText('Rs : \u20b9' + price, x + padX, y + hPx - padB);
+  }
+
+  ctx.restore();
+}
+
+/* Build canvas for a single label */
+function buildLabelCanvas(item, tmpl, scale) {
+  scale = scale || HIGH_RES_SCALE;
+  const wPx    = tmpl.labelW * MM;
+  const hPx    = tmpl.labelH * MM;
+  const canvas = document.createElement('canvas');
+  canvas.width  = Math.round(wPx * scale);
+  canvas.height = Math.round(hPx * scale);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+  drawLabel(ctx, item, 0, 0, wPx, hPx, tmpl.layout || 'portrait');
+  return canvas;
+}
+
+/* Build a single label as an <img> element */
+function buildLabelImg(item, tmpl) {
+  const canvas = buildLabelCanvas(item, tmpl, HIGH_RES_SCALE);
+  const img    = document.createElement('img');
+  img.src = canvas.toDataURL('image/png', 1.0);
+  return img;
+}
+
+/* Build 2-UP (side-by-side) label canvas */
+function build2UpImg(item1, item2, tmpl) {
+  const lw      = tmpl.labelW * MM;
+  const lh      = tmpl.labelH * MM;
+  const gap     = (tmpl.gapH || 0) * MM;
+  const totalW  = lw * 2 + gap;
+  const canvas  = document.createElement('canvas');
+  canvas.width  = Math.round(totalW * HIGH_RES_SCALE);
+  canvas.height = Math.round(lh * HIGH_RES_SCALE);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(HIGH_RES_SCALE, HIGH_RES_SCALE);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, totalW, lh);
+  drawLabel(ctx, item1, 0, 0, lw, lh, tmpl.layout || 'portrait');
+  if (item2) drawLabel(ctx, item2, lw + gap, 0, lw, lh, tmpl.layout || 'portrait');
+  const img = document.createElement('img');
+  img.src = canvas.toDataURL('image/png', 1.0);
+  return img;
+}
+
+/* Build a full A4 page canvas */
+function buildA4PageCanvas(items, tmpl, scale) {
+  scale = scale || HIGH_RES_SCALE;
+  const PW     = tmpl.pageW * MM;
+  const PH     = tmpl.pageH * MM;
+  const canvas = document.createElement('canvas');
+  canvas.width  = Math.round(PW * scale);
+  canvas.height = Math.round(PH * scale);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, PW, PH);
+
+  const lw   = tmpl.labelW * MM;
+  const lh   = tmpl.labelH * MM;
+  const gapX = (tmpl.gapX || 0) * MM;
+  const gapY = (tmpl.gapY || 0) * MM;
+  const ml   = (PW - (tmpl.cols * lw + (tmpl.cols - 1) * gapX)) / 2;
+  const mt   = (PH - (tmpl.rows * lh + (tmpl.rows - 1) * gapY)) / 2;
+
+  items.forEach((item, idx) => {
+    const col = idx % tmpl.cols;
+    const row = Math.floor(idx / tmpl.cols);
+    drawLabel(ctx, item, ml + col * (lw + gapX), mt + row * (lh + gapY), lw, lh, 'portrait');
+  });
+  return canvas;
+}
+
+/* Build A4 page as <img> */
+function buildA4PageImg(items, tmpl) {
+  const canvas = buildA4PageCanvas(items, tmpl, HIGH_RES_SCALE);
+  const img    = document.createElement('img');
+  img.src = canvas.toDataURL('image/png', 1.0);
+  return img;
+}
+
+/* ================================================================
+   TEMPLATE PREVIEW — image-based (SVG files loaded by path)
+================================================================ */
+window.updateTemplatePreview = function() {
+  const key        = document.getElementById('templateSelect').value;
+  const imgEl      = document.getElementById('templatePreviewImg');
+  const fallbackEl = document.getElementById('templatePreviewFallback');
+  const src        = TEMPLATE_PREVIEW_PATHS[key] || '';
+
+  if (imgEl) {
+    imgEl.style.display = '';
+    fallbackEl.style.display = 'none';
+    imgEl.src = src;
+  }
+};
+
+/* ================================================================
+   TEMPLATE APPLY
+================================================================ */
+window.applyTemplate = function() {
+  currentTemplate = document.getElementById('templateSelect').value;
+  renderPreview();
+  updateTemplatePreview();
+  const label = document.getElementById('templateSelect').selectedOptions[0].text;
+  notify('Template applied: ' + label, 'success');
+};
+
+/* ================================================================
+   PRINT
+================================================================ */
+window.printLabels = function() {
+  const arr = getSelectedArray();
+  if (!arr.length) { notify('Please select at least one product.', 'error'); return; }
+
+  const tmpl      = TEMPLATES[currentTemplate];
+  const printArea = document.getElementById('printArea');
+  printArea.innerHTML = '';
+
+  // Inject dynamic @page size
+  let pageStyle = document.getElementById('dynamicPageStyle');
+  if (!pageStyle) {
+    pageStyle = document.createElement('style');
+    pageStyle.id = 'dynamicPageStyle';
+    document.head.appendChild(pageStyle);
+  }
+  if (tmpl.isA4) {
+    pageStyle.textContent = `@media print { @page { size: ${tmpl.pageW}mm ${tmpl.pageH}mm; margin:0; } }`;
+  } else {
+    const pw = tmpl.rollW || tmpl.labelW;
+    const ph = tmpl.rollH || tmpl.labelH;
+    pageStyle.textContent = `@media print { @page { size: ${pw}mm ${ph}mm; margin:0; } }`;
+  }
+
+  const allItems = [];
+  arr.forEach(item => { for (let i = 0; i < (item.copies || 1); i++) allItems.push(item); });
+
+  const wrapper = document.createElement('div');
+
+  if (tmpl.isA4) {
+    const perPage = tmpl.cols * tmpl.rows;
+    for (let p = 0; p < allItems.length; p += perPage) {
+      const img = buildA4PageImg(allItems.slice(p, p + perPage), tmpl);
+      img.style.cssText = `width:${tmpl.pageW}mm;height:${tmpl.pageH}mm;display:block;page-break-after:always;break-after:page;`;
+      wrapper.appendChild(img);
+    }
+
+  } else if (tmpl.cols === 2) {
+    for (let i = 0; i < allItems.length; i += 2) {
+      const img = build2UpImg(allItems[i], allItems[i+1] || null, tmpl);
+      const lw  = tmpl.labelW * 2 + (tmpl.gapH || 0);
+      img.style.cssText = `width:${lw}mm;height:${tmpl.labelH}mm;display:block;margin-left:${tmpl.marginL||0}mm;page-break-after:always;break-after:page;`;
+      wrapper.appendChild(img);
+    }
+
+  } else {
+    for (const item of allItems) {
+      const img = buildLabelImg(item, tmpl);
+      img.style.cssText = `width:${tmpl.labelW}mm;height:${tmpl.labelH}mm;display:block;margin-left:${tmpl.marginL||0}mm;page-break-after:always;break-after:page;`;
+      wrapper.appendChild(img);
+    }
+  }
+
+  printArea.appendChild(wrapper);
+  requestAnimationFrame(() => window.print());
+
+  window.addEventListener('afterprint', function() {
+    document.getElementById('printArea').innerHTML = '';
+    renderProductList();
+    renderNavBar();
+    renderPreview();
+  }, { once: true });
+};
+
+/* ================================================================
+   DOWNLOAD
+================================================================ */
+window.downloadCurrentLabel = async function() {
+  const arr = getSelectedArray();
+  if (!arr.length) { notify('No product selected.', 'error'); return; }
+
+  const tmpl = TEMPLATES[currentTemplate];
+  notify('Preparing download…', 'info');
+
+  function savePng(canvas, filename) {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png', 1.0);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  await new Promise(r => setTimeout(r, 80));
+
+  if (tmpl.isA4) {
+    const allItems = [];
+    arr.forEach(item => { for (let i = 0; i < (item.copies || 1); i++) allItems.push(item); });
+    const perPage = tmpl.cols * tmpl.rows;
+    let pageNum = 1;
+    for (let p = 0; p < allItems.length; p += perPage) {
+      const cv     = buildA4PageCanvas(allItems.slice(p, p + perPage), tmpl, 2);
+      const suffix = allItems.length > perPage ? '_page' + pageNum : '';
+      savePng(cv, 'SP_Fashion_A4_Labels' + suffix + '.png');
+      pageNum++;
+      if (p + perPage < allItems.length) await new Promise(r => setTimeout(r, 200));
+    }
+    notify('Downloaded ' + (pageNum - 1) + ' A4 page(s)!', 'success');
+
+  } else {
+    const item   = arr[navIndex] || arr[0];
+    const rawDl  = (item.product.spBarcode || '000001').replace(/\*/g, '');
+    const bv     = rawDl.startsWith('SP') ? rawDl.substring(2) : rawDl;
+    const dlTmpl = tmpl.cols === 2 ? { ...tmpl, cols: 1, layout: tmpl.layout || 'portrait' } : tmpl;
+    const cv     = buildLabelCanvas(item, dlTmpl, 8);
+    savePng(cv, 'SP_Fashion_SP' + bv + '.png');
+    notify('Label downloaded! (' + dlTmpl.labelW + '×' + dlTmpl.labelH + 'mm)', 'success');
+  }
+};
+
+/* ================================================================
+   MOBILE TAB SWITCHING
+================================================================ */
+window.mobSwitchTab = function(tab) {
+  if (window.innerWidth > 768) return; // desktop: no-op
+
+  // Map tab names to panel IDs
+  const panels = {
+    products: 'bp-left-panel',
+    preview:  'bp-center-panel',
+    template: 'bp-right-panel',
+  };
+
+  // Show selected panel, hide others
+  document.querySelectorAll('.bp-left, .bp-center, .bp-right')
+    .forEach(el => el.classList.remove('mob-active'));
+  document.getElementById(panels[tab])?.classList.add('mob-active');
+
+  // Update active tab styling
+  document.querySelectorAll('.mob-tab').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('mobTab-' + tab)?.classList.add('active');
+
+  // Re-render preview when switching to it
+  if (tab === 'preview') renderPreview();
+};
+
+function updateMobileBadge(count) {
+  const badge = document.getElementById('mobBadge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent    = count;
+    badge.style.display  = 'flex';
+  } else {
+    badge.style.display  = 'none';
+  }
+}
+
+/* ================================================================
+   MOBILE PANEL INIT (default active tab: products)
+================================================================ */
+(function initMobilePanels() {
+  if (window.innerWidth <= 768) {
+    document.getElementById('bp-left-panel')?.classList.add('mob-active');
+  }
+})();
+
+/* Restore panel visibility on resize / orientation change */
+window.addEventListener('resize', () => {
+  const isMobile = window.innerWidth <= 768;
+  if (!isMobile) {
+    document.querySelectorAll('.bp-left, .bp-center, .bp-right')
+      .forEach(el => el.classList.remove('mob-active'));
+  } else {
+    const hasActive = document.querySelector('.bp-left.mob-active, .bp-center.mob-active, .bp-right.mob-active');
+    if (!hasActive) {
+      document.getElementById('bp-left-panel')?.classList.add('mob-active');
+      document.getElementById('mobTab-products')?.classList.add('active');
+    }
+  }
+});
+
+/* ================================================================
+   BACK TO PRODUCTS
+================================================================ */
+window.goBackToProducts = function() {
+  const base = window.location.href.replace(/\/[^/]*$/, '/');
+  window.location.href = base + 'product.html';
+};
+
+/* ================================================================
+   UTILITIES
+================================================================ */
+
+/** Format a numeric price: no trailing .00 */
+function fmt(num) {
+  if (num == null || isNaN(num)) return '0';
+  const f = parseFloat(num);
+  if (f % 1 === 0) return String(f);
+  const s = f.toFixed(2);
+  return s.endsWith('.00') ? String(parseInt(f)) : String(parseFloat(s));
+}
+
+/** Show a toast notification */
+function notify(msg, type = 'info') {
+  const colors = { success: '#10bf39', error: '#e30202', info: '#007bff' };
+  const el = document.createElement('div');
+  el.className  = 'notif';
+  el.style.background = colors[type] || colors.info;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// Expose for external use (e.g. download helper)
+window.notify = notify;
+
+</script>
+</body>
+</html>

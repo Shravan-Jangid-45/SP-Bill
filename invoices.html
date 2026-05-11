@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Invoices - SP Fashion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-green: #10bf39;
+      --accent-red: #e30202;
+      --accent-blue: #0066cc;
+      --title-font: "DM Sans", "Inter", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--title-font); background: #f5f5f5; min-height: 100vh; overflow-x: hidden; }
+    .app { display: flex; width: 100%; min-height: 100vh; }
+
+    /* ── Sidebar (billing.html se identical) ── */
+    .sidebar { background: #1a1a1a; color: white; width: 200px; padding: 20px 0; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 1100; overflow-y: auto; }
+    .brand { font-size: 18px; font-weight: bold; margin-bottom: 30px; text-align: center; color: white; }
+    .nav-link { text-decoration: none; color: white; display: block; margin-bottom: 5px; }
+    .nav-inner { display: flex; align-items: center; gap: 12px; padding: 12px 20px; transition: background .3s; font-size: 14px; }
+    .nav-link:hover .nav-inner { background-color: #333; }
+    .nav-link.active .nav-inner { background: #0066cc; border-left: 3px solid #fff; }
+    .nav-inner img { width: 16px; height: 16px; }
+
+    /* ── Layout ── */
+    .main-content { margin-left: 200px; width: calc(100% - 200px); background: #fff; display: flex; flex-direction: column; min-height: 100vh; }
+    .top-header { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,.1); min-height: 60px; position: sticky; top: 0; z-index: 1050; }
+    .page-title { font-size: 20px; font-weight: 600; color: #333; }
+    .header-right { display: flex; align-items: center; gap: 15px; }
+    .icon-wrapper { width: 35px; height: 35px; background: #1c1c1c; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .3s; }
+    .icon-wrapper.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .icon-wrapper img { width: 20px; height: 20px; }
+    .menu-toggle { display: none; background: none; border: none; font-size: 20px; cursor: pointer; color: #333; }
+    .content-area { padding: 20px 30px; flex-grow: 1; background: #f8f9fa; }
+
+    /* ── Search filters bar ── */
+    .search-filters-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.1); gap: 20px; flex-wrap: wrap; }
+    .search-section { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    .search-input { padding: 8px 15px; border: 1px solid #ddd; border-radius: 20px; width: 270px; font-size: 14px; outline: none; font-family: var(--title-font); }
+    .search-input:focus { border-color: #667eea; }
+    .filter-dropdown { position: relative; display: inline-block; }
+    .filters-btn { display: flex; align-items: center; gap: 8px; padding: 8px 15px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: var(--title-font); }
+    .filter-menu { position: absolute; top: 100%; left: 0; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.1); z-index: 1000; display: none; min-width: 130px; }
+    .filter-menu.show { display: block; }
+    .filter-option { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px; font-family: var(--title-font); }
+    .filter-option:hover { background: #f8f9fa; }
+    .filter-option.active { background: #0066cc; color: white; }
+    .new-bill-link { color: #10bf39; font-weight: 600; font-size: 14px; text-decoration: none; white-space: nowrap; }
+
+    /* ── Table ── */
+    .table-container { background: white; border-radius: 8px; overflow: hidden; overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,.1); margin-bottom: 20px; }
+    .invoice-table { width: 100%; border-collapse: collapse; min-width: 660px; }
+    .invoice-table th { background: #f8f9fa; padding: 15px; text-align: left; font-weight: 600; color: #333; border-bottom: 1px solid #e0e0e0; font-size: 14px; }
+    .invoice-table td { padding: 15px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #555; }
+    .invoice-table tbody tr:hover { background: #f8f9fa; }
+    .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; display: inline-block; min-width: 60px; text-align: center; }
+    .status-paid { background: #d4edda; color: #155724; }
+    .status-due  { background: #f8d7da; color: #721c24; }
+    .action-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+    .action-btn { padding: 5px 10px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; font-family: var(--title-font); transition: background .2s; white-space: nowrap; }
+    .action-btn:hover { background: #f8f9fa; }
+    .btn-view  { border-color: #10bf39; color: #10bf39; }
+    .btn-print { border-color: #ff6b35; color: #ff6b35; }
+    .btn-edit  { border-color: #0066cc; color: #0066cc; }
+    .loading-row td { text-align: center; color: #aaa; padding: 40px; font-size: 14px; }
+
+    /* ── Toast (billing.html se same) ── */
+    #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 8px; color: white; font-weight: 500; z-index: 10000; max-width: 380px; min-width: 200px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,.2); font-size: 14px; display: none; font-family: var(--title-font); }
+    #toast.show { display: block; }
+    @keyframes slideInUp { from { transform: translateX(-50%) translateY(30px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+
+    /* ── Modals ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 15px; }
+    .modal-overlay.show { display: flex; }
+    .modal-content { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,.15); font-family: var(--title-font); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-title { font-size: 18px; font-weight: 600; color: #333; }
+    .close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; line-height: 1; }
+    .close-modal:hover { color: #333; }
+
+    /* ── Bill detail sections ── */
+    .bill-detail-sec { margin-bottom: 14px; }
+    .bill-detail-sec h4 { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 7px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
+    .bill-items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .bill-items-table th { background: #f8f9fa; padding: 7px 10px; text-align: left; font-weight: 600; color: #333; }
+    .bill-items-table td { padding: 6px 10px; border-bottom: 1px solid #f5f5f5; color: #555; }
+    .detail-table { width: 100%; border-collapse: collapse; }
+    .detail-table td { padding: 4px 0; font-size: 13px; }
+    .detail-table .amount { text-align: right; font-weight: 500; white-space: nowrap; }
+    .coupon-badge { display: inline-flex; align-items: center; gap: 6px; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 8px; padding: 6px 12px; margin-top: 6px; font-size: 13px; }
+
+    /* ── Bill action bar ── */
+    .bill-action-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px 0 0; border-top: 1px solid #eee; margin-top: 10px; }
+    .bill-action-btn { display: flex; align-items: center; gap: 5px; padding: 9px 16px; border-radius: 6px; border: 1px solid #ddd; background: white; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--title-font); transition: background .2s; white-space: nowrap; }
+    .bill-action-btn:hover { background: #f5f5f5; }
+    .bill-action-btn.btn-edit-billing { border-color: #0066cc; color: #0066cc; }
+    .bill-action-btn.btn-print        { border-color: #ff6b35; color: #ff6b35; }
+    .bill-action-btn.btn-download     { border-color: #007bff; color: #007bff; }
+    .bill-action-btn.btn-share        { border-color: #25D366; color: white; background: #25D366; }
+    .bill-action-btn.btn-share:hover  { background: #1da851; }
+
+    /* ── Camera modal ── */
+    .camera-modal-content { max-width: 480px; }
+    .camera-container { text-align: center; position: relative; }
+    #camVideo { width: 100%; max-width: 420px; height: 300px; border: 1px solid #ddd; border-radius: 8px; object-fit: cover; display: block; margin: 0 auto; }
+    .camera-overlay-rect { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 220px; height: 90px; border: 2px solid #10bf39; border-radius: 8px; pointer-events: none; }
+    .scan-result-bar { margin-top: 12px; padding: 10px; background: #d4edda; color: #155724; border-radius: 6px; display: none; font-size: 14px; font-weight: 600; }
+    .camera-controls { margin-top: 14px; display: flex; justify-content: center; }
+    .cam-stop-btn { padding: 9px 22px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: var(--title-font); font-weight: 500; }
+    .cam-stop-btn:hover { background: #5a6268; }
+
+    /* ── Mobile cards ── */
+    .mobile-cards { display: none; }
+    .invoice-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    .invoice-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .invoice-bill-no { font-weight: 600; font-size: 14px; color: #333; }
+    .invoice-amount  { font-weight: 600; font-size: 14px; color: #333; }
+    .invoice-meta    { font-size: 13px; color: #666; margin-bottom: 3px; }
+    .invoice-phone   { font-size: 12px; color: #888; margin-bottom: 10px; }
+    .invoice-card-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .card-action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform .3s; }
+      .sidebar.active { transform: translateX(0); }
+      .menu-toggle { display: block; }
+      .main-content { margin-left: 0; width: 100%; }
+      .top-header { position: fixed; top: 0; width: 100%; padding: 10px 15px; }
+      .content-area { padding: 15px; margin-top: 60px; }
+      .search-input { width: 100%; }
+      /* search bar stacks: search on top, filter+newbill on same row below */
+      .search-filters-bar { flex-direction: column; align-items: stretch; padding: 10px 12px; gap: 8px; }
+      .search-section { width: 100%; flex-direction: column; align-items: stretch; gap: 8px; }
+      /* filter dropdown and new bill link together on one row */
+      .mob-filter-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+      .table-container { display: none; }
+      .mobile-cards { display: block; }
+      .modal-overlay { align-items: flex-end; padding: 0; }
+      .modal-content { border-radius: 14px 14px 0 0; max-height: 92vh; }
+      .bill-action-btn { padding: 7px 10px; font-size: 12px; }
+    }
+    @media (min-width: 769px) { .mobile-cards { display: none !important; } }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="appSidebar">
+    <div class="brand">SP Fashion</div>
+    <a href="dashboard.html" class="nav-link"><div class="nav-inner"><img src="icon/deshboard.svg" width="20"><span>Dashboard</span></div></a>
+    <a href="product.html"   class="nav-link"><div class="nav-inner"><img src="icon/products.svg" width="20"><span>Products</span></div></a>
+    <a href="suppliers.html" class="nav-link"><div class="nav-inner"><img src="icon/Suppliers.svg" width="20"><span>Suppliers</span></div></a>
+    <a href="staff.html"     class="nav-link"><div class="nav-inner"><img src="icon/customer.svg" width="20"><span>Staff Members</span></div></a>
+    <a href="billing.html"   class="nav-link"><div class="nav-inner"><img src="icon/Bill.svg" width="20"><span>Billing</span></div></a>
+    <a href="invoices.html"  class="nav-link active"><div class="nav-inner"><img src="icon/invoices.svg" width="20"><span>Invoices</span></div></a>
+    <a href="cashBook.html"  class="nav-link"><div class="nav-inner"><img src="icon/cashbook.svg" width="20"><span>Cash Book</span></div></a>
+    <a href="coupon.html"    class="nav-link"><div class="nav-inner"><img src="icon/coupon.svg" width="20"><span>Coupons</span></div></a>
+    <a href="settings.html"  class="nav-link"><div class="nav-inner"><img src="icon/setting.svg" width="20"><span>Settings</span></div></a>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <div class="top-header">
+      <div style="display:flex;align-items:center;gap:15px;">
+        <button class="menu-toggle" id="menuToggle">☰</button>
+        <h1 class="page-title">Invoices</h1>
+      </div>
+      <div class="header-right">
+        <div id="barcodeBtn" class="icon-wrapper" title="USB Barcode Scanner — Bill number scan karo">
+          <img src="icon/barcode.svg" width="20" />
+        </div>
+        <div id="cameraBtn" class="icon-wrapper" title="Camera Barcode Scanner">
+          <img src="icon/camera-barcode.svg" width="20" />
+        </div>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <div class="search-filters-bar">
+      <div class="search-section">
+          <input type="text" class="search-input" id="searchInput" placeholder="Search Bill No. or Customer Name" />
+          <div class="mob-filter-row">
+            <div class="filter-dropdown">
+              <div class="filters-btn" id="filterBtn"><span id="filterText">All Bills</span><span>▼</span></div>
+              <div class="filter-menu" id="filterMenu">
+                <div class="filter-option active" data-filter="all">All Bills</div>
+                <div class="filter-option" data-filter="paid">Paid Bills</div>
+                <div class="filter-option" data-filter="due">Due Bills</div>
+              </div>
+            </div>
+            <a href="billing.html" class="new-bill-link">+ NEW BILL</a>
+          </div>
+      </div>
+      </div>
+
+      <!-- Desktop Table -->
+      <div class="table-container">
+        <table class="invoice-table">
+          <thead>
+            <tr>
+              <th>Bill No.</th><th>Customer Name</th><th>Mobile</th>
+              <th>Date</th><th>Status</th><th>Amount</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="invoiceTableBody">
+            <tr class="loading-row"><td colspan="7">Loading invoices…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Cards -->
+      <div class="mobile-cards" id="mobileCards"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BILL DETAILS MODAL -->
+<div id="billDetailsModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Bill Details</h3>
+      <button class="close-modal" onclick="closeModal('billDetailsModal')">&times;</button>
+    </div>
+    <div id="billDetailsContent"></div>
+    <div class="bill-action-bar" id="billActionBar"></div>
+  </div>
+</div>
+
+<!-- CAMERA MODAL -->
+<div id="cameraModal" class="modal-overlay">
+  <div class="modal-content camera-modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">📷 Camera Scanner</h3>
+      <button class="close-modal" id="camCloseBtn">&times;</button>
+    </div>
+    <p style="font-size:13px;color:#888;margin-bottom:14px;text-align:center;">Bill number wale barcode ko camera ke saamne rakhen</p>
+    <div class="camera-container">
+      <div style="position:relative;display:inline-block;width:100%;">
+        <video id="camVideo" autoplay muted playsinline></video>
+        <div class="camera-overlay-rect"></div>
+      </div>
+      <canvas id="camCanvas" style="display:none;"></canvas>
+      <div class="scan-result-bar" id="scanResultBar">✅ Scanned: <span id="scannedValue"></span></div>
+      <div class="camera-controls">
+        <button class="cam-stop-btn" id="stopCamBtn">Camera Band Karo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Quagga — same CDN as billing.html -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCVXql_12NNa9_bUXYfWhj8Z7ZUqTyD1ak",
+  authDomain: "sp-fashion-beca2.firebaseapp.com",
+  projectId: "sp-fashion-beca2",
+  storageBucket: "sp-fashion-beca2.firebasestorage.app",
+  messagingSenderId: "734725526616",
+  appId: "1:734725526616:web:4ed1410e441789653e262d"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+let allBills = [], filteredBills = [], cbPaidMap = {};
+let currentFilter = 'all', searchTerm = '';
+let barcodeActive = false, cameraStream = null, cameraScannerActive = false;
+let barcodeBuffer = '', barcodeTimeout = null;
+let _lastScanTime = 0;
+const _SCAN_COOLDOWN = 1500;
+
+// ── Helpers ──
+function formatDate(ts) {
+  if (!ts) return '—';
+  if (ts.seconds) return new Date(ts.seconds * 1000).toLocaleDateString('en-GB');
+  return new Date(ts).toLocaleDateString('en-GB');
+}
+function formatTime(ts) {
+  if (!ts) return '';
+  if (ts.seconds) return new Date(ts.seconds * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  return '';
+}
+function fmtCur(v) { const n = parseFloat(v || 0); return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: n % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 }); }
+function fmtNum(v) { const n = Number(v); return isNaN(n) ? v : n % 1 === 0 ? n.toString() : parseFloat(n.toFixed(2)).toString(); }
+
+window.closeModal = id => document.getElementById(id).classList.remove('show');
+
+// Toast notification
+function showNotification(message, type = 'info') {
+  const el = document.getElementById('toast');
+  const colors = { success: '#10bf39', error: '#e30202', info: '#007bff' };
+  el.style.cssText = '';
+  el.style.background = colors[type] || colors.info;
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transition = 'opacity .3s';
+    setTimeout(() => {
+      el.classList.remove('show');
+      el.style.cssText = '';
+    }, 320);
+  }, 3000);
+}
+
+// ── Load Bills + CashBook ──
+async function loadBills() {
+  try {
+    const [billSnap, cbSnap] = await Promise.all([
+      getDocs(collection(db, 'bills')),
+      getDocs(collection(db, 'customerCashBook'))
+    ]);
+    allBills = billSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allBills.sort((a, b) => ((b.timestamp?.seconds||0) - (a.timestamp?.seconds||0)));
+
+    // Build map: billId → total paid via cashBook
+    cbPaidMap = {};
+    cbSnap.docs.forEach(d => {
+      const p = d.data();
+      (p.allocations      || []).forEach(a => { cbPaidMap[a.billId] = (cbPaidMap[a.billId]||0) + (a.amount||0); });
+      (p.extraAllocations || []).forEach(a => { cbPaidMap[a.billId] = (cbPaidMap[a.billId]||0) + (a.amount||0); });
+    });
+
+    applyFilter();
+  } catch(e) {
+    document.getElementById('invoiceTableBody').innerHTML = `<tr class="loading-row"><td colspan="7" style="color:#e30202;">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// Compute real effective status using cashBook payments
+function getEffectiveStatus(bill) {
+  const raw = bill.status || 'due';
+  if (raw === 'paid' || raw === 'replaced' || raw === 'returned') return raw;
+  const effTotal   = bill.effectiveTotal !== undefined ? parseFloat(bill.effectiveTotal) : parseFloat(bill.totalAmount || 0);
+  const fp         = bill.finalPayment ? parseFloat(bill.finalPayment) : null;
+  const netPayable = fp !== null ? fp : effTotal;
+  const recvd      = parseFloat(bill.receivedAmount || 0);
+  const cbPaid     = cbPaidMap[bill.id] || 0;
+  return (recvd + cbPaid >= netPayable - 0.01) ? 'paid' : 'due';
+}
+
+function applyFilter() {
+  const q = searchTerm.toLowerCase();
+  filteredBills = allBills.filter(b => {
+    const effStatus = getEffectiveStatus(b);
+    const matchF = currentFilter === 'all' || effStatus === currentFilter;
+    const billDateStr = formatDate(b.timestamp).toLowerCase();
+    const matchS = !q || (b.billNumber||'').toLowerCase().includes(q) || (b.customerName||'').toLowerCase().includes(q) || (b.customerPhone||'').toLowerCase().includes(q) || billDateStr.includes(q);
+    return matchF && matchS;
+  });
+  renderTable();
+  renderMobileCards();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('invoiceTableBody');
+  if (!filteredBills.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7" style="color:#aaa;">No invoices found.</td></tr>'; return; }
+  tbody.innerHTML = filteredBills.map(b => {
+    const status = getEffectiveStatus(b);
+    const amt = b.effectiveTotal !== undefined ? b.effectiveTotal : (b.totalAmount || 0);
+    return `<tr>
+      <td><strong>${b.billNumber || '—'}</strong></td>
+      <td>${b.customerName || '—'}</td>
+      <td>${b.customerPhone || '—'}</td>
+      <td>${formatDate(b.timestamp)}</td>
+      <td><span class="status-badge status-${status}">${status.charAt(0).toUpperCase()+status.slice(1)}</span></td>
+      <td>${fmtCur(amt)}</td>
+      <td><div class="action-buttons">
+        <button class="action-btn btn-view"  data-id="${b.id}">View</button>
+        <button class="action-btn btn-print" data-id="${b.id}" data-act="print">Print</button>
+        <button class="action-btn btn-edit"  data-id="${b.id}" data-act="edit">Edit</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('.btn-view').forEach(btn => btn.addEventListener('click', () => showBillDetails(btn.dataset.id)));
+  tbody.querySelectorAll('[data-act="print"]').forEach(btn => btn.addEventListener('click', () => { const b = allBills.find(x => x.id === btn.dataset.id); if (b) _doPrint(b); }));
+  tbody.querySelectorAll('[data-act="edit"]').forEach(btn => btn.addEventListener('click', () => editInBillingPage(btn.dataset.id)));
+}
+
+function renderMobileCards() {
+  const div = document.getElementById('mobileCards');
+  if (!filteredBills.length) { div.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;font-size:14px;">No invoices found.</div>'; return; }
+  div.innerHTML = filteredBills.map(b => {
+    const status = getEffectiveStatus(b);
+    const amt = b.effectiveTotal !== undefined ? b.effectiveTotal : (b.totalAmount || 0);
+    return `<div class="invoice-card">
+      <div class="invoice-card-header"><span class="invoice-bill-no">${b.billNumber||'—'}</span><span class="invoice-amount">${fmtCur(amt)}</span></div>
+      <div class="invoice-meta">${b.customerName||'—'}</div>
+      <div class="invoice-phone">${b.customerPhone||''}&nbsp;&nbsp;${formatDate(b.timestamp)}</div>
+      <div class="invoice-card-footer">
+        <span class="status-badge status-${status}">${status.charAt(0).toUpperCase()+status.slice(1)}</span>
+        <div class="card-action-btns">
+          <button class="action-btn btn-view"  data-id="${b.id}">View</button>
+          <button class="action-btn btn-print" data-id="${b.id}" data-act="print">Print</button>
+          <button class="action-btn btn-edit"  data-id="${b.id}" data-act="edit">Edit</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  div.querySelectorAll('.btn-view').forEach(btn => btn.addEventListener('click', () => showBillDetails(btn.dataset.id)));
+  div.querySelectorAll('[data-act="print"]').forEach(btn => btn.addEventListener('click', () => { const b = allBills.find(x => x.id === btn.dataset.id); if (b) _doPrint(b); }));
+  div.querySelectorAll('[data-act="edit"]').forEach(btn => btn.addEventListener('click', () => editInBillingPage(btn.dataset.id)));
+}
+
+// ── Edit → redirect to billing.html ──
+function editInBillingPage(billId) {
+  localStorage.setItem('invoiceEditBillId', billId);
+  window.location.href = 'billing.html';
+}
+
+// ── Bill Details Modal — instant from local cache ──
+function showBillDetails(billId) {
+  const bill = allBills.find(b => b.id === billId);
+  if (!bill) { showNotification('Bill not found.', 'error'); return; }
+
+  const rawTotal   = parseFloat(bill.totalAmount || 0);
+  const effTotal   = bill.effectiveTotal !== undefined ? parseFloat(bill.effectiveTotal) : rawTotal;
+  const couponDisc = parseFloat(bill.couponDiscount || 0);
+  const ac = bill.appliedCoupon;
+  const couponCode = (ac && ac.code) ? ac.code : (bill.couponCode || null);
+  const fp = bill.finalPayment ? parseFloat(bill.finalPayment) : null;
+  const recvd = parseFloat(bill.receivedAmount || 0);
+  const cbPaid = cbPaidMap[bill.id] || 0;
+  const effStatus = getEffectiveStatus(bill);
+  const isPaid = effStatus === 'paid' || effStatus === 'replaced' || effStatus === 'returned';
+  const netPayable = fp !== null ? fp : effTotal;
+  const totalPaid = recvd + cbPaid;
+  const displayReceived = isPaid ? netPayable : totalPaid;
+  const dueAmt = isPaid ? 0 : Math.max(0, netPayable - totalPaid);
+
+  let badge = '';
+  if (bill.status==='replaced')    badge = '<span style="color:#7b1fa2;font-weight:600;">↩️ Replaced</span>';
+  else if (bill.status==='returned') badge = '<span style="color:#e65c00;font-weight:600;">↩ Returned</span>';
+  else if (isPaid)                 badge = '<span style="color:#10bf39;font-weight:600;">✓ Fully Paid</span>';
+  else if (totalPaid > 0.01)       badge = `<span style="color:#f57c00;font-weight:600;">Partial — Due ${fmtCur(dueAmt)}</span>`;
+  else                             badge = `<span style="color:#e30202;font-weight:600;">Unpaid — Due ${fmtCur(netPayable)}</span>`;
+
+  let itemsHtml = '<p style="color:#aaa;font-size:13px;">No items.</p>';
+  if (bill.items && bill.items.length) {
+    itemsHtml = `<table class="bill-items-table"><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead><tbody>
+      ${bill.items.map((it,i) => `<tr><td>${i+1}</td><td>${it.name||'—'}</td><td>${fmtNum(parseFloat(it.qty||1))}</td><td>${fmtCur(parseFloat(it.rate||0))}</td><td>${fmtCur(parseFloat(it.amount||0))}</td></tr>`).join('')}
+    </tbody></table>`;
+  }
+
+  let couponHtml = '';
+  if (couponCode && couponDisc > 0) {
+    let dl = '';
+    if (ac) dl = ac.discountType==='cash' ? `₹${ac.discountValue} OFF` : ac.discountSubType==='product_percent' ? `${ac.discountValue}% OFF (Product)` : `${ac.discountValue}% OFF (Bill)`;
+    couponHtml = `<div class="coupon-badge" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;margin-top:6px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:16px;">🏷️</span>
+        <strong style="color:#7b1fa2;font-size:14px;">${couponCode}</strong>
+        ${dl ? `<span style="background:#7b1fa2;color:white;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px;">${dl}</span>` : ''}
+      </div>
+      <div style="font-size:13px;color:#555;">Discount: <strong style="color:#10bf39;">-${fmtCur(couponDisc)}</strong></div>
+    </div>`;
+  }
+
+  const mrmSubTotal = (bill.items||[]).reduce((s,it) => s + parseFloat(it.originalRate!==undefined?it.originalRate:it.rate||0)*parseFloat(it.qty||1), 0);
+  const hasBillCoupon = !!(couponCode && couponDisc > 0);
+
+  document.getElementById('billDetailsContent').innerHTML = `
+    <div class="bill-detail-sec">
+      <h4>Bill Info</h4>
+      <p style="margin-bottom:6px;"><strong>Bill No:</strong> ${bill.billNumber||'—'}</p>
+      <p style="margin-bottom:6px;"><strong>Date:</strong> ${formatDate(bill.timestamp)}${formatTime(bill.timestamp)?' &nbsp; '+formatTime(bill.timestamp):''}</p>
+      <p style="margin-bottom:6px;"><strong>Customer:</strong> ${bill.customerName||'—'} &nbsp;<span style="color:#888;">${bill.customerPhone||''}</span></p>
+      <p style="margin-bottom:2px;"><strong>Status:</strong> ${badge}</p>
+      ${couponHtml}
+    </div>
+    <div class="bill-detail-sec"><h4>Items</h4>${itemsHtml}</div>
+    <div class="bill-detail-sec">
+      <table class="detail-table">
+        <tr><td>Sub Total</td><td class="amount">${fmtCur(mrmSubTotal||rawTotal)}</td></tr>
+        ${hasBillCoupon
+          ? `<tr><td style="color:#7b1fa2;">🏷️ Coupon (${couponCode})</td><td class="amount" style="color:#7b1fa2;font-weight:700;">-${fmtCur(couponDisc)}</td></tr>
+             <tr style="border-top:1px solid #eee;"><td style="color:#e65c00;font-weight:700;">Final Charged</td><td class="amount" style="color:#e65c00;font-weight:700;"><strong>${fmtCur(effTotal)}</strong></td></tr>`
+          : `<tr style="border-top:1px solid #eee;"><td><strong>Total</strong></td><td class="amount"><strong>${fmtCur(effTotal)}</strong></td></tr>`
+        }
+        ${fp!==null&&fp<effTotal ? `<tr><td style="color:#e65c00;font-weight:600;">Final Payment</td><td class="amount" style="color:#e65c00;font-weight:600;">${fmtCur(fp)}</td></tr>` : ''}
+        <tr><td style="color:#10bf39;">Received at Billing</td><td class="amount" style="color:#10bf39;">${fmtCur(recvd)}</td></tr>
+        ${cbPaid > 0.01 ? `<tr><td style="color:#0066cc;">Paid via Cash Book</td><td class="amount" style="color:#0066cc;">${fmtCur(cbPaid)}</td></tr>` : ''}
+        ${dueAmt>0.01 ? `<tr><td style="color:#e30202;font-weight:600;">Due</td><td class="amount" style="color:#e30202;font-weight:600;">${fmtCur(dueAmt)}</td></tr>` : ''}
+      </table>
+    </div>`;
+
+  const bar = document.getElementById('billActionBar');
+  bar.innerHTML = `
+    <button class="bill-action-btn btn-edit-billing" id="abEdit">Edit</button>
+    <button class="bill-action-btn btn-print"        id="abPrint"> Print</button>
+    <button class="bill-action-btn btn-download"     id="abDownload"> Download</button>
+    <button class="bill-action-btn btn-share"        id="abShare">WhatsApp</button>`;
+  bar.querySelector('#abEdit').onclick     = () => { closeModal('billDetailsModal'); editInBillingPage(bill.id); };
+  bar.querySelector('#abPrint').onclick    = () => { closeModal('billDetailsModal'); _doPrint(bill); };
+  bar.querySelector('#abDownload').onclick = () => { closeModal('billDetailsModal'); _doDownload(bill); };
+  bar.querySelector('#abShare').onclick    = () => _doWhatsApp(bill);
+  document.getElementById('billDetailsModal').classList.add('show');
+}
+
+// ── Print meta builder ──
+function buildPrintMeta(bill) {
+  const settings = JSON.parse(localStorage.getItem('shopSettings') || '{}');
+  const io = settings.invoiceOptions || {};
+  const rawTotal   = parseFloat(bill.totalAmount || 0);
+  const effTotal   = bill.effectiveTotal !== undefined ? parseFloat(bill.effectiveTotal) : rawTotal;
+  const couponDisc = parseFloat(bill.couponDiscount || 0);
+  const ac = bill.appliedCoupon;
+  const couponCode = (ac && ac.code) ? ac.code : (bill.couponCode || null);
+  const fp  = bill.finalPayment ? parseFloat(bill.finalPayment) : null;
+  const recvd  = parseFloat(bill.receivedAmount || 0);
+  const isPaid = bill.status === 'paid';
+  const netPayable = fp !== null ? fp : effTotal;
+  const displayReceived = isPaid ? netPayable : recvd;
+  const dueAmt = isPaid ? 0 : Math.max(0, netPayable - recvd);
+  const hasBillCoupon = !!(couponCode && couponDisc > 0);
+  const billTotalBC = effTotal + (hasBillCoupon ? couponDisc : 0);
+  const mrmSubTotal = (bill.items||[]).reduce((s,it) => s + parseFloat(it.originalRate!==undefined?it.originalRate:it.rate||0)*parseFloat(it.qty||1), 0);
+  const hasFinalDiscount = netPayable < effTotal && netPayable > 0;
+  const items = (bill.items||[]).map(it => ({
+    name: it.name||'—', barcode: it.barcode||'', spBarcode: it.spBarcode||'',
+    qty: parseFloat(it.qty||1), mrp: parseFloat(it.mrp||it.rate||0),
+    rate: parseFloat(it.rate||0), amount: parseFloat(it.amount||0),
+    originalRate: parseFloat(it.originalRate||it.mrp||it.rate||0),
+    displayRate: parseFloat(it.rate||0), displayAmount: parseFloat(it.amount||0)
+  }));
+  return {
+    billNumber: bill.billNumber||'SP00000', customerName: bill.customerName||'Customer', customerPhone: bill.customerPhone||'',
+    date: formatDate(bill.timestamp), time: formatTime(bill.timestamp), items,
+    totalAmount: mrmSubTotal||rawTotal, effectiveTotal: billTotalBC||effTotal,
+    couponCode, couponDiscount: hasBillCoupon ? couponDisc : null,
+    finalPayment: (hasFinalDiscount && io.showFinalPayment !== false) ? netPayable : null,
+    receivedAmount: displayReceived, dueAmount: dueAmt, status: bill.status||'due',
+    thermalSize: settings.thermalSize||'80mm', invoiceOptions: io
+  };
+}
+
+function _doPrint(bill) {
+  const meta = buildPrintMeta(bill);
+  localStorage.setItem('printBillData', JSON.stringify(meta));
+  const tpl = (JSON.parse(localStorage.getItem('shopSettings')||'{}')).selectedTemplate||'template-thermal.html';
+  const win = window.open('templates/' + tpl, '_blank', 'width=500,height=700');
+  if (!win) showNotification('Pop-up blocked! Please allow pop-ups.', 'error');
+}
+
+function _doDownload(bill) {
+  const meta = buildPrintMeta(bill);
+  localStorage.setItem('printBillData', JSON.stringify(meta));
+  const tpl = (JSON.parse(localStorage.getItem('shopSettings')||'{}')).selectedTemplate||'template-thermal.html';
+  const billNo = meta.billNumber;
+  showNotification('⏳ Preparing download…', 'info');
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'position:fixed;top:-99999px;left:-99999px;width:500px;height:1000px;border:none;opacity:0;pointer-events:none;z-index:-1;';
+  document.body.appendChild(iframe);
+  const cleanup = () => { try { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); } catch(_) {} };
+  const safetyTimer = setTimeout(() => { cleanup(); showNotification('Download timed out.', 'error'); }, 30000);
+  iframe.onload = async () => {
+    try {
+      const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+      const iWin = iframe.contentWindow;
+      await new Promise(r => setTimeout(r, 1800));
+      const doCapture = async (h2c) => {
+        const el = iDoc.querySelector('.receipt-container') || iDoc.querySelector('.bill-container') || iDoc.querySelector('main') || iDoc.body;
+        iDoc.documentElement.style.minHeight = '0'; iDoc.documentElement.style.height = 'auto';
+        iDoc.body.style.minHeight = '0'; iDoc.body.style.height = 'auto'; iDoc.body.style.overflow = 'visible';
+        iDoc.body.style.webkitFontSmoothing = 'antialiased';
+        await new Promise(r => setTimeout(r, 200));
+        const elW = Math.ceil(el.scrollWidth||el.offsetWidth||400), elH = Math.ceil(el.scrollHeight||el.offsetHeight||600);
+        iframe.style.width = elW+'px'; iframe.style.height = elH+'px';
+        iDoc.documentElement.style.width = elW+'px'; iDoc.body.style.width = elW+'px';
+        await new Promise(r => setTimeout(r, 150));
+        const canvas = await h2c(el, { scale: 5, useCORS: true, backgroundColor: '#ffffff', width: elW, height: elH, x: 0, y: 0, scrollX: 0, scrollY: 0, logging: false, allowTaint: true, imageTimeout: 8000, removeContainer: true });
+        canvas.toBlob(blob => {
+          clearTimeout(safetyTimer);
+          const url = URL.createObjectURL(blob), a = document.createElement('a');
+          a.href = url; a.download = `Bill_${billNo}.png`;
+          document.body.appendChild(a); a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+          cleanup(); showNotification('✅ Bill downloaded!', 'success');
+        }, 'image/png', 1.0);
+      };
+      if (iWin.html2canvas) { await doCapture(iWin.html2canvas); }
+      else {
+        const script = iDoc.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.onload  = async () => { try { await doCapture(iWin.html2canvas); } catch(e2) { clearTimeout(safetyTimer); cleanup(); showNotification('Download failed.', 'error'); } };
+        script.onerror = () => { clearTimeout(safetyTimer); cleanup(); showNotification('Download library failed.', 'error'); };
+        iDoc.head.appendChild(script);
+      }
+    } catch(e) { clearTimeout(safetyTimer); cleanup(); showNotification('Error: ' + e.message, 'error'); }
+  };
+  iframe.onerror = () => { clearTimeout(safetyTimer); cleanup(); showNotification('Could not load template.', 'error'); };
+  iframe.src = 'templates/' + tpl;
+}
+
+function _doWhatsApp(bill) {
+  const meta = buildPrintMeta(bill);
+  const io = meta.invoiceOptions || {};
+  const showRate = io.showProductRate !== false, showStatus = io.showBillStatus !== false;
+  const showFinal = io.showFinalPayment !== false, showRcv = io.showReceivedAmount !== false, showDue = io.showDueAmount !== false;
+  const itemsText = (meta.items||[]).map((it,i) => { let l=`${i+1}. ${it.name}  Qty:${fmtNum(it.qty)}`; if(showRate) l+=` × ${fmtCur(it.displayRate)}`; return l + ` = ${fmtCur(it.displayAmount)}`; }).join('\n');
+  let msg = `*SP Fashion - Bill*\nBill No: ${meta.billNumber} | Date: ${meta.date}\nCustomer: ${meta.customerName}${meta.customerPhone?` (${meta.customerPhone})`:''}\n\n*Items:*\n${itemsText}\n\n`;
+  msg += `Total: ${fmtCur(meta.effectiveTotal)}`;
+  if (meta.couponCode && meta.couponDiscount > 0) msg += `\nCoupon (${meta.couponCode}): -${fmtCur(meta.couponDiscount)}`;
+  if (showFinal && meta.finalPayment) msg += `\n*Final: ${fmtCur(meta.finalPayment)}*`;
+  if (showRcv && meta.receivedAmount > 0) msg += `\nReceived: ${fmtCur(meta.receivedAmount)}`;
+  if (showDue && meta.dueAmount > 0)     msg += `\nDue: ${fmtCur(meta.dueAmount)}`;
+  if (showStatus) msg += `\nStatus: *${(meta.status||'DUE').toUpperCase()}*`;
+  msg += `\n\nThank you for shopping at SP Fashion! 🙏`;
+  const phone = (meta.customerPhone||'').replace(/\D/g,'');
+  window.open(phone ? `https://wa.me/91${phone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ── Scan bill by barcode ──
+function processBillScan(rawCode) {
+  const now = Date.now();
+  if (now - _lastScanTime < _SCAN_COOLDOWN) return;
+  _lastScanTime = now;
+  const code = (rawCode || '').trim().toUpperCase();
+  if (!code) return;
+  let bill = allBills.find(b => (b.billNumber||'').toUpperCase() === code);
+  if (!bill) bill = allBills.find(b => (b.billNumber||'').toUpperCase().includes(code));
+  if (bill) { showNotification(`✅ Bill mil gaya: ${bill.billNumber}`, 'success'); showBillDetails(bill.id); }
+  else { showNotification(`"${code}" ka bill nahi mila.`, 'error'); document.getElementById('searchInput').value = rawCode; searchTerm = rawCode; applyFilter(); }
+}
+
+// ── USB Barcode Scanner (billing.html se identical) ──
+function toggleUSBScanner() {
+  const btn = document.getElementById('barcodeBtn');
+  barcodeActive = !barcodeActive;
+  if (barcodeActive) {
+    btn.classList.add('active');
+    document.addEventListener('keydown', handleUSBInput);
+    showNotification('USB scanner activate! Bill number scan karo.', 'success');
+  } else {
+    btn.classList.remove('active');
+    document.removeEventListener('keydown', handleUSBInput);
+    showNotification('USB scanner off.', 'info');
+  }
+}
+
+function handleUSBInput(e) {
+  if (!barcodeActive) return;
+  const tag = (document.activeElement||{}).tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (e.key === 'Enter' || e.key === 'Tab') {
+    e.preventDefault();
+    if (barcodeBuffer.length > 0) processBillScan(barcodeBuffer);
+    barcodeBuffer = '';
+    if (barcodeTimeout) clearTimeout(barcodeTimeout);
+    return;
+  }
+  if (e.key.length === 1 && !e.ctrlKey && !e.altKey) {
+    barcodeBuffer += e.key;
+    if (barcodeTimeout) clearTimeout(barcodeTimeout);
+    barcodeTimeout = setTimeout(() => { if (barcodeBuffer.length > 0) processBillScan(barcodeBuffer); barcodeBuffer = ''; }, 200);
+  }
+}
+
+// ── Camera Scanner — exact Quagga setup from billing.html ──
+async function openCameraModal() {
+  document.getElementById('cameraModal').classList.add('show');
+  document.getElementById('scanResultBar').style.display = 'none';
+  document.getElementById('cameraBtn').classList.add('active');
+  stopCameraScanning();
+
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+    });
+    const video = document.getElementById('camVideo');
+    video.srcObject = cameraStream;
+    await video.play();
+    _startQuaggaScanning();
+  } catch(err) {
+    showNotification('Camera error: ' + (err.name === 'NotAllowedError' ? 'Permission denied.' : err.message), 'error');
+    stopCameraScanning();
+    closeModal('cameraModal');
+    document.getElementById('cameraBtn').classList.remove('active');
+  }
+}
+
+function _startQuaggaScanning() {
+  if (cameraScannerActive) return;
+  cameraScannerActive = true;
+
+  Quagga.init({
+    inputStream: {
+      name: 'Live', type: 'LiveStream',
+      target: document.getElementById('camVideo'),
+      constraints: { width: 640, height: 480, facingMode: 'environment' }
+    },
+    decoder: {
+      readers: ['ean_reader', 'upc_reader', 'code_128_reader', 'ean_8_reader', 'upc_e_reader'],
+      multiple: false
+    },
+    locator: { patchSize: 'medium', halfSample: true },
+    numOfWorkers: navigator.hardwareConcurrency || 2,
+    locate: true
+  }, err => {
+    if (err) { cameraScannerActive = false; showNotification('Scanner init failed: ' + err.message, 'error'); return; }
+    Quagga.start();
+  });
+
+  Quagga.onDetected(data => {
+    if (!cameraScannerActive || !data.codeResult?.code) return;
+    const barcode = data.codeResult.code;
+    const overlay = document.querySelector('.camera-overlay-rect');
+    if (overlay) { overlay.style.borderColor = '#10bf39'; overlay.style.borderWidth = '3px'; }
+    document.getElementById('scannedValue').textContent = barcode;
+    document.getElementById('scanResultBar').style.display = 'block';
+    stopCameraScanning();
+    closeModal('cameraModal');
+    document.getElementById('cameraBtn').classList.remove('active');
+    processBillScan(barcode);
+  });
+
+  Quagga.onProcessed(result => {
+    const ctx = Quagga.canvas?.ctx?.overlay;
+    const canvas = Quagga.canvas?.dom?.overlay;
+    if (!result || !ctx || !canvas) return;
+    if (result.boxes) {
+      ctx.clearRect(0, 0, +canvas.getAttribute('width'), +canvas.getAttribute('height'));
+      result.boxes.filter(b => b !== result.box).forEach(b => Quagga.ImageDebug.drawPath(b, { x: 0, y: 1 }, ctx, { color: 'green', lineWidth: 2 }));
+    }
+    if (result.box)              Quagga.ImageDebug.drawPath(result.box,  { x: 0, y: 1 }, ctx, { color: '#00F', lineWidth: 2 });
+    if (result.codeResult?.code) Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, ctx, { color: 'red',  lineWidth: 3 });
+  });
+}
+
+function stopCameraScanning() {
+  cameraScannerActive = false;
+  try { if (typeof Quagga !== 'undefined') Quagga.stop(); } catch(_) {}
+  if (cameraStream) { cameraStream.getTracks().forEach(t => { try { t.stop(); } catch(_) {} }); cameraStream = null; }
+  const video = document.getElementById('camVideo');
+  if (video) video.srcObject = null;
+}
+
+// ── Event Listeners ──
+document.getElementById('menuToggle').addEventListener('click', () => document.querySelector('.sidebar').classList.toggle('active'));
+document.getElementById('barcodeBtn').addEventListener('click', toggleUSBScanner);
+document.getElementById('cameraBtn').addEventListener('click', openCameraModal);
+document.getElementById('stopCamBtn').addEventListener('click', () => { stopCameraScanning(); closeModal('cameraModal'); document.getElementById('cameraBtn').classList.remove('active'); });
+document.getElementById('camCloseBtn').addEventListener('click', () => { stopCameraScanning(); closeModal('cameraModal'); document.getElementById('cameraBtn').classList.remove('active'); });
+document.getElementById('searchInput').addEventListener('input', e => { searchTerm = e.target.value; applyFilter(); });
+document.getElementById('filterBtn').addEventListener('click', () => document.getElementById('filterMenu').classList.toggle('show'));
+document.querySelectorAll('#filterMenu .filter-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('#filterMenu .filter-option').forEach(o => o.classList.remove('active'));
+    opt.classList.add('active');
+    currentFilter = opt.dataset.filter;
+    document.getElementById('filterText').textContent = opt.textContent;
+    document.getElementById('filterMenu').classList.remove('show');
+    applyFilter();
+  });
+});
+document.addEventListener('click', e => {
+  const sidebar = document.querySelector('.sidebar');
+  const mToggle = document.getElementById('menuToggle');
+  if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && !mToggle.contains(e.target)) sidebar.classList.remove('active');
+  if (!e.target.closest('#filterBtn') && !e.target.closest('#filterMenu')) document.getElementById('filterMenu').classList.remove('show');
+  if (e.target.classList.contains('modal-overlay')) {
+    if (e.target.id === 'cameraModal') { stopCameraScanning(); document.getElementById('cameraBtn').classList.remove('active'); }
+    e.target.classList.remove('show');
+  }
+});
+
+loadBills();
+
+  import { checkPageAccess, applySidebarPermissions,
+          applyQuickActionPermissions, addLogoutToSidebar } from './auth.js';
+  if (!checkPageAccess()) throw new Error('Access denied');
+  applySidebarPermissions();
+  addLogoutToSidebar();
+</script>
+<script>
+(function(){
+  try { var d=JSON.parse(localStorage.getItem('staffAuth')||'null');
+    if(!d||!d.userId){location.href='login.html?redirect=billing.html';return;}
+  } catch(e){location.href='login.html';return;}
+  var o=document.createElement('div');
+  o.id='__auth_guard__';
+  o.style.cssText='position:fixed;inset:0;background:#000;z-index:99999;';
+  document.documentElement.appendChild(o);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Suppliers - SP Fashion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-green: #10bf39;
+      --accent-red: #e30202;
+      --title-font: "DM Sans", "Inter", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--title-font);
+      background: #f5f5f5;
+      min-height: 100vh;
+      font-weight: 400;
+      margin: 0;
+      overflow-x: hidden;
+    }
+    .app { display: flex; width: 100%; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: #1a1a1a;
+      color: white;
+      width: 200px;
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      z-index: 1100;
+      overflow-y: auto;
+      transition: transform 0.3s ease-in-out;
+    }
+    .brand { font-size: 18px; font-weight: bold; margin-bottom: 30px; text-align: center; color: white; }
+    .nav-link { text-decoration: none; color: white; display: block; margin-bottom: 5px; }
+    .nav-inner { display: flex; align-items: center; gap: 12px; padding: 12px 20px; transition: background 0.3s; font-size: 14px; }
+    .nav-link:hover .nav-inner { background-color: #333; }
+    .nav-link.active .nav-inner { background: #0066cc; border-left: 3px solid #ffffff; }
+    .nav-inner img { width: 16px; height: 16px; }
+
+    /* ── Main content ── */
+    .main-content {
+      margin-left: 200px;
+      width: calc(100% - 200px);
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── Top header ── */
+    .top-header {
+      background: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e0e0e0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 1050;
+      min-height: 60px;
+    }
+    .page-title { font-size: 20px; font-weight: 600; color: #333; }
+
+    /* ── Menu toggle (mobile) ── */
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: #333;
+      padding: 0 6px;
+    }
+
+    /* ── Mobile overlay ── */
+    .mobile-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1099;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s;
+    }
+    .mobile-overlay.active { opacity: 1; visibility: visible; }
+
+    /* ── Content area ── */
+    .content-area { padding: 20px 30px; flex-grow: 1; background: #f8f9fa; overflow-y: auto; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Status bar ── */
+    .status-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 14px; color: #666; flex-wrap: wrap; }
+    .status-bar a { color: #0066cc; text-decoration: none; cursor: pointer; }
+    .status-bar span { color: #333; font-weight: 500; }
+
+    /* ── Shop info detail card (collapsible) ── */
+    .shop-info-detail {
+      background: white; padding: 15px 20px; border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .shop-info-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .shop-info-header .shop-name {
+      font-weight: 600;
+      font-size: 16px;
+      color: #222;
+    }
+    .toggle-arrow {
+      font-size: 18px;
+      color: #666;
+      transition: transform 0.2s;
+    }
+    .shop-info-content {
+      margin-top: 12px;
+      display: none;
+      border-top: 1px solid #eee;
+      padding-top: 12px;
+    }
+    .shop-info-content.show {
+      display: block;
+    }
+    .shop-info-detail p { margin: 5px 0; }
+    .shop-info-detail .totals { display: flex; gap: 16px; font-weight: 500; flex-wrap: wrap; margin-top: 8px; }
+
+    /* ── Search/filter bar ── */
+    .search-filters-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; background: white; padding: 15px 20px;
+      border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); gap: 20px;
+      flex-wrap: wrap;
+    }
+    .search-section { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    .search-box { position: relative; }
+    .search-input { padding: 8px 40px 8px 15px; border: 1px solid #ddd; border-radius: 20px; width: 240px; font-size: 14px; outline: none; font-family: var(--title-font); }
+    .search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; opacity: 0.6; }
+    .filter-dropdown { position: relative; display: inline-block; }
+    .filters-btn { display: flex; align-items: center; gap: 8px; padding: 8px 15px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: var(--title-font); }
+    .filter-options { display: none; position: absolute; background: white; min-width: 150px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 1001; border-radius: 4px; padding: 5px 0; top: 100%; left: 0; }
+    .filter-options a { color: #333; padding: 8px 16px; text-decoration: none; display: block; font-size: 14px; }
+    .filter-options a:hover { background: #f5f5f5; }
+    .filter-options.show { display: block; }
+    .action-section { display: flex; align-items: center; gap: 15px; }
+    .primary-btn { background: #10bf39; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: var(--title-font); white-space: nowrap; }
+    .primary-btn:hover { background: #0da02f; }
+    .secondary-btn { background: white; border: 1px solid #ddd; padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; font-family: var(--title-font); }
+    .secondary-btn:hover { background: #f5f5f5; }
+
+    /* ── Table ── */
+    .table-container { background: white; border-radius: 8px; overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .data-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+    .data-table th { background: #f8f9fa; padding: 12px 15px; text-align: left; font-weight: 600; color: #333; border-bottom: 1px solid #e0e0e0; font-size: 14px; }
+    .data-table td { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #555; vertical-align: top; }
+    .data-table tbody tr { cursor: pointer; }
+    .data-table tbody tr:hover { background: #f8f9fa; }
+
+    /* ── Labels ── */
+    .clickable { color: #0066cc; text-decoration: underline; cursor: pointer; }
+    .due-bill  { color: #0066cc; text-decoration: underline; cursor: pointer; }
+    .dr-label { display: inline; font-size: 11px; font-weight: 700; color: #10bf39; letter-spacing: 0.5px; margin-left: 2px; }
+    .cr-label { display: inline; font-size: 11px; font-weight: 700; color: #e30202; letter-spacing: 0.5px; margin-left: 2px; }
+    .bal-positive .dr-label, .bal-positive { color: #10bf39 !important; font-weight: 600; }
+    .bal-negative .cr-label, .bal-negative { color: #e30202 !important; font-weight: 600; }
+    .bal-zero { color: #10bf39 !important; font-weight: 600; }
+    .due-tag { font-size: 10px; background: #fdecea; color: #e30202; border: 1px solid #e30202; border-radius: 10px; padding: 1px 5px; margin-left: 4px; font-weight: 700; vertical-align: middle; }
+
+    /* ── Modal ── */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 15px; }
+    .modal-content { background: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-title { font-size: 18px; font-weight: 600; }
+    .close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: 500; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; font-family: var(--title-font); }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .form-actions button { padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; font-family: var(--title-font); }
+    .cancel-btn { background: white; border: 1px solid #ddd; }
+    .save-btn { background: #10bf39; color: white; border: 1px solid #10bf39; }
+
+    /* ── Payment allocation ── */
+    .payment-allocation { margin-top: 15px; border: 1px solid #eee; border-radius: 6px; padding: 12px; }
+    .payment-allocation h4 { font-size: 14px; margin-bottom: 10px; color: #333; }
+    .allocation-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap; }
+    .allocation-item:last-child { border-bottom: none; }
+    .allocation-item span { flex: 1; font-size: 13px; min-width: 120px; }
+    .allocation-item input { width: 120px; flex-shrink: 0; }
+
+    /* ── Extra payment ── */
+    .extra-payment-banner { background: linear-gradient(135deg,#e8f5e9,#f1f8e9); border: 1.5px solid #10bf39; border-radius: 8px; padding: 12px 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .extra-payment-banner .ep-info { font-size: 13px; color: #2e7d32; font-weight: 600; }
+    .extra-payment-banner .ep-badge { background: #10bf39; color: white; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+    .use-extra-btn { background: #10bf39; color: white; border: none; padding: 6px 12px; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--title-font); }
+    .use-extra-btn:hover { background: #0da02f; }
+    .extra-alloc-section { background: #fffde7; border: 1px solid #fdd835; border-radius: 6px; padding: 12px; margin-top: 10px; }
+    .extra-alloc-section h4 { font-size: 13px; font-weight: 600; color: #f57f17; margin-bottom: 8px; }
+    .extra-alloc-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #fff9c4; flex-wrap: wrap; }
+    .extra-alloc-item:last-child { border-bottom: none; }
+    .extra-alloc-item .eai-label { flex: 1; min-width: 130px; font-size: 13px; }
+    .extra-alloc-item .eai-inputs { display: flex; gap: 6px; }
+    .extra-alloc-item input[type="number"] { width: 100px; padding: 5px 7px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+    .extra-alloc-item input.input-error { border-color: #e30202 !important; background: #fff5f5; }
+    .extra-available-note { font-size: 12px; color: #888; margin-top: 6px; }
+
+    /* ── Images ── */
+    .image-previews { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .image-container { position: relative; display: inline-block; }
+    .image-preview { width: 80px; height: 80px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; }
+    .delete-image { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; border: none; }
+
+    /* ── Detail table ── */
+    .detail-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+    .detail-table td { padding: 3px 0; border: none; font-size: 13px; }
+    .detail-table .amount { text-align: right; font-weight: 500; white-space: nowrap; }
+    .payment-note { font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #333; }
+    .agst-row td:first-child { color: #0066cc; }
+    .extra-agst-row td:first-child { color: #f57f17 !important; }  /* orange */
+
+    /* ══════════════════════════════════════
+       MOBILE CARDS — refined UPI style
+    ══════════════════════════════════════ */
+    .mobile-cards { display: none; }
+    .shop-card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      cursor: pointer;
+      border: 1px solid #f0f0f0;
+    }
+    .shop-card-name { font-size: 16px; font-weight: 700; color: #222; margin-bottom: 4px; }
+    .shop-card-contact { font-size: 13px; color: #888; margin-bottom: 8px; }
+    .shop-card-bal {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .bal-green { color: #10bf39; }
+    .bal-red   { color: #e30202; }
+
+    /* UPI‑style transaction card */
+    .bill-card {
+      background: white;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      cursor: pointer;
+      border: 1px solid #f0f0f0;
+      transition: background 0.15s;
+    }
+    .bill-card:hover { background: #fafafa; }
+    .bill-left {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .bill-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      color: white;
+      flex-shrink: 0;
+    }
+    .bill-icon.purchase { background: #ffebee; color: #c62828; }
+    .bill-icon.payment  { background: #e8f5e9; color: #2e7d32; }
+    .bill-details { flex: 1; }
+    .bill-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e1e1e;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .bill-meta {
+      font-size: 13px;
+      color: #757575;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .bill-allocations {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed #eee;
+      font-size: 12px;
+    }
+    .alloc-line {
+      color: #0066cc;
+      padding: 2px 0;
+      line-height: 1.5;
+    }
+    .alloc-line .alloc-amt {
+      font-weight: 500;
+      color: #333;
+    }
+    .extra-alloc-line {
+      color: #f57f17;
+    }
+    .bill-right {
+      text-align: right;
+      min-width: 100px;
+    }
+    .bill-amount {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e1e1e;
+      line-height: 1.2;
+    }
+    .bill-amount .dr { color: #10bf39; font-size: 12px; margin-left: 2px; }
+    .bill-amount .cr { color: #e30202; font-size: 12px; margin-left: 2px; }
+    .bill-due-badge {
+      display: inline-block;
+      background: #fdecea;
+      color: #e30202;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      margin-top: 6px;
+      border: 1px solid #ffcdd2;
+    }
+
+    /* ── Mobile header action buttons ── */
+    .header-mobile-btns { display: none; align-items: center; gap: 8px; }
+    .header-icon-btn {
+      width: 36px; height: 36px;
+      background: #000000;
+      border: none; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .header-icon-btn img { filter: brightness(0) invert(1); }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 40px 20px; color: #aaa; font-size: 14px; }
+
+    /* ══════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .menu-toggle { display: block; }
+      .main-content { margin-left: 0; width: 100%; }
+      .top-header { position: fixed; top: 0; width: 100%; z-index: 1050; padding: 10px 15px; }
+      .content-area { padding: 12px; margin-top: 60px; }
+      .search-input { width: 100%; }
+      .search-filters-bar { flex-direction: column; align-items: stretch; padding: 12px 15px; gap: 10px; }
+      .search-section { width: 100%; justify-content: space-between; }
+      .action-section { justify-content: flex-end; }
+      .search-box { flex: 1; }
+      .shop-info-detail { flex-direction: column; }
+      .shop-info-detail .totals { flex-direction: column; gap: 5px; }
+      .table-container { display: none; }
+      .mobile-cards { display: block; }
+      .header-mobile-btns { display: flex; }
+      #shopListView .action-section,
+      #shopDetailView .action-section { display: none; }
+      .modal-content { padding: 18px; }
+      .modal-overlay { align-items: flex-end; padding: 0; }
+      .modal-content { border-radius: 14px 14px 0 0; max-height: 92vh; }
+    }
+
+    @media (min-width: 769px) {
+      .mobile-cards { display: none !important; }
+    }
+
+    /* ── Scroll to Top Button ── */
+    #scrollTopBtn {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1a1a1a;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 1200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #scrollTopBtn.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    #scrollTopBtn:hover { background: #333; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="appSidebar">
+    <div class="brand">SP Fashion</div>
+    <a href="dashboard.html" class="nav-link"><div class="nav-inner"><img src="icon/deshboard.svg" width="20"><span>Dashboard</span></div></a>
+    <a href="product.html"   class="nav-link"><div class="nav-inner"><img src="icon/products.svg" width="20"><span>Products</span></div></a>
+    <a href="suppliers.html" class="nav-link active"><div class="nav-inner"><img src="icon/Suppliers.svg" width="20"><span>Suppliers</span></div></a>
+    <a href="staff.html"     class="nav-link"><div class="nav-inner"><img src="icon/customer.svg" width="20"><span>Staff Members</span></div></a>
+    <a href="billing.html"   class="nav-link"><div class="nav-inner"><img src="icon/Bill.svg" width="20"><span>Billing</span></div></a>
+    <a href="invoices.html"  class="nav-link"><div class="nav-inner"><img src="icon/invoices.svg" width="20"><span>Invoices</span></div></a>
+    <a href="cashBook.html"  class="nav-link"><div class="nav-inner"><img src="icon/cashbook.svg" width="20"><span>Cash Book</span></div></a>
+    <a href="coupon.html"    class="nav-link"><div class="nav-inner"><img src="icon/coupon.svg" width="20"><span>Coupons</span></div></a>
+    <a href="settings.html"  class="nav-link"><div class="nav-inner"><img src="icon/setting.svg" width="20"><span>Settings</span></div></a>
+  </aside>
+
+  <!-- Mobile overlay -->
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main-content">
+
+    <!-- Top Header -->
+    <div class="top-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="menu-toggle" id="menuToggle">☰</button>
+        <h1 class="page-title">Suppliers</h1>
+      </div>
+      <div class="header-mobile-btns">
+        <button class="header-icon-btn" id="mobileAddShopBtn" title="Add Shop">
+          <img src="icon/add.svg" width="20" alt="Add">
+        </button>
+        <button class="header-icon-btn" id="mobileAddBillBtn" title="Add Bill" style="display:none;">
+          <img src="icon/add.svg" width="20" alt="Add">
+        </button>
+      </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content-area">
+
+      <!-- ─── VIEW 1: Shop List ─── -->
+      <div id="shopListView" class="view active">
+        <div class="search-filters-bar">
+          <div class="search-section">
+            <div class="search-box">
+              <input type="text" id="shopSearchInput" class="search-input" placeholder="Search shop name" />
+              <span class="search-icon"><img src="icon/search.svg" alt="search" width="16"></span>
+            </div>
+            <div class="filter-dropdown">
+              <div class="filters-btn" id="shopFilterBtn"><span id="shopFilterValue">All</span><span>▼</span></div>
+              <div id="shopFilterOptions" class="filter-options">
+                <a href="#" data-filter="All">All</a>
+                <a href="#" data-filter="Due">Due</a>
+                <a href="#" data-filter="Paid">Paid</a>
+              </div>
+            </div>
+          </div>
+          <div class="action-section">
+            <button class="primary-btn" id="addShopBtn">+ Add Shop</button>
+          </div>
+        </div>
+
+        <!-- Desktop table -->
+        <div class="table-container">
+          <table class="data-table" id="shopTable">
+            <thead>
+              <tr><th>Shop Name</th><th>Contact Number</th><th>Total Dr</th><th>Total Cr</th><th>Remaining Balance</th></tr>
+            </thead>
+            <tbody id="shopTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Mobile cards -->
+        <div class="mobile-cards" id="shopMobileCards"></div>
+      </div>
+
+      <!-- ─── VIEW 2: Shop Detail ─── -->
+      <div id="shopDetailView" class="view">
+        <div class="status-bar">
+          <a id="backToShopList">Suppliers</a><span>/</span><span id="currentShopName"></span>
+        </div>
+        <div class="shop-info-detail" id="shopDetailInfo">
+          <div class="shop-info-header" id="shopInfoToggle">
+            <span class="shop-name" id="detailShopNameDisplay"></span>
+            <span class="toggle-arrow" id="toggleArrow">▼</span>
+          </div>
+          <div class="shop-info-content" id="shopInfoContent">
+            <div>
+              <p><strong>Contact:</strong> <span id="detailContact"></span></p>
+              <p><strong>Address:</strong> <span id="detailAddress"></span></p>
+            </div>
+            <div class="totals" id="detailTotals"></div>
+            <button class="secondary-btn" id="editShopDetailBtn" style="margin-top:10px;">Edit Shop</button>
+          </div>
+        </div>
+        <div class="search-filters-bar">
+          <div class="search-section">
+            <div class="search-box">
+              <input type="text" id="billSearchInput" class="search-input" placeholder="Search date or bill number" />
+              <span class="search-icon"><img src="icon/search.svg" alt="search" width="16"></span>
+            </div>
+            <div class="filter-dropdown">
+              <div class="filters-btn" id="billFilterBtn"><span id="billFilterValue">All</span><span>▼</span></div>
+              <div id="billFilterOptions" class="filter-options">
+                <a href="#" data-filter="All">All</a>
+                <a href="#" data-filter="Purchase">Purchase</a>
+                <a href="#" data-filter="Payment">Payment</a>
+                <a href="#" data-filter="Due">Due Payment</a>
+              </div>
+            </div>
+          </div>
+          <div class="action-section">
+            <button class="primary-btn" id="addBillBtn">+ Add Bill</button>
+          </div>
+        </div>
+
+        <!-- Desktop table -->
+        <div class="table-container">
+          <table class="data-table" id="billTable">
+            <thead>
+              <tr><th>Date</th><th>Details</th><th>Type</th><th>Bill Number</th><th>Dr</th><th>Cr</th></tr>
+            </thead>
+            <tbody id="billTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Mobile bill cards -->
+        <div class="mobile-cards" id="billMobileCards"></div>
+      </div>
+
+    </div><!-- /content-area -->
+  </div><!-- /main-content -->
+</div><!-- /app -->
+
+<!-- ═══════════════════════ MODALS ═══════════════════════ -->
+<!-- (All modals unchanged from previous version) -->
+<div id="addShopModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header"><h3 class="modal-title">Add Shop</h3><button class="close-modal" onclick="closeModal('addShopModal')">&times;</button></div>
+    <form id="shopForm">
+      <div class="form-group"><label>Shop Name *</label><input type="text" id="shopName" required></div>
+      <div class="form-group"><label>Contact Number *</label><input type="text" id="contactNumber" required></div>
+      <div class="form-group"><label>Address (optional)</label><textarea id="address" rows="2"></textarea></div>
+      <div class="form-actions"><button type="button" class="cancel-btn" onclick="closeModal('addShopModal')">Cancel</button><button type="submit" class="save-btn">Save Shop</button></div>
+    </form>
+  </div>
+</div>
+<div id="editShopModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header"><h3 class="modal-title">Edit Shop</h3><button class="close-modal" onclick="closeModal('editShopModal')">&times;</button></div>
+    <form id="editShopForm">
+      <input type="hidden" id="editShopId">
+      <div class="form-group"><label>Shop Name *</label><input type="text" id="editShopName" required></div>
+      <div class="form-group"><label>Contact Number *</label><input type="text" id="editContactNumber" required></div>
+      <div class="form-group"><label>Address (optional)</label><textarea id="editAddress" rows="2"></textarea></div>
+      <div class="form-actions"><button type="button" class="cancel-btn" onclick="closeModal('editShopModal')">Cancel</button><button type="submit" class="save-btn">Update Shop</button></div>
+    </form>
+  </div>
+</div>
+<div id="addBillModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header"><h3 class="modal-title">Add Bill</h3><button class="close-modal" onclick="closeModal('addBillModal')">&times;</button></div>
+    <form id="billForm">
+      <input type="hidden" id="billShopId">
+      <div class="form-group"><label>Bill Type *</label><select id="billType" required><option value="">Select</option><option value="purchase">Purchase</option><option value="payment">Payment</option></select></div>
+      <div id="purchaseFields" style="display:none;">
+        <div class="form-group"><label>Date *</label><input type="date" id="purchaseDate"></div>
+        <div class="form-group"><label>Amount *</label><input type="number" id="purchaseAmount" step="0.01"></div>
+        <div class="form-group"><label>Bill Number (optional)</label><input type="text" id="purchaseBillNumber" placeholder="Leave empty to auto-generate"></div>
+        <div class="form-group"><label>Notes (optional)</label><textarea id="purchaseNotes" rows="2" placeholder="Purchase"></textarea></div>
+        <div class="form-group"><label>Upload Images</label><input type="file" id="purchaseImages" multiple accept="image/*"></div>
+      </div>
+      <div id="paymentFields" style="display:none;">
+        <div class="form-group"><label>Date *</label><input type="date" id="paymentDate"></div>
+        <div class="form-group"><label>Bill Number (optional)</label><input type="text" id="paymentBillNumber" placeholder="Leave empty to auto-generate"></div>
+        <div class="form-group"><label>Notes (optional)</label><textarea id="paymentNotes" rows="2" placeholder="Payment"></textarea></div>
+        <div class="form-group"><label>Upload Images</label><input type="file" id="paymentImages" multiple accept="image/*"></div>
+        <div id="extraPaymentBanner" style="display:none;"></div>
+        <div class="payment-allocation" id="paymentAllocation"><h4>Allocate New Payment to Unpaid Purchases</h4><div id="unpaidPurchasesList"><p style="color:#999;font-size:13px;">No unpaid bills found.</p></div></div>
+        <div class="form-group" style="margin-top:12px;"><label>Extra Payment (unallocated)</label><input type="number" id="extraPaymentInput" step="0.01" value="0" min="0"></div>
+        <div id="extraAllocSection" class="extra-alloc-section" style="display:none;"><h4>🟡 Allocate Extra Balance to Due Bills</h4><div id="extraAllocList"></div><p class="extra-available-note" id="extraAvailableNote"></p></div>
+      </div>
+      <div class="form-actions"><button type="button" class="cancel-btn" onclick="closeModal('addBillModal')">Cancel</button><button type="submit" class="save-btn">Save Bill</button></div>
+    </form>
+  </div>
+</div>
+<div id="billDetailsModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header"><h3 class="modal-title">Bill Details</h3><button class="close-modal" onclick="closeModal('billDetailsModal')">&times;</button></div>
+    <div id="billDetailsContent"></div>
+    <div class="form-actions"><button class="secondary-btn" id="editBillBtn">Edit Bill</button><button class="secondary-btn" id="addMoreImagesBtn">Add More Images</button></div>
+  </div>
+</div>
+<div id="editBillModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header"><h3 class="modal-title">Edit Bill</h3><button class="close-modal" onclick="closeModal('editBillModal')">&times;</button></div>
+    <form id="editBillForm">
+      <input type="hidden" id="editBillId">
+      <div class="form-group"><label>Date</label><input type="date" id="editDate" required></div>
+      <div class="form-group"><label>Amount</label><input type="number" id="editAmount" step="0.01" required></div>
+      <div class="form-group"><label>Bill Number</label><input type="text" id="editBillNumber" required></div>
+      <div class="form-group"><label>Notes</label><textarea id="editNotes" rows="2"></textarea></div>
+      <div class="form-actions"><button type="button" class="cancel-btn" onclick="closeModal('editBillModal')">Cancel</button><button type="submit" class="save-btn">Update Bill</button></div>
+    </form>
+  </div>
+</div>
+<div id="addImagesModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header"><h3 class="modal-title">Add More Images</h3><button class="close-modal" onclick="closeModal('addImagesModal')">&times;</button></div>
+    <form id="addImagesForm">
+      <input type="hidden" id="imagesBillId">
+      <div class="form-group"><label>Upload Additional Images</label><input type="file" id="moreImages" multiple accept="image/*"></div>
+      <div class="form-actions"><button type="button" class="cancel-btn" onclick="closeModal('addImagesModal')">Cancel</button><button type="submit" class="save-btn">Add Images</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════ SCRIPT ═══════════════════════ -->
+<script type="module">
+  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, getDocs, query,
+    doc, updateDoc, where, getDoc
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCVXql_12NNa9_bUXYfWhj8Z7ZUqTyD1ak",
+    authDomain: "sp-fashion-beca2.firebaseapp.com",
+    projectId: "sp-fashion-beca2",
+    storageBucket: "sp-fashion-beca2.firebasestorage.app",
+    messagingSenderId: "734725526616",
+    appId: "1:734725526616:web:4ed1410e441789653e262d",
+    measurementId: "G-3PFB7B7MZZ"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const CLOUD_NAME    = "df0aitccb";
+  const UPLOAD_PRESET = "SP_Fashion";
+
+  // ── State ──
+  let shops = [], currentShopId = null, currentShopData = null;
+  let currentBills = [], shopFilter = 'All', billFilter = 'All', billSearch = '';
+  let currentExtraBalance = 0;
+
+  // Sidebar toggle (unchanged)
+  const sidebar      = document.getElementById('appSidebar');
+  const menuToggle   = document.getElementById('menuToggle');
+  const mobileOverlay = document.getElementById('mobileOverlay');
+  function openSidebar()  { sidebar.classList.add('active'); mobileOverlay.classList.add('active'); }
+  function closeSidebar() { sidebar.classList.remove('active'); mobileOverlay.classList.remove('active'); }
+  menuToggle.addEventListener('click', () => sidebar.classList.contains('active') ? closeSidebar() : openSidebar());
+  mobileOverlay.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+
+  const mobileAddShopBtn = document.getElementById('mobileAddShopBtn');
+  const mobileAddBillBtn = document.getElementById('mobileAddBillBtn');
+  function updateMobileHeaderBtns(view) {
+    if (view === 'shopList') {
+      mobileAddShopBtn.style.display = 'flex';
+      mobileAddBillBtn.style.display = 'none';
+    } else {
+      mobileAddShopBtn.style.display = 'none';
+      mobileAddBillBtn.style.display = 'flex';
+    }
+  }
+  mobileAddShopBtn.addEventListener('click', () => document.getElementById('addShopModal').style.display = 'flex');
+  mobileAddBillBtn.addEventListener('click', () => {
+    if (!currentShopId) return;
+    document.getElementById('billShopId').value = currentShopId;
+    document.getElementById('billType').value = '';
+    document.getElementById('purchaseFields').style.display = 'none';
+    document.getElementById('paymentFields').style.display  = 'none';
+    document.getElementById('extraPaymentBanner').style.display = 'none';
+    document.getElementById('extraAllocSection').style.display  = 'none';
+    document.getElementById('addBillModal').style.display = 'flex';
+  });
+
+  // Helpers
+  function formatDate(s) { if (!s) return ''; return new Date(s).toLocaleDateString('en-IN'); }
+  function formatCurrency(v) {
+    const num = parseFloat(v || 0);
+    return '₹' + num.toLocaleString('en-IN', { minimumFractionDigits: Number.isInteger(num) ? 0 : 2, maximumFractionDigits: 2 });
+  }
+  function imgUrl(img) { return typeof img === 'string' ? img : (img && img.url ? img.url : ''); }
+  function imgPublicId(img) {
+    if (typeof img === 'object' && img && img.public_id) return img.public_id;
+    const url = imgUrl(img); if (!url) return null;
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^./]+)?$/);
+    return match ? match[1] : null;
+  }
+  window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
+
+  // Image helpers (unchanged)
+  function compressImage(file, maxSizeKB) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        const img = new Image(); img.src = e.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let w = img.width, h = img.height, maxD = 1024;
+          if (w > h && w > maxD) { h *= maxD / w; w = maxD; } else if (h > maxD) { w *= maxD / h; h = maxD; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          let q = 0.9, c = canvas.toDataURL('image/jpeg', q);
+          while ((c.length * 0.75) > maxSizeKB * 1024 && q > 0.1) { q -= 0.05; c = canvas.toDataURL('image/jpeg', q); }
+          resolve(c);
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  }
+  async function uploadToCloudinary(file) {
+    const sizeKB = file.size / 1024;
+    let target = sizeKB <= 500 ? 100 : sizeKB <= 1000 ? 200 : 250;
+    let fileToUp = file;
+    if (sizeKB > target) {
+      const dataUrl = await compressImage(file, target);
+      const blob = await fetch(dataUrl).then(r => r.blob());
+      fileToUp = new File([blob], file.name, { type: 'image/jpeg' });
+    }
+    const fd = new FormData();
+    fd.append('file', fileToUp); fd.append('upload_preset', UPLOAD_PRESET);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
+    const data = await res.json();
+    return { url: data.secure_url, public_id: data.public_id, delete_token: data.delete_token || null };
+  }
+  async function uploadImages(files) {
+    if (!files || files.length === 0) return [];
+    return Promise.all(Array.from(files).map(uploadToCloudinary));
+  }
+  async function deleteImageFromCloudinary(imgOrPublicId) { /* unchanged */ }
+
+  // Load shops
+  async function loadShops() {
+    const snap = await getDocs(collection(db, 'shops'));
+    shops = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderShopList();
+  }
+
+  async function renderShopList() {
+    const tbody = document.getElementById('shopTableBody');
+    const mobileCards = document.getElementById('shopMobileCards');
+    tbody.innerHTML = '';
+    mobileCards.innerHTML = '';
+    const search = document.getElementById('shopSearchInput').value.toLowerCase();
+
+    for (let shop of shops) {
+      if (!shop.shopName.toLowerCase().includes(search)) continue;
+      const snap = await getDocs(query(collection(db, 'billinbox'), where('shopId', '==', shop.id)));
+      let totalDebit = 0, totalCredit = 0;
+      snap.forEach(d => {
+        const b = d.data();
+        if (b.type === 'purchase') totalCredit += b.amount || 0;
+        else if (b.type === 'payment') totalDebit += b.amount || 0;
+      });
+      const remaining = totalDebit - totalCredit;
+      if (shopFilter === 'Due'  && remaining >= 0) continue;
+      if (shopFilter === 'Paid' && remaining <  0) continue;
+
+      let balClass = 'bal-zero', balSuffix = '';
+      if (remaining > 0) { balClass = 'bal-positive'; balSuffix = ' <span class="dr-label">Dr</span>'; }
+      else if (remaining < 0) { balClass = 'bal-negative'; balSuffix = ' <span class="cr-label">Cr</span>'; }
+
+      // Desktop row
+      const row = tbody.insertRow();
+      row.setAttribute('data-shop-id', shop.id);
+      row.addEventListener('click', () => openShopDetail(shop.id, shop.shopName));
+      row.innerHTML = `<td>${shop.shopName}</td><td>${shop.contact || ''}</td><td>${formatCurrency(totalDebit)} <span class="dr-label">Dr</span></td><td>${formatCurrency(totalCredit)} <span class="cr-label">Cr</span></td><td class="${balClass}">${formatCurrency(Math.abs(remaining))}${balSuffix}</td>`;
+
+      // Mobile card
+      const remClass = remaining > 0 ? 'bal-green' : remaining < 0 ? 'bal-red' : 'bal-green'; // 0 = green
+      const remLabel = remaining > 0 ? 'Dr' : remaining < 0 ? 'Cr' : 'Dr';
+      const card = document.createElement('div');
+      card.className = 'shop-card';
+      card.addEventListener('click', () => openShopDetail(shop.id, shop.shopName));
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div class="shop-card-name">${shop.shopName}</div>
+            <div class="shop-card-contact">📞 ${shop.contact || '—'}</div>
+          </div>
+          <div class="shop-card-bal ${remClass}" style="text-align:right; flex-shrink:0; margin-left:8px;">
+            ${formatCurrency(Math.abs(remaining))}<br><span style="font-weight:600; font-size:12px;">${remLabel}</span>
+          </div>
+        </div>
+      `;
+      mobileCards.appendChild(card);
+    }
+    if (!tbody.rows.length && !mobileCards.children.length) {
+      mobileCards.innerHTML = '<div class="empty-state">No suppliers found.</div>';
+    }
+  }
+
+  // Edit shop
+  async function openEditShopModal(shopId) {
+    const shop = shops.find(s => s.id === shopId);
+    if (!shop) return;
+    document.getElementById('editShopId').value        = shop.id;
+    document.getElementById('editShopName').value      = shop.shopName;
+    document.getElementById('editContactNumber').value = shop.contact || '';
+    document.getElementById('editAddress').value       = shop.address || '';
+    document.getElementById('editShopModal').style.display = 'flex';
+  }
+  document.getElementById('editShopForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const shopId = document.getElementById('editShopId').value;
+    const updated = {
+      shopName: document.getElementById('editShopName').value,
+      contact:  document.getElementById('editContactNumber').value,
+      address:  document.getElementById('editAddress').value
+    };
+    await updateDoc(doc(db, 'shops', shopId), updated);
+    closeModal('editShopModal');
+    if (currentShopId === shopId) await openShopDetail(shopId, updated.shopName);
+    loadShops();
+  });
+
+  // Shop detail
+  async function openShopDetail(shopId, shopName) {
+    currentShopId = shopId;
+    document.getElementById('currentShopName').textContent = shopName;
+    document.getElementById('detailShopNameDisplay').textContent = shopName;
+    const shopDoc = await getDoc(doc(db, 'shops', shopId));
+    if (shopDoc.exists()) {
+      currentShopData = shopDoc.data();
+      document.getElementById('detailContact').textContent = currentShopData.contact || 'N/A';
+      document.getElementById('detailAddress').textContent = currentShopData.address || 'N/A';
+      currentExtraBalance = currentShopData.extraPayment || 0;
+    }
+    document.getElementById('shopListView').classList.remove('active');
+    document.getElementById('shopDetailView').classList.add('active');
+    await loadBillsForShop();
+    window.scrollTo(0, 0);
+    updateMobileHeaderBtns('shopDetail');
+
+    // Collapse shop info by default
+    const content = document.getElementById('shopInfoContent');
+    const arrow = document.getElementById('toggleArrow');
+    content.classList.remove('show');
+    arrow.textContent = '▼';
+  }
+
+  // Toggle shop info
+  document.getElementById('shopInfoToggle').addEventListener('click', () => {
+    const content = document.getElementById('shopInfoContent');
+    const arrow = document.getElementById('toggleArrow');
+    if (content.classList.contains('show')) {
+      content.classList.remove('show');
+      arrow.textContent = '▼';
+    } else {
+      content.classList.add('show');
+      arrow.textContent = '▲';
+    }
+  });
+
+  async function loadBillsForShop() {
+    if (!currentShopId) return;
+    const snap = await getDocs(query(collection(db, 'billinbox'), where('shopId', '==', currentShopId)));
+    const bills = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    bills.sort((a, b) => {
+      const dd = new Date(b.date) - new Date(a.date);
+      return dd !== 0 ? dd : new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+    currentBills = bills;
+    const shopSnap = await getDoc(doc(db, 'shops', currentShopId));
+    currentExtraBalance = shopSnap.exists() ? (shopSnap.data().extraPayment || 0) : 0;
+    renderBillTable();
+    updateShopTotals();
+  }
+
+  function updateShopTotals() {
+    let totalDebit = 0, totalCredit = 0;
+    currentBills.forEach(b => {
+      if (b.type === 'purchase') totalCredit += b.amount || 0;
+      else if (b.type === 'payment') totalDebit += b.amount || 0;
+    });
+    const rem = totalDebit - totalCredit;
+    let remHtml;
+    if (rem > 0)      remHtml = `<span class="bal-positive">${formatCurrency(rem)} <span class="dr-label">Dr</span></span>`;
+    else if (rem < 0) remHtml = `<span class="bal-negative">${formatCurrency(Math.abs(rem))} <span class="cr-label">Cr</span></span>`;
+    else              remHtml = `<span class="bal-zero">${formatCurrency(0)} <span class="dr-label">Dr</span></span>`;
+    document.getElementById('detailTotals').innerHTML = `
+      <span>Total Dr: ${formatCurrency(totalDebit)} <span class="dr-label">Dr</span></span>
+      <span>Total Cr: ${formatCurrency(totalCredit)} <span class="cr-label">Cr</span></span>
+      <span>Balance: ${remHtml}</span>
+    `;
+  }
+
+  function renderBillTable() {
+    const tbody = document.getElementById('billTableBody');
+    const mobileCards = document.getElementById('billMobileCards');
+    tbody.innerHTML = '';
+    mobileCards.innerHTML = '';
+
+    let filtered = currentBills.filter(bill => {
+      if (billFilter === 'Due') return bill.type === 'purchase' && (bill.paid || 0) < bill.amount;
+      if (billFilter !== 'All' && bill.type !== billFilter.toLowerCase()) return false;
+      if (billSearch) {
+        const s = billSearch.toLowerCase();
+        return (bill.date && bill.date.includes(s)) || (bill.billNumber && bill.billNumber.toLowerCase().includes(s));
+      }
+      return true;
+    });
+
+    if (!filtered.length) {
+      mobileCards.innerHTML = '<div class="empty-state">No bills found.</div>';
+    }
+
+    filtered.forEach(bill => {
+      // Desktop row
+      let detailsHtml = '';
+      if (bill.type === 'payment') {
+        detailsHtml = `<div class="payment-note">${bill.notes || 'Payment'}</div><table class="detail-table">`;
+        (bill.allocations || []).forEach(a => {
+          const purchaseBill = currentBills.find(b => b.id === a.purchaseId);
+          const dateStr = purchaseBill ? formatDate(purchaseBill.date) : '';
+          detailsHtml += `<tr class="agst-row"><td>Agst: <span class="clickable agst-link" data-purchase-id="${a.purchaseId}">${a.billNumber || a.purchaseId}</span> ${dateStr ? `(${dateStr})` : ''}</td><td class="amount">${formatCurrency(a.amount)} <span class="dr-label">Dr</span></td></tr>`;
+        });
+        (bill.extraAllocations || []).forEach(a => {
+          const purchaseBill = currentBills.find(b => b.id === a.purchaseId);
+          const dateStr = purchaseBill ? formatDate(purchaseBill.date) : '';
+          detailsHtml += `<tr class="extra-agst-row"><td>Extra Agst: <span class="clickable agst-link" data-purchase-id="${a.purchaseId}">${a.billNumber || a.purchaseId}</span> ${dateStr ? `(${dateStr})` : ''}</td><td class="amount">${formatCurrency(a.amount)} <span class="cr-label">Cr</span></td></tr>`;
+        });
+        if (bill.extraPayment && bill.extraPayment > 0) {
+          detailsHtml += `<tr><td>Extra Payment</td><td class="amount">${formatCurrency(bill.extraPayment)} <span class="dr-label">Dr</span></td></tr>`;
+        }
+        detailsHtml += '</table>';
+      } else {
+        const unpaid = (bill.amount || 0) - (bill.paid || 0);
+        detailsHtml = (bill.notes || 'Purchase');
+        if (unpaid > 0) detailsHtml += ` <span class="due-tag">DUE ${formatCurrency(unpaid)}</span>`;
+      }
+      const drCrLabel = bill.type === 'payment' ? `<span class="dr-label">Dr</span>` : `<span class="cr-label">Cr</span>`;
+
+      const row = tbody.insertRow();
+      row.innerHTML = `
+        <td>${formatDate(bill.date)}</td><td></td>
+        <td>${bill.type === 'purchase' ? 'Purchase' : 'Payment'}</td>
+        <td><span class="clickable" data-bill-id="${bill.id}">${bill.billNumber || ''}</span></td>
+        <td>${bill.type === 'payment' ? formatCurrency(bill.amount) + drCrLabel : ''}</td>
+        <td>${bill.type === 'purchase' ? formatCurrency(bill.amount) + drCrLabel : ''}</td>
+      `;
+      row.cells[1].innerHTML = detailsHtml;
+      row.cells[1].querySelectorAll('.agst-link').forEach(el => {
+        el.addEventListener('click', e => { e.stopPropagation(); showBillDetails(el.dataset.purchaseId); });
+      });
+      row.cells[3].querySelector('span').addEventListener('click', e => { e.stopPropagation(); showBillDetails(bill.id); });
+
+      // Mobile card (unchanged from previous refined version)
+      const unpaidAmt = (bill.amount || 0) - (bill.paid || 0);
+      const isDuePurchase = bill.type === 'purchase' && unpaidAmt > 0;
+      const iconClass = bill.type === 'purchase' ? 'purchase' : 'payment';
+      const iconSymbol = bill.type === 'purchase' ? '↓' : '↑';
+      const amountSign = bill.type === 'purchase' ? 'Cr' : 'Dr';
+      const amountClass = bill.type === 'purchase' ? 'cr' : 'dr';
+
+      const card = document.createElement('div');
+      card.className = 'bill-card';
+      card.addEventListener('click', () => showBillDetails(bill.id));
+
+      let allocHtml = '';
+      if (bill.type === 'payment') {
+        const allocs = bill.allocations || [];
+        const extraAllocs = bill.extraAllocations || [];
+        if (allocs.length || extraAllocs.length || (bill.extraPayment > 0)) {
+          allocHtml = '<div class="bill-allocations">';
+          allocs.forEach(a => {
+            const purchaseBill = currentBills.find(b => b.id === a.purchaseId);
+            const dateStr = purchaseBill ? formatDate(purchaseBill.date) : '';
+            allocHtml += `<div class="alloc-line">Agst ${a.billNumber || a.purchaseId}${dateStr ? ` (${dateStr})` : ''} — <span class="alloc-amt">${formatCurrency(a.amount)} Dr</span></div>`;
+          });
+          extraAllocs.forEach(a => {
+            const purchaseBill = currentBills.find(b => b.id === a.purchaseId);
+            const dateStr = purchaseBill ? formatDate(purchaseBill.date) : '';
+            allocHtml += `<div class="alloc-line extra-alloc-line">Extra Agst ${a.billNumber || a.purchaseId}${dateStr ? ` (${dateStr})` : ''} — <span class="alloc-amt">${formatCurrency(a.amount)} Cr</span></div>`;
+          });
+          if (bill.extraPayment > 0) {
+            allocHtml += `<div class="alloc-line">Extra Payment — <span class="alloc-amt">${formatCurrency(bill.extraPayment)} Dr</span></div>`;
+          }
+          allocHtml += '</div>';
+        }
+      }
+
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+          <div class="bill-left">
+            <div class="bill-icon ${iconClass}">${iconSymbol}</div>
+            <div class="bill-details">
+              <div class="bill-title">${bill.billNumber || '—'}</div>
+              <div class="bill-meta">
+                <span>${formatDate(bill.date)}</span>
+                ${bill.notes ? `<span>${bill.notes.substring(0,20)}${bill.notes.length>20?'…':''}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <div class="bill-right">
+            <div class="bill-amount">
+              ${formatCurrency(bill.amount)} <span class="${amountClass}">${amountSign}</span>
+            </div>
+            ${isDuePurchase ? `<div class="bill-due-badge">Due ${formatCurrency(unpaidAmt)}</div>` : ''}
+          </div>
+        </div>
+        ${allocHtml}
+      `;
+      mobileCards.appendChild(card);
+    });
+  }
+
+  // Bill details (unchanged)
+  async function showBillDetails(billId) {
+    let bill = currentBills.find(b => b.id === billId);
+    if (!bill) {
+      const snap = await getDoc(doc(db, 'billinbox', billId));
+      if (!snap.exists()) return;
+      bill = { id: snap.id, ...snap.data() };
+    }
+    const content = document.getElementById('billDetailsContent');
+    let imagesHtml = '';
+    if (bill.images && bill.images.length) {
+      imagesHtml = bill.images.map((img, idx) => {
+        const url = imgUrl(img), pid = imgPublicId(img);
+        const imgJson = encodeURIComponent(JSON.stringify(img));
+        return `<div class="image-container">
+          <img src="${url}" class="image-preview" onclick="window.open('${url}','_blank')">
+          <button class="delete-image" data-bill-id="${billId}" data-img-index="${idx}" data-public-id="${pid||''}" data-img-json="${imgJson}">×</button>
+        </div>`;
+      }).join('');
+    } else { imagesHtml = '<p style="color:#999;font-size:13px;">No images attached</p>'; }
+
+    const paid = bill.paid || 0;
+    const unpaid = (bill.amount || 0) - paid;
+    const statusBadge = bill.type === 'purchase'
+      ? (unpaid <= 0 ? `<span style="color:#10bf39;font-weight:600;">✓ Fully Paid</span>` : `<span style="color:#e30202;font-weight:600;">Due: ${formatCurrency(unpaid)}</span>`)
+      : '';
+    let allocHtml = '';
+    if (bill.type === 'payment') {
+      if (bill.allocations && bill.allocations.length) {
+        allocHtml += `<div style="margin-top:12px;"><strong style="font-size:13px;">Against Bill:</strong><table class="detail-table" style="margin-top:4px;">`;
+        for (let a of bill.allocations) {
+          const purchaseDoc = await getDoc(doc(db, 'billinbox', a.purchaseId));
+          const purchaseDate = purchaseDoc.exists() ? formatDate(purchaseDoc.data().date) : '';
+          allocHtml += `<tr class="agst-row"><td><span class="clickable agst-link-detail" data-purchase-id="${a.purchaseId}" style="color:#0066cc;text-decoration:underline;cursor:pointer;">${a.billNumber || a.purchaseId}</span> ${purchaseDate ? `(${purchaseDate})` : ''}</td><td class="amount">${formatCurrency(a.amount)} <span class="dr-label">Dr</span></td></tr>`;
+        }
+        allocHtml += `</table></div>`;
+      }
+      if (bill.extraAllocations && bill.extraAllocations.length) {
+        allocHtml += `<div style="margin-top:10px;"><strong style="font-size:13px;color:#f57f17;">Extra Payment Allocation:</strong><table class="detail-table" style="margin-top:4px;">`;
+        for (let a of bill.extraAllocations) {
+          const purchaseDoc = await getDoc(doc(db, 'billinbox', a.purchaseId));
+          const purchaseDate = purchaseDoc.exists() ? formatDate(purchaseDoc.data().date) : '';
+          allocHtml += `<tr class="extra-agst-row"><td><span class="clickable agst-link-detail" data-purchase-id="${a.purchaseId}" style="color:#0066cc;text-decoration:underline;cursor:pointer;">${a.billNumber || a.purchaseId}</span> ${purchaseDate ? `(${purchaseDate})` : ''}</td><td class="amount">${formatCurrency(a.amount)} <span class="cr-label">Cr</span></td></tr>`;
+        }
+        allocHtml += `</table></div>`;
+      }
+      if (bill.extraPayment && bill.extraPayment > 0) {
+        allocHtml += `<p style="margin-top:8px;font-size:13px;"><strong>Extra (Unallocated):</strong> ${formatCurrency(bill.extraPayment)} <span class="dr-label">Dr</span></p>`;
+      }
+    }
+
+    content.innerHTML = `
+      <p><strong>Date:</strong> ${formatDate(bill.date)}</p>
+      <p><strong>Type:</strong> ${bill.type === 'purchase' ? 'Purchase' : 'Payment'}</p>
+      <p><strong>Bill Number:</strong> ${bill.billNumber || ''}</p>
+      <p><strong>Amount:</strong> ${formatCurrency(bill.amount)}</p>
+      ${bill.type === 'purchase' ? `<p><strong>Paid:</strong> ${formatCurrency(paid)} &nbsp; ${statusBadge}</p>` : ''}
+      <p><strong>Notes:</strong> ${bill.notes || ''}</p>
+      ${allocHtml}
+      <div class="image-previews" style="margin-top:12px;">${imagesHtml}</div>
+    `;
+
+    content.querySelectorAll('.agst-link-detail').forEach(el => {
+      el.addEventListener('click', e => { e.stopPropagation(); closeModal('billDetailsModal'); showBillDetails(el.dataset.purchaseId); });
+    });
+    content.querySelectorAll('.delete-image').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (!confirm('Delete this image?')) return;
+        const bId = btn.dataset.billId, idx = parseInt(btn.dataset.imgIndex);
+        let imgObj = null;
+        try { imgObj = JSON.parse(decodeURIComponent(btn.dataset.imgJson || '{}')); } catch (_) {}
+        await deleteImageFromCloudinary(imgObj || btn.dataset.publicId);
+        const billRef = doc(db, 'billinbox', bId), billSnap = await getDoc(billRef);
+        if (billSnap.exists()) {
+          const images = [...(billSnap.data().images || [])]; images.splice(idx, 1);
+          await updateDoc(billRef, { images });
+          currentBills = currentBills.map(b => b.id === bId ? { id: bId, ...billSnap.data(), images } : b);
+          showBillDetails(bId); await loadBillsForShop();
+        }
+      });
+    });
+
+    document.getElementById('editBillBtn').onclick = () => { closeModal('billDetailsModal'); openEditBillModal(bill); };
+    document.getElementById('addMoreImagesBtn').onclick = () => { closeModal('billDetailsModal'); openAddImagesModal(bill.id); };
+    document.getElementById('billDetailsModal').style.display = 'flex';
+  }
+
+  function openEditBillModal(bill) {
+    document.getElementById('editBillId').value     = bill.id;
+    document.getElementById('editDate').value       = bill.date;
+    document.getElementById('editAmount').value     = bill.amount;
+    document.getElementById('editBillNumber').value = bill.billNumber || '';
+    document.getElementById('editNotes').value      = bill.notes || '';
+    document.getElementById('editBillModal').style.display = 'flex';
+  }
+
+  document.getElementById('editBillForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editBillId').value;
+    const newAmount = parseFloat(document.getElementById('editAmount').value);
+    const updates = {
+      date: document.getElementById('editDate').value, amount: newAmount,
+      billNumber: document.getElementById('editBillNumber').value, notes: document.getElementById('editNotes').value
+    };
+    await updateDoc(doc(db, 'billinbox', id), updates);
+    closeModal('editBillModal'); await loadBillsForShop();
+  });
+
+  function openAddImagesModal(billId) {
+    document.getElementById('imagesBillId').value = billId;
+    document.getElementById('addImagesModal').style.display = 'flex';
+  }
+
+  document.getElementById('addImagesForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const billId = document.getElementById('imagesBillId').value;
+    const files = document.getElementById('moreImages').files;
+    if (files.length) {
+      const newImgs = await uploadImages(files);
+      const billRef = doc(db, 'billinbox', billId), billSnap = await getDoc(billRef);
+      const existing = billSnap.data().images || [];
+      await updateDoc(billRef, { images: [...existing, ...newImgs] });
+    }
+    closeModal('addImagesModal'); e.target.reset(); await loadBillsForShop();
+  });
+
+  // Bill type change
+  document.getElementById('billType').addEventListener('change', async function () {
+    const val = this.value;
+    document.getElementById('purchaseFields').style.display = val === 'purchase' ? 'block' : 'none';
+    document.getElementById('paymentFields').style.display  = val === 'payment'  ? 'block' : 'none';
+    if (val === 'payment') { await loadUnpaidPurchases(); await renderExtraPaymentBanner(); }
+  });
+
+  async function renderExtraPaymentBanner() {
+    const banner = document.getElementById('extraPaymentBanner');
+    const allocSec = document.getElementById('extraAllocSection');
+    if (!currentShopId) { banner.style.display = 'none'; allocSec.style.display = 'none'; return; }
+    const shopSnap = await getDoc(doc(db, 'shops', currentShopId));
+    const extra = shopSnap.exists() ? (shopSnap.data().extraPayment || 0) : 0;
+    currentExtraBalance = extra;
+    if (extra <= 0) { banner.style.display = 'none'; allocSec.style.display = 'none'; return; }
+    banner.style.display = 'block';
+    banner.innerHTML = `<div class="extra-payment-banner">
+      <span class="ep-info">💰 Extra Payment Available</span>
+      <span class="ep-badge">${formatCurrency(extra)}</span>
+      <button type="button" class="use-extra-btn" id="useExtraBtn">Use Extra Payment</button>
+    </div>`;
+    document.getElementById('useExtraBtn').addEventListener('click', async () => {
+      const isVisible = allocSec.style.display !== 'none';
+      if (isVisible) { allocSec.style.display = 'none'; document.getElementById('useExtraBtn').textContent = 'Use Extra Payment'; }
+      else { await loadExtraAllocList(extra); allocSec.style.display = 'block'; document.getElementById('useExtraBtn').textContent = 'Hide Extra Allocation'; }
+    });
+  }
+
+  async function loadExtraAllocList(availableExtra) {
+    const list = document.getElementById('extraAllocList');
+    const note = document.getElementById('extraAvailableNote');
+    list.innerHTML = '';
+    const q = query(collection(db, 'billinbox'), where('shopId', '==', currentShopId), where('type', '==', 'purchase'));
+    const snap = await getDocs(q);
+    const purchases = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const duePurchases = purchases.filter(p => (p.amount || 0) - (p.paid || 0) > 0);
+    if (!duePurchases.length) { list.innerHTML = '<p style="color:#888;font-size:13px;">No due bills found.</p>'; note.textContent = ''; return; }
+
+    function recalcRemaining() {
+      let used = 0;
+      list.querySelectorAll('.extra-alloc-input').forEach(inp => { used += parseFloat(inp.value) || 0; });
+      const remaining = availableExtra - used;
+      note.innerHTML = `Available: <strong>${formatCurrency(availableExtra)}</strong> | Used: <strong style="color:#f57f17">${formatCurrency(used)}</strong> | Remaining: <strong style="color:${remaining < -0.001 ? '#e30202' : '#10bf39'}">${formatCurrency(Math.max(0,remaining))}</strong>`;
+      list.querySelectorAll('.extra-alloc-input').forEach(inp => {
+        inp.style.display = (remaining <= 0.001 && (parseFloat(inp.value)||0) === 0) ? 'none' : '';
+      });
+    }
+
+    duePurchases.forEach(p => {
+      const due = (p.amount || 0) - (p.paid || 0);
+      const div = document.createElement('div'); div.className = 'extra-alloc-item';
+      div.innerHTML = `
+        <span class="eai-label"><strong>${p.billNumber || 'No#'}</strong> — Due: <span style="color:#e30202;font-weight:600;">${formatCurrency(due)}</span></span>
+        <div class="eai-inputs"><input type="number" class="extra-alloc-input" data-purchase-id="${p.id}" data-bill-number="${p.billNumber||''}" data-due="${due}" placeholder="Extra ₹" min="0" max="${Math.min(due,availableExtra)}" step="1"></div>
+      `;
+      list.appendChild(div);
+      div.querySelector('.extra-alloc-input').addEventListener('input', function() {
+        const payInp = document.querySelector(`.payment-alloc[data-purchase-id="${p.id}"]`);
+        const payUsed = payInp ? (parseFloat(payInp.value)||0) : 0;
+        let usedByOthers = 0;
+        list.querySelectorAll('.extra-alloc-input').forEach(inp => { if (inp !== this) usedByOthers += parseFloat(inp.value)||0; });
+        const maxAllowed = Math.min(due - payUsed, availableExtra - usedByOthers);
+        if ((parseFloat(this.value)||0) > maxAllowed + 0.001) {
+          this.classList.add('input-error');
+          setTimeout(() => { this.value = Math.max(0,maxAllowed).toFixed(0); this.classList.remove('input-error'); recalcRemaining(); if(payInp) payInp.max = Math.max(0,due-(parseFloat(this.value)||0)); }, 600);
+        } else { this.classList.remove('input-error'); }
+        if (payInp) { payInp.max = Math.max(0, due - (parseFloat(this.value)||0)); if ((parseFloat(payInp.value)||0) > parseFloat(payInp.max)+0.001) payInp.value = payInp.max; }
+        recalcRemaining();
+      });
+    });
+    recalcRemaining();
+  }
+
+  async function loadUnpaidPurchases() {
+    if (!currentShopId) return;
+    const q = query(collection(db, 'billinbox'), where('shopId', '==', currentShopId), where('type', '==', 'purchase'));
+    const snap = await getDocs(q);
+    const purchases = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const list = document.getElementById('unpaidPurchasesList');
+    list.innerHTML = '';
+    const due = purchases.filter(p => (p.amount || 0) - (p.paid || 0) > 0);
+    if (!due.length) { list.innerHTML = '<p style="color:#999;font-size:13px;">No unpaid bills found.</p>'; return; }
+    due.forEach(p => {
+      const unpaid = (p.amount || 0) - (p.paid || 0);
+      const dateStr = formatDate(p.date);
+      const div = document.createElement('div'); div.className = 'allocation-item';
+      div.innerHTML = `<span><strong>${p.billNumber||'No#'}</strong> ${dateStr ? `(${dateStr})` : ''} — Due: ${formatCurrency(unpaid)}</span>
+        <input type="number" class="payment-alloc" data-purchase-id="${p.id}" data-bill-number="${p.billNumber||''}" data-due="${unpaid}" placeholder="Amount" min="0" max="${unpaid}" step="0.01">`;
+      list.appendChild(div);
+      const allocInp = div.querySelector('.payment-alloc');
+      allocInp.addEventListener('input', () => {
+        const extraInp = document.querySelector(`.extra-alloc-input[data-purchase-id="${p.id}"]`);
+        const extraUsed = extraInp ? (parseFloat(extraInp.value)||0) : 0;
+        const maxAllowed = Math.max(0, unpaid - extraUsed);
+        if ((parseFloat(allocInp.value)||0) > maxAllowed + 0.001) allocInp.value = maxAllowed.toFixed(0);
+        if (extraInp) { extraInp.max = Math.max(0, unpaid - (parseFloat(allocInp.value)||0)); if ((parseFloat(extraInp.value)||0) > parseFloat(extraInp.max)+0.001) extraInp.value = extraInp.max; }
+      });
+    });
+  }
+
+  async function generateBillNumber(date, type) {
+    const prefix = type === 'purchase' ? 'P' : 'M';
+    const d = new Date(date);
+    const base = prefix + d.getDate().toString().padStart(2,'0') + (d.getMonth()+1).toString().padStart(2,'0') + d.getFullYear().toString().slice(-2);
+    const q = query(collection(db, 'billinbox'), where('billNumber', '>=', base), where('billNumber', '<', base + 'Z'));
+    const snap = await getDocs(q);
+    const existing = snap.docs.map(d => d.data().billNumber);
+    if (!existing.includes(base)) return base;
+    let suffix = 'A';
+    while (existing.includes(base + suffix)) suffix = String.fromCharCode(suffix.charCodeAt(0) + 1);
+    return base + suffix;
+  }
+
+  // Add shop
+  document.getElementById('shopForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await addDoc(collection(db, 'shops'), {
+      shopName: document.getElementById('shopName').value,
+      contact:  document.getElementById('contactNumber').value,
+      address:  document.getElementById('address').value,
+      createdAt: new Date().toISOString(), extraPayment: 0
+    });
+    closeModal('addShopModal'); e.target.reset(); loadShops();
+  });
+
+  // Add bill (unchanged)
+  document.getElementById('billForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const type = document.getElementById('billType').value;
+    if (!type) { alert('Please select bill type'); return; }
+    const date = type === 'purchase' ? document.getElementById('purchaseDate').value : document.getElementById('paymentDate').value;
+    if (!date) { alert('Please select a date'); return; }
+    const billData = { shopId: currentShopId, type, date, createdAt: new Date().toISOString() };
+
+    try {
+      if (type === 'purchase') {
+        const amount = parseFloat(document.getElementById('purchaseAmount').value);
+        if (isNaN(amount) || amount <= 0) { alert('Please enter a valid amount'); return; }
+        let billNumber = document.getElementById('purchaseBillNumber').value.trim();
+        if (!billNumber) billNumber = await generateBillNumber(date, type);
+        const images = document.getElementById('purchaseImages').files.length ? await uploadImages(document.getElementById('purchaseImages').files) : [];
+        Object.assign(billData, { amount, billNumber, images, paid: 0, notes: document.getElementById('purchaseNotes').value.trim() || 'Purchase' });
+        await addDoc(collection(db, 'billinbox'), billData);
+      } else {
+        let billNumber = document.getElementById('paymentBillNumber').value.trim();
+        if (!billNumber) billNumber = await generateBillNumber(date, type);
+        const images = document.getElementById('paymentImages').files.length ? await uploadImages(document.getElementById('paymentImages').files) : [];
+        const notes = document.getElementById('paymentNotes').value.trim() || 'Payment';
+        const allocInputs = document.querySelectorAll('.payment-alloc');
+        const allocArray = [], paidUpdates = [];
+        let totalNormalAlloc = 0;
+        allocInputs.forEach(inp => {
+          const val = parseFloat(inp.value) || 0;
+          if (val > 0) { totalNormalAlloc += val; allocArray.push({ purchaseId: inp.dataset.purchaseId, billNumber: inp.dataset.billNumber, amount: val }); paidUpdates.push({ purchaseId: inp.dataset.purchaseId, amount: val }); }
+        });
+        const newExtra = parseFloat(document.getElementById('extraPaymentInput').value) || 0;
+        const totalAmount = totalNormalAlloc + newExtra;
+        if (totalAmount === 0) { alert('Please enter at least one payment amount'); return; }
+        const extraAllocInputs = document.querySelectorAll('.extra-alloc-input');
+        const extraAllocArray = [], extraPaidUpdates = [];
+        let totalExtraUsed = 0;
+        extraAllocInputs.forEach(inp => {
+          const val = parseFloat(inp.value) || 0;
+          if (val > 0) { totalExtraUsed += val; extraAllocArray.push({ purchaseId: inp.dataset.purchaseId, billNumber: inp.dataset.billNumber, amount: val }); extraPaidUpdates.push({ purchaseId: inp.dataset.purchaseId, amount: val }); }
+        });
+        if (totalExtraUsed > currentExtraBalance + 0.001) { alert(`Extra allocation exceeds available balance (${formatCurrency(currentExtraBalance)})`); return; }
+        const mainAllocs = [], mainExtraAllocs = [], splitAllocsMap = {};
+        for (const alloc of allocArray) {
+          const purchase = currentBills.find(b => b.id === alloc.purchaseId);
+          const billDate = purchase ? purchase.date : date;
+          if (billDate <= date) { mainAllocs.push(alloc); } else { if (!splitAllocsMap[billDate]) splitAllocsMap[billDate] = { allocs: [], extraAllocs: [] }; splitAllocsMap[billDate].allocs.push(alloc); }
+        }
+        for (const alloc of extraAllocArray) {
+          const purchase = currentBills.find(b => b.id === alloc.purchaseId);
+          const billDate = purchase ? purchase.date : date;
+          if (billDate <= date) { mainExtraAllocs.push(alloc); } else { if (!splitAllocsMap[billDate]) splitAllocsMap[billDate] = { allocs: [], extraAllocs: [] }; splitAllocsMap[billDate].extraAllocs.push(alloc); }
+        }
+        const mainPayTotal = mainAllocs.reduce((s, a) => s + a.amount, 0) + newExtra;
+        Object.assign(billData, { amount: mainPayTotal, billNumber, images, notes, allocations: mainAllocs, extraAllocations: mainExtraAllocs, extraPayment: newExtra });
+        await addDoc(collection(db, 'billinbox'), billData);
+        for (const [splitDate, splitData] of Object.entries(splitAllocsMap)) {
+          const splitAmount = splitData.allocs.reduce((s, a) => s + a.amount, 0);
+          const splitBillNum = await generateBillNumber(splitDate, 'payment');
+          await addDoc(collection(db, 'billinbox'), { shopId: currentShopId, type: 'payment', date: splitDate, createdAt: new Date().toISOString(), amount: splitAmount, billNumber: splitBillNum, notes, images: [], allocations: splitData.allocs, extraAllocations: splitData.extraAllocs, extraPayment: 0 });
+        }
+        for (const upd of paidUpdates) { const ref = doc(db,'billinbox',upd.purchaseId), snap = await getDoc(ref); if(snap.exists()) await updateDoc(ref,{paid:(snap.data().paid||0)+upd.amount}); }
+        for (const upd of extraPaidUpdates) { const ref = doc(db,'billinbox',upd.purchaseId), snap = await getDoc(ref); if(snap.exists()) await updateDoc(ref,{paid:(snap.data().paid||0)+upd.amount}); }
+        const shopRef = doc(db,'shops',currentShopId), shopSnap = await getDoc(shopRef);
+        await updateDoc(shopRef, { extraPayment: Math.max(0, (shopSnap.data().extraPayment||0) - totalExtraUsed + newExtra) });
+      }
+      closeModal('addBillModal'); e.target.reset();
+      document.getElementById('purchaseFields').style.display = 'none';
+      document.getElementById('paymentFields').style.display  = 'none';
+      document.getElementById('extraPaymentBanner').style.display = 'none';
+      document.getElementById('extraAllocSection').style.display  = 'none';
+      await loadBillsForShop();
+    } catch (err) { console.error('Error saving bill:', err); alert('Failed to save bill. Check console.'); }
+  });
+
+  // Navigation
+  document.getElementById('backToShopList').addEventListener('click', () => {
+    document.getElementById('shopDetailView').classList.remove('active');
+    document.getElementById('shopListView').classList.add('active');
+    currentShopId = null;
+    window.scrollTo(0, 0);
+    updateMobileHeaderBtns('shopList');
+  });
+  document.getElementById('editShopDetailBtn').addEventListener('click', () => { if (currentShopId) openEditShopModal(currentShopId); });
+  document.getElementById('shopSearchInput').addEventListener('input', renderShopList);
+  document.getElementById('shopFilterBtn').addEventListener('click', () => document.getElementById('shopFilterOptions').classList.toggle('show'));
+  document.querySelectorAll('#shopFilterOptions a').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault(); shopFilter = e.target.dataset.filter;
+      document.getElementById('shopFilterValue').textContent = shopFilter;
+      document.getElementById('shopFilterOptions').classList.remove('show'); renderShopList();
+    });
+  });
+  document.getElementById('billSearchInput').addEventListener('input', e => { billSearch = e.target.value; renderBillTable(); });
+  document.getElementById('billFilterBtn').addEventListener('click', () => document.getElementById('billFilterOptions').classList.toggle('show'));
+  document.querySelectorAll('#billFilterOptions a').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault(); billFilter = e.target.dataset.filter;
+      document.getElementById('billFilterValue').textContent = e.target.textContent;
+      document.getElementById('billFilterOptions').classList.remove('show'); renderBillTable();
+    });
+  });
+  document.getElementById('addShopBtn').addEventListener('click', () => { document.getElementById('addShopModal').style.display = 'flex'; });
+  document.getElementById('addBillBtn').addEventListener('click', () => {
+    if (!currentShopId) return;
+    document.getElementById('billShopId').value = currentShopId;
+    document.getElementById('billType').value = '';
+    document.getElementById('purchaseFields').style.display = 'none';
+    document.getElementById('paymentFields').style.display  = 'none';
+    document.getElementById('extraPaymentBanner').style.display = 'none';
+    document.getElementById('extraAllocSection').style.display  = 'none';
+    document.getElementById('addBillModal').style.display = 'flex';
+  });
+  window.addEventListener('click', e => {
+    if (e.target.classList.contains('modal-overlay')) e.target.style.display = 'none';
+    if (!e.target.closest('.filter-dropdown')) { document.getElementById('shopFilterOptions').classList.remove('show'); document.getElementById('billFilterOptions').classList.remove('show'); }
+  });
+
+  loadShops();
+
+  // ── Scroll to Top ──
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  window.addEventListener('scroll', () => {
+    scrollTopBtn.classList.toggle('visible', window.scrollY > 300);
+  });
+  scrollTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+
+  import { checkPageAccess, applySidebarPermissions,
+          applyQuickActionPermissions, addLogoutToSidebar } from './auth.js';
+  if (!checkPageAccess()) throw new Error('Access denied');
+  applySidebarPermissions();
+  addLogoutToSidebar();
+</script>
+<script>
+(function(){
+  try { var d=JSON.parse(localStorage.getItem('staffAuth')||'null');
+    if(!d||!d.userId){location.href='login.html?redirect=billing.html';return;}
+  } catch(e){location.href='login.html';return;}
+  var o=document.createElement('div');
+  o.id='__auth_guard__';
+  o.style.cssText='position:fixed;inset:0;background:#000;z-index:99999;';
+  document.documentElement.appendChild(o);
+})();
+</script>
+<button id="scrollTopBtn" title="Back to top">&#8679;</button>
+</body>
+</html>

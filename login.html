@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Login · SP Fashion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0a0a;--surface:#111;--surface2:#161616;
+      --border:#1f1f1f;--border2:#2a2a2a;
+      --green:#10bf39;--green-d:#0a8a28;--red:#e30202;
+      --text:#f0f0f0;--muted:#555;--muted2:#888;
+      --font:'DM Sans',sans-serif;--display:'Syne',sans-serif;
+    }
+    body{font-family:var(--font);background:var(--bg);min-height:100dvh;
+         display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden;}
+
+    /* Grid bg */
+    body::before{content:'';position:fixed;inset:0;
+      background-image:linear-gradient(rgba(16,191,57,.03)1px,transparent 1px),
+                       linear-gradient(90deg,rgba(16,191,57,.03)1px,transparent 1px);
+      background-size:40px 40px;pointer-events:none;}
+
+    /* Glow blobs */
+    .blob{position:fixed;border-radius:50%;filter:blur(90px);opacity:.12;pointer-events:none;
+          animation:drift 12s ease-in-out infinite alternate;}
+    .b1{width:340px;height:340px;background:#10bf39;top:-60px;left:-80px;}
+    .b2{width:260px;height:260px;background:#0066cc;bottom:-40px;right:-60px;animation-delay:-6s;}
+    @keyframes drift{from{transform:translate(0,0) scale(1);}to{transform:translate(30px,20px) scale(1.08);}}
+
+    /* Card */
+    .card{position:relative;width:100%;max-width:420px;background:var(--surface);
+          border:1px solid var(--border);border-radius:20px;
+          box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04) inset;
+          overflow:hidden;animation:rise .5s cubic-bezier(.22,1,.36,1) both;}
+    @keyframes rise{from{opacity:0;transform:translateY(28px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+
+    /* Card head */
+    .card-head{padding:36px 36px 28px;border-bottom:1px solid var(--border);}
+    .brand-row{display:flex;align-items:center;gap:11px;margin-bottom:22px;}
+    .brand-icon{width:40px;height:40px;background:linear-gradient(135deg,#10bf39,#0a8a28);
+                border-radius:11px;display:flex;align-items:center;justify-content:center;
+                flex-shrink:0;box-shadow:0 4px 16px rgba(16,191,57,.35);}
+    .brand-name{font-family:var(--display);font-size:18px;font-weight:800;
+                color:var(--text);letter-spacing:-.3px;}
+    .brand-sub{font-size:12px;color:var(--muted);margin-top:1px;}
+    .card-title{font-size:26px;font-weight:700;color:var(--text);letter-spacing:-.5px;line-height:1.15;}
+    .card-sub{font-size:14px;color:var(--muted2);margin-top:6px;}
+
+    /* Card body */
+    .card-body{padding:28px 36px 36px;}
+
+    /* Error box */
+    .err-box{background:#1a0808;border:1px solid #3a1010;color:#e07070;
+             padding:11px 15px;border-radius:10px;font-size:13px;margin-bottom:22px;
+             display:none;align-items:center;gap:9px;
+             animation:shake .35s cubic-bezier(.36,.07,.19,.97);}
+    .err-box.show{display:flex;}
+    @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-6px);}60%{transform:translateX(6px);}}
+
+    /* Form */
+    .form-group{margin-bottom:18px;}
+    .form-label{display:block;font-size:12px;font-weight:600;color:var(--muted2);
+                letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px;}
+    .input-wrap{position:relative;}
+    .form-input{width:100%;padding:13px 44px 13px 15px;background:var(--surface2);
+                border:1px solid var(--border2);border-radius:11px;font-size:15px;
+                font-family:var(--font);color:var(--text);outline:none;
+                transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;}
+    .form-input::placeholder{color:var(--muted);}
+    .form-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(16,191,57,.12);}
+    .form-input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(227,2,2,.1);}
+    .input-icon{position:absolute;right:13px;top:50%;transform:translateY(-50%);
+                color:var(--muted);pointer-events:none;display:flex;}
+    .eye-btn{position:absolute;right:11px;top:50%;transform:translateY(-50%);
+             background:none;border:none;cursor:pointer;color:var(--muted);
+             display:flex;padding:4px;border-radius:6px;transition:color .15s;}
+    .eye-btn:hover{color:var(--muted2);}
+
+    /* Submit button */
+    .btn-submit{width:100%;padding:14px;background:var(--green);color:#fff;border:none;
+                border-radius:11px;font-size:15px;font-weight:700;font-family:var(--font);
+                cursor:pointer;margin-top:6px;display:flex;align-items:center;
+                justify-content:center;gap:8px;
+                transition:background .2s,transform .15s,box-shadow .2s;
+                box-shadow:0 4px 20px rgba(16,191,57,.3);}
+    .btn-submit:hover:not(:disabled){background:var(--green-d);transform:translateY(-1px);
+                                     box-shadow:0 6px 24px rgba(16,191,57,.4);}
+    .btn-submit:disabled{opacity:.55;cursor:not-allowed;}
+
+    /* Spinner */
+    .spin{display:inline-block;width:17px;height:17px;
+          border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+          border-radius:50%;animation:rot .6s linear infinite;flex-shrink:0;}
+    @keyframes rot{to{transform:rotate(360deg);}}
+
+    .footer-note{text-align:center;margin-top:22px;font-size:12px;color:var(--muted);
+                 display:flex;align-items:center;justify-content:center;gap:6px;}
+
+    @media(max-width:480px){
+      .card-head,.card-body{padding-left:24px;padding-right:24px;}
+      .card-title{font-size:22px;}
+    }
+  </style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+
+<div class="card">
+  <div class="card-head">
+    <div class="brand-row">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2">
+          <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">SP Fashion</div>
+        <div class="brand-sub">Management System</div>
+      </div>
+    </div>
+    <h1 class="card-title">Welcome back</h1>
+    <p class="card-sub">Sign in to your staff account</p>
+  </div>
+
+  <div class="card-body">
+    <div id="errBox" class="err-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span id="errMsg"></span>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="username">Username</label>
+      <div class="input-wrap">
+        <input type="text" id="username" class="form-input" placeholder="your_username"
+               autocomplete="username" autocapitalize="none" spellcheck="false">
+        <span class="input-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+        </span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="password">Password</label>
+      <div class="input-wrap">
+        <input type="password" id="password" class="form-input" placeholder="••••••••"
+               autocomplete="current-password">
+        <button type="button" class="eye-btn" id="eyeBtn" aria-label="Toggle password">
+          <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <button id="loginBtn" class="btn-submit">Sign In</button>
+
+    <div class="footer-note">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      Secured · SP Fashion Staff Portal
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore, collection, query, where, getDocs,
+  addDoc, updateDoc, deleteDoc, doc, orderBy
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getRedirectTarget, isLoggedIn } from './auth.js';
+
+const FB = {
+  apiKey:"AIzaSyCVXql_12NNa9_bUXYfWhj8Z7ZUqTyD1ak",
+  authDomain:"sp-fashion-beca2.firebaseapp.com",
+  projectId:"sp-fashion-beca2",
+  storageBucket:"sp-fashion-beca2.firebasestorage.app",
+  messagingSenderId:"734725526616",
+  appId:"1:734725526616:web:4ed1410e441789653e262d"
+};
+const db = getFirestore(initializeApp(FB));
+
+/* ── Already logged in → redirect away ── */
+if (isLoggedIn()) {
+  const req = new URLSearchParams(window.location.search).get('redirect') || '';
+  window.location.href = getRedirectTarget(req);
+}
+
+/* ── Device detection (best-effort from User-Agent) ── */
+function detectDevice() {
+  const ua = navigator.userAgent;
+
+  let browser = 'Browser';
+  if (/Edg\//i.test(ua))            browser = 'Edge';
+  else if (/OPR\/|Opera/i.test(ua)) browser = 'Opera';
+  else if (/Firefox\/\d/i.test(ua)) browser = 'Firefox';
+  else if (/Chrome\/\d/i.test(ua))  browser = 'Chrome';
+  else if (/Safari\/\d/i.test(ua))  browser = 'Safari';
+
+  let deviceName = 'Unknown';
+  let isMobile   = false;
+
+  if (/iPhone/i.test(ua)) {
+    deviceName = 'iPhone'; isMobile = true;
+  } else if (/iPad/i.test(ua)) {
+    deviceName = 'iPad'; isMobile = true;
+  } else if (/Android/i.test(ua)) {
+    isMobile = true;
+    // Try to extract Android device model from UA
+    const m = ua.match(/Android [^;]+;\s*([^)]+)\s*(?:Build|MIUI|\))/);
+    deviceName = m ? m[1].trim() : 'Android';
+  } else if (/Windows/i.test(ua)) {
+    deviceName = 'Windows PC';
+  } else if (/Macintosh|Mac OS X/i.test(ua)) {
+    deviceName = 'Mac';
+  } else if (/Linux/i.test(ua)) {
+    deviceName = 'Linux PC';
+  }
+
+  return {
+    displayName: `${browser} on ${deviceName}`,
+    isMobile,
+    browser,
+    deviceName,
+  };
+}
+
+/* ── SHA-256 ── */
+async function hashPw(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ── Generate a session token (UUID) ── */
+function makeToken() {
+  return crypto.randomUUID ? crypto.randomUUID()
+    : Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+/* ── Cleanup: keep only newest 5 sessions per user ── */
+async function cleanupOldSessions(userId) {
+  try {
+    const snap = await getDocs(
+      query(collection(db,'sessions'), where('userId','==',userId))
+    );
+    if (snap.size <= 5) return;
+    // Sort by loginTime ascending (oldest first), delete oldest beyond 5
+    const sorted = snap.docs
+      .map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(a.loginTime||'').localeCompare(b.loginTime||''));
+    const toDelete = sorted.slice(0, sorted.length - 5);
+    await Promise.all(toDelete.map(s => deleteDoc(doc(db,'sessions',s.id))));
+  } catch(e) { console.warn('Session cleanup:', e); }
+}
+
+/* ── UI helpers ── */
+const eyeBtn  = document.getElementById('eyeBtn');
+const eyeIcon = document.getElementById('eyeIcon');
+const pwInp   = document.getElementById('password');
+const loginBtn= document.getElementById('loginBtn');
+const errBox  = document.getElementById('errBox');
+const errMsg  = document.getElementById('errMsg');
+
+const EYE_ON  = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+const EYE_OFF = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+
+eyeBtn.addEventListener('click', () => {
+  const show = pwInp.type === 'password';
+  pwInp.type = show ? 'text' : 'password';
+  eyeIcon.innerHTML = show ? EYE_OFF : EYE_ON;
+});
+
+function showErr(msg) {
+  errMsg.textContent = msg;
+  errBox.style.display = 'flex';
+  errBox.classList.remove('show');
+  void errBox.offsetWidth;
+  errBox.classList.add('show');
+  document.getElementById('username').classList.add('err');
+  pwInp.classList.add('err');
+}
+function clearErr() {
+  errBox.style.display='none'; errBox.classList.remove('show');
+  document.getElementById('username').classList.remove('err');
+  pwInp.classList.remove('err');
+}
+['username','password'].forEach(id =>
+  document.getElementById(id).addEventListener('input', clearErr));
+
+/* ── Login ── */
+async function doLogin() {
+  clearErr();
+  const username = document.getElementById('username').value.trim().toLowerCase();
+  const password = pwInp.value;
+  if (!username) { showErr('Please enter your username'); return; }
+  if (!password) { showErr('Please enter your password'); return; }
+
+  loginBtn.disabled = true;
+  loginBtn.innerHTML = '<span class="spin"></span> Signing in…';
+
+  try {
+    /* 1 – Find user */
+    const snap = await getDocs(
+      query(collection(db,'staff'), where('username','==',username))
+    );
+    if (snap.empty) { showErr('Invalid username or password'); return; }
+
+    const staffDoc = snap.docs[0];
+    const staff    = { id: staffDoc.id, ...staffDoc.data() };
+
+    /* 2 – Account enabled? */
+    if (staff.status === 'disabled') {
+      showErr('Your account is disabled. Contact your administrator.'); return;
+    }
+
+    /* 3 – Password check */
+    if (staff.passwordHash !== await hashPw(password)) {
+      showErr('Invalid username or password'); return;
+    }
+
+    /* 4 – Build session payload (no passwordHash) */
+    const session = {
+      userId:      staff.id,
+      name:        staff.name        || '',
+      username:    staff.username    || '',
+      role:        staff.role        || 'staff',
+      permissions: staff.permissions || {},
+      loginTime:   new Date().toISOString(),
+    };
+    if (staff.role === 'admin' || staff.role === 'master_admin') {
+      const all = ['dashboard','products','suppliers','billing','invoices',
+                   'cashbook','staff','coupons','settings'];
+      all.forEach(p => session.permissions[p] = true);
+    }
+
+    /* 5 – Save to localStorage */
+    localStorage.setItem('staffAuth', JSON.stringify(session));
+
+    /* 6 – Detect device */
+    const device = detectDevice();
+    const token  = makeToken();
+
+    /* 7 – Write Firestore session */
+    const sessRef = await addDoc(collection(db,'sessions'), {
+      userId:      staff.id,
+      sessionToken: token,
+      loginTime:   new Date().toISOString(),
+      lastSeen:    new Date().toISOString(),
+      device:      device.displayName,
+      deviceName:  device.deviceName,
+      browser:     device.browser,
+      isMobile:    device.isMobile,
+      userAgent:   navigator.userAgent.slice(0, 250),
+      active:      true,
+      forceLogout: false,
+    });
+
+    /* 8 – Store sessionId + token locally */
+    localStorage.setItem('sessionId',    sessRef.id);
+    localStorage.setItem('sessionToken', token);
+
+    /* 9 – Update lastLogin on staff doc */
+    updateDoc(doc(db,'staff',staff.id), {
+      lastLogin: new Date().toISOString()
+    }).catch(console.warn);
+
+    /* 10 – Cleanup old sessions (max 5) */
+    cleanupOldSessions(staff.id).catch(console.warn);
+
+    /* 11 – Smart redirect */
+    const req = new URLSearchParams(window.location.search).get('redirect') || '';
+    window.location.href = getRedirectTarget(req);
+
+  } catch (err) {
+    console.error('Login error', err);
+    showErr('Login failed. Please try again.');
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Sign In';
+  }
+}
+
+loginBtn.addEventListener('click', doLogin);
+document.getElementById('username').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+pwInp.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>

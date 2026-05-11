@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings - SP Fashion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-green: #10bf39;
+      --accent-red: #e30202;
+      --accent-blue: #0066cc;
+      --font: "DM Sans", "Inter", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: #f5f5f5; min-height: 100vh; overflow-x: hidden; }
+    .app { display: flex; width: 100%; min-height: 100vh; }
+
+    /* ── Sidebar (same as cashBook.html) ── */
+    .sidebar { background: #1a1a1a; color: white; width: 200px; padding: 20px 0; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 1100; overflow-y: auto; transition: transform 0.3s ease-in-out; }
+    .brand { font-size: 18px; font-weight: bold; margin-bottom: 30px; text-align: center; color: white; }
+    .nav-link { text-decoration: none; color: white; display: block; margin-bottom: 5px; }
+    .nav-inner { display: flex; align-items: center; gap: 12px; padding: 12px 20px; transition: background .3s; font-size: 14px; }
+    .nav-link:hover .nav-inner { background-color: #333; }
+    .nav-link.active .nav-inner { background: #0066cc; border-left: 3px solid #fff; }
+    .nav-inner img { width: 16px; height: 16px; }
+
+    /* ── Mobile sidebar overlay ── */
+    .mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1099; opacity: 0; visibility: hidden; transition: opacity .3s; }
+    .mobile-overlay.active { opacity: 1; visibility: visible; }
+
+    /* ── Layout ── */
+    .main-content { margin-left: 200px; width: calc(100% - 200px); background: #fff; display: flex; flex-direction: column; min-height: 100vh; }
+    .top-header { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,.1); position: sticky; top: 0; z-index: 1050; min-height: 60px; }
+    .page-title { font-size: 20px; font-weight: 600; color: #333; }
+    .menu-toggle { display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: #333; }
+    .content-area { padding: 30px; flex-grow: 1; background: #f8f9fa; }
+
+    /* ── Settings Grid Layout ── */
+    .settings-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 1200px; }
+    .settings-grid .full-width { grid-column: 1 / -1; }
+
+    /* ── Settings Section Card ── */
+    .settings-section {
+      background: white; border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.1);
+      border: 1px solid #e8e8e8; overflow: hidden;
+    }
+    .section-header {
+      padding: 16px 20px; border-bottom: 1px solid #f0f0f0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-header h2 { font-size: 15px; font-weight: 700; color: #222; }
+    .section-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: #737373; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0;
+    }
+    .section-icon img { width: 16px; height: 16px; }
+    .section-body { padding: 18px 20px; }
+
+    /* ── Form Elements ── */
+    .form-row { margin-bottom: 14px; }
+    .form-row:last-child { margin-bottom: 0; }
+    .form-row label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px; }
+    .form-row input, .form-row select {
+      width: 100%; padding: 9px 12px;
+      border: 1px solid #ddd; border-radius: 8px;
+      font-size: 14px; outline: none;
+      transition: border-color .2s; font-family: var(--font);
+      background: white; color: #333;
+    }
+    .form-row input:focus, .form-row select:focus { border-color: var(--accent-green); }
+
+    /* ── Toggle row ── */
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #f5f5f5; }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-info .toggle-label { font-size: 14px; font-weight: 600; color: #333; }
+    .toggle-info .toggle-desc { font-size: 12px; color: #888; margin-top: 2px; }
+    .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 24px; transition: .3s; }
+    .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .3s; }
+    .toggle-switch input:checked + .toggle-slider { background: var(--accent-green); }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+    /* ── Radio group ── */
+    .radio-group { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; }
+    .radio-option { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: #333; }
+    .radio-option input[type=radio] { width: 16px; height: 16px; accent-color: var(--accent-green); cursor: pointer; }
+
+    /* ── Template grid ── */
+    .template-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+    .template-card {
+      border: 2px solid #e0e0e0; border-radius: 8px; padding: 12px 10px;
+      text-align: center; cursor: pointer; transition: all .2s; background: #fafafa;
+    }
+    .template-card:hover:not(.soon) { border-color: var(--accent-green); background: #f0fff4; }
+    .template-card.selected { border-color: var(--accent-green); background: #f0fff4; }
+    .template-card.soon { opacity: .55; cursor: not-allowed; }
+    .tpl-name { font-size: 13px; font-weight: 600; color: #333; }
+    .tpl-desc { font-size: 11px; color: #888; margin-top: 2px; }
+    .tpl-badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 10px; background: var(--accent-green); color: white; margin-top: 4px; font-weight: 600; }
+    .soon-tag { font-size: 10px; color: #e65c00; margin-top: 3px; display: block; }
+
+    /* ── Buttons ── */
+    .save-btn {
+      background: var(--accent-green); color: white; border: none;
+      border-radius: 7px; padding: 9px 22px; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: background .2s;
+      font-family: var(--font);
+    }
+    .save-btn:hover { background: #0ea332; }
+    .secondary-btn {
+      background: white; border: 1px solid #ddd;
+      border-radius: 7px; padding: 9px 16px; font-size: 14px;
+      cursor: pointer; font-family: var(--font); color: #333;
+      transition: background .2s;
+    }
+    .secondary-btn:hover { background: #f5f5f5; }
+    .btn-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .save-success { color: var(--accent-green); font-size: 13px; font-weight: 600; display: none; }
+
+    /* ── Data Management (Excel Import/Export) ── */
+    .data-mgmt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .data-mgmt-card {
+      border: 1px solid #e8e8e8; border-radius: 10px;
+      overflow: hidden; background: white;
+    }
+    .data-card-header {
+      padding: 12px 15px; background: #f8f9fa;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px; font-weight: 700; color: #333;
+    }
+    .data-card-body { padding: 14px 15px; }
+    .data-card-body p { font-size: 12px; color: #888; margin-bottom: 12px; line-height: 1.5; }
+    .export-btn {
+      width: 100%; padding: 9px 12px; border: 1.5px solid var(--accent-blue);
+      background: white; color: var(--accent-blue);
+      border-radius: 7px; font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: var(--font); margin-bottom: 8px;
+      transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .export-btn:hover { background: var(--accent-blue); color: white; }
+    .import-btn {
+      width: 100%; padding: 9px 12px; border: 1.5px solid var(--accent-green);
+      background: white; color: var(--accent-green);
+      border-radius: 7px; font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: var(--font);
+      transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .import-btn:hover { background: var(--accent-green); color: white; }
+    .file-input-hidden { display: none; }
+
+    /* ── Import progress / status ── */
+    .import-status {
+      margin-top: 10px; padding: 10px 12px;
+      border-radius: 7px; font-size: 13px;
+      display: none; font-weight: 500;
+    }
+    .import-status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .import-status.error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .import-status.loading { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+    /* ── Pending requests ── */
+    .pending-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #fff8f0; border: 1px solid #ffd5a8;
+      border-radius: 8px; padding: 10px 14px; margin-bottom: 8px;
+    }
+    .pend-barcode { font-weight: 600; color: #e65c00; font-size: 14px; }
+    .pend-date    { font-size: 11px; color: #999; margin-top: 2px; }
+    .pend-actions { display: flex; gap: 8px; }
+    .pend-btn     { padding: 5px 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; font-family: var(--font); }
+    .pend-btn-add { background: var(--accent-green); color: white; }
+    .pend-btn-del { background: var(--accent-red); color: white; }
+    .no-pending   { text-align: center; color: #bbb; padding: 20px; font-size: 14px; }
+
+    /* ── Add pending modal ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 9999; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal-box { background: white; border-radius: 12px; padding: 24px; width: 90%; max-width: 420px; }
+    .modal-box h2 { font-size: 16px; margin-bottom: 16px; font-weight: 700; color: #222; }
+    .modal-field { margin-bottom: 12px; }
+    .modal-field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #555; }
+    .modal-field input, .modal-field select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; outline: none; font-family: var(--font); }
+    .modal-row { display: flex; gap: 10px; }
+    .modal-row > div { flex: 1; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+    .modal-cancel { padding: 8px 18px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer; font-size: 14px; font-family: var(--font); }
+    .modal-save   { padding: 8px 18px; background: var(--accent-green); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: var(--font); }
+
+    /* ── Toast ── */
+    #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 22px; border-radius: 8px; font-size: 14px; z-index: 99999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,.2); white-space: nowrap; font-family: var(--font); }
+    #toast.show { display: block; }
+
+    /* ── Spinner ── */
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #ccc; border-top-color: currentColor; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive ── */
+    @media (max-width: 1100px) {
+      .data-mgmt-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .settings-grid { grid-template-columns: 1fr; }
+      .settings-grid .full-width { grid-column: 1; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .menu-toggle { display: block; }
+      .main-content { margin-left: 0; width: 100%; }
+      .top-header { position: fixed; top: 0; width: 100%; padding: 10px 15px; }
+      .content-area { padding: 15px; margin-top: 60px; }
+      .data-mgmt-grid { grid-template-columns: 1fr; }
+      .template-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR (same as cashBook.html) -->
+  <aside class="sidebar" id="appSidebar">
+    <div class="brand">SP Fashion</div>
+    <a href="dashboard.html" class="nav-link"><div class="nav-inner"><img src="icon/deshboard.svg" width="20"><span>Dashboard</span></div></a>
+    <a href="product.html"   class="nav-link"><div class="nav-inner"><img src="icon/products.svg" width="20"><span>Products</span></div></a>
+    <a href="suppliers.html" class="nav-link"><div class="nav-inner"><img src="icon/Suppliers.svg" width="20"><span>Suppliers</span></div></a>
+    <a href="staff.html"     class="nav-link"><div class="nav-inner"><img src="icon/customer.svg" width="20"><span>Staff Members</span></div></a>
+    <a href="billing.html"   class="nav-link"><div class="nav-inner"><img src="icon/Bill.svg" width="20"><span>Billing</span></div></a>
+    <a href="invoices.html"  class="nav-link"><div class="nav-inner"><img src="icon/invoices.svg" width="20"><span>Invoices</span></div></a>
+    <a href="cashBook.html"  class="nav-link"><div class="nav-inner"><img src="icon/cashbook.svg" width="20"><span>Cash Book</span></div></a>
+    <a href="coupon.html"    class="nav-link"><div class="nav-inner"><img src="icon/coupon.svg" width="20"><span>Coupons</span></div></a>
+    <a href="settings.html"  class="nav-link active"><div class="nav-inner"><img src="icon/setting.svg" width="20"><span>Settings</span></div></a>
+  </aside>
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <div class="top-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="menu-toggle" id="menuToggle">&#9776;</button>
+        <h1 class="page-title">Settings</h1>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <div class="settings-grid">
+
+        <!-- Shop Information -->
+        <div class="settings-section">
+          <div class="section-header">
+            <div class="section-icon"><img src="icon/setting.svg" alt=""></div>
+            <h2>Shop Information</h2>
+          </div>
+          <div class="section-body">
+            <div class="form-row"><label>Shop Name</label><input id="shopName" placeholder="SP Fashion"></div>
+            <div class="form-row"><label>Shop Address</label><input id="shopAddress" placeholder="Meethi Beri (Nokhada) Barmer"></div>
+            <div class="form-row"><label>Phone</label><input id="shopPhone" type="tel" placeholder="8000478785"></div>
+            <div class="btn-row">
+              <button class="save-btn" onclick="saveShopInfo()">Save</button>
+              <span class="save-success" id="shopInfoSuccess">Saved successfully</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thermal Printer Size -->
+        <div class="settings-section">
+          <div class="section-header">
+            <div class="section-icon"><img src="icon/print.svg" alt=""></div>
+            <h2>Thermal Printer Size</h2>
+          </div>
+          <div class="section-body">
+            <p style="font-size:13px;color:#888;margin-bottom:14px;">Select paper size for thermal receipt printing.</p>
+            <div class="radio-group">
+              <label class="radio-option"><input type="radio" name="thermalSize" value="80mm" id="size80"><span>80mm (Standard)</span></label>
+              <label class="radio-option"><input type="radio" name="thermalSize" value="57mm" id="size57"><span>57mm (Small)</span></label>
+            </div>
+            <div class="btn-row">
+              <button class="save-btn" onclick="saveThermalSize()">Save</button>
+              <span class="save-success" id="thermalSuccess">Saved successfully</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invoice Template -->
+        <div class="settings-section full-width">
+          <div class="section-header">
+            <div class="section-icon"><img src="icon/invoices.svg" alt=""></div>
+            <h2>Invoice Template</h2>
+          </div>
+          <div class="section-body">
+            <p style="font-size:13px;color:#888;margin-bottom:14px;">Select the template used when printing bills.</p>
+            <div class="template-grid" id="templateGrid"></div>
+            <div class="btn-row">
+              <button class="save-btn" onclick="saveTemplateSettings()">Save Template</button>
+              <button class="secondary-btn" onclick="previewTemplate()">Preview</button>
+              <span class="save-success" id="tplSuccess">Saved successfully</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invoice Print Options -->
+        <div class="settings-section">
+          <div class="section-header">
+            <div class="section-icon"><img src="icon/invoices.svg" alt=""></div>
+            <h2>Invoice Print Options</h2>
+          </div>
+          <div class="section-body">
+            <p style="font-size:13px;color:#888;margin-bottom:12px;">Control which fields appear on printed invoices.</p>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-label">Show Updated Rate</div><div class="toggle-desc">Show negotiated rate instead of original</div></div>
+              <label class="toggle-switch"><input type="checkbox" id="showUpdatedRate"><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-label">Show Bill Status</div><div class="toggle-desc">PAID / DUE label on invoice</div></div>
+              <label class="toggle-switch"><input type="checkbox" id="showBillStatus" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-label">Show Product Rate</div><div class="toggle-desc">Rate per item column</div></div>
+              <label class="toggle-switch"><input type="checkbox" id="showProductRate" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-label">Show Final Payment</div><div class="toggle-desc">Negotiated final amount</div></div>
+              <label class="toggle-switch"><input type="checkbox" id="showFinalPayment" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-label">Show Received Amount</div><div class="toggle-desc">Amount received from customer</div></div>
+              <label class="toggle-switch"><input type="checkbox" id="showReceivedAmount" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-label">Show Due Amount</div><div class="toggle-desc">Remaining due amount</div></div>
+              <label class="toggle-switch"><input type="checkbox" id="showDueAmount" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div class="btn-row">
+              <button class="save-btn" onclick="saveInvoiceOptions()">Save</button>
+              <span class="save-success" id="invoiceOptSuccess">Saved successfully</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Billing Page Settings -->
+        <div class="settings-section">
+          <div class="section-header">
+            <div class="section-icon"><img src="icon/Bill.svg" alt=""></div>
+            <h2>Billing Page Settings</h2>
+          </div>
+          <div class="section-body">
+            <p style="font-size:13px;color:#888;margin-bottom:12px;">Control fields visible on the billing/POS page.</p>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-label">Show Final Payment Field</div><div class="toggle-desc">Negotiated amount field in billing footer</div></div>
+              <label class="toggle-switch"><input type="checkbox" id="showFinalPaymentField" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-label">Show Cash Received Field</div><div class="toggle-desc">Cash received input in billing footer</div></div>
+              <label class="toggle-switch"><input type="checkbox" id="showCashReceivedField" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-label">Show Coupon Field</div><div class="toggle-desc">Coupon code input in billing footer</div></div>
+              <label class="toggle-switch"><input type="checkbox" id="showCouponField" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div class="btn-row">
+              <button class="save-btn" onclick="saveBillingSettings()">Save</button>
+              <span class="save-success" id="billingSuccess">Saved successfully</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Page Settings -->
+        <div class="settings-section">
+          <div class="section-header">
+            <div class="section-icon"><img src="icon/products.svg" alt=""></div>
+            <h2>Product Page Settings</h2>
+          </div>
+          <div class="section-body">
+            <p style="font-size:13px;color:#888;margin-bottom:12px;">Control columns and fields on the products page.</p>
+            <div class="toggle-row">
+              <div class="toggle-info"><div class="toggle-label">Show Purchasing Rate Column</div><div class="toggle-desc">Shows purchasing rate in table and add/edit form</div></div>
+              <label class="toggle-switch"><input type="checkbox" id="showPurchasingRate" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div class="btn-row">
+              <button class="save-btn" onclick="saveProductSettings()">Save</button>
+              <span class="save-success" id="productSettingsSuccess">Saved successfully</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Management: Products -->
+        <div class="settings-section full-width">
+          <div class="section-header">
+            <div class="section-icon"><img src="icon/products.svg" alt=""></div>
+            <h2>Data Management — Excel Import / Export</h2>
+          </div>
+          <div class="section-body">
+            <p style="font-size:13px;color:#888;margin-bottom:16px;">Download existing data as Excel files or upload bulk data to import records directly into the database.</p>
+
+            <div class="data-mgmt-grid">
+
+              <!-- Products -->
+              <div class="data-mgmt-card">
+                <div class="data-card-header">Products</div>
+                <div class="data-card-body">
+                  <p>Download all products (barcode, name, MRP, rate, stock, category) or upload a filled template to add/update products in bulk.</p>
+                  <button class="export-btn" onclick="exportProducts()">
+                    <img src="icon/invoices.svg" width="14" style="filter:invert(28%) sepia(82%) saturate(1400%) hue-rotate(200deg);"> Download Excel
+                  </button>
+                  <button class="import-btn" onclick="document.getElementById('productImportFile').click()">
+                    <img src="icon/add.svg" width="14" style="filter:invert(38%) sepia(66%) saturate(500%) hue-rotate(100deg);"> Upload Excel
+                  </button>
+                  <input type="file" id="productImportFile" class="file-input-hidden" accept=".xlsx,.xls,.csv" onchange="importProducts(this)">
+                  <div id="productImportStatus" class="import-status"></div>
+                </div>
+              </div>
+
+              <!-- Invoices / Bills -->
+              <div class="data-mgmt-card">
+                <div class="data-card-header">Invoices</div>
+                <div class="data-card-body">
+                  <p>Download all bills/invoices (bill number, customer, date, items, amount, status) or upload to add bulk invoices.</p>
+                  <button class="export-btn" onclick="exportInvoices()">
+                    <img src="icon/invoices.svg" width="14" style="filter:invert(28%) sepia(82%) saturate(1400%) hue-rotate(200deg);"> Download Excel
+                  </button>
+                  <button class="import-btn" onclick="document.getElementById('invoiceImportFile').click()">
+                    <img src="icon/add.svg" width="14" style="filter:invert(38%) sepia(66%) saturate(500%) hue-rotate(100deg);"> Upload Excel
+                  </button>
+                  <input type="file" id="invoiceImportFile" class="file-input-hidden" accept=".xlsx,.xls,.csv" onchange="importInvoices(this)">
+                  <div id="invoiceImportStatus" class="import-status"></div>
+                </div>
+              </div>
+
+              <!-- Suppliers -->
+              <div class="data-mgmt-card">
+                <div class="data-card-header">Suppliers</div>
+                <div class="data-card-body">
+                  <p>Download all supplier records (shop name, contact, address, balance) or upload to add suppliers and their purchase bills in bulk.</p>
+                  <button class="export-btn" onclick="exportSuppliers()">
+                    <img src="icon/invoices.svg" width="14" style="filter:invert(28%) sepia(82%) saturate(1400%) hue-rotate(200deg);"> Download Excel
+                  </button>
+                  <button class="import-btn" onclick="document.getElementById('supplierImportFile').click()">
+                    <img src="icon/add.svg" width="14" style="filter:invert(38%) sepia(66%) saturate(500%) hue-rotate(100deg);"> Upload Excel
+                  </button>
+                  <input type="file" id="supplierImportFile" class="file-input-hidden" accept=".xlsx,.xls,.csv" onchange="importSuppliers(this)">
+                  <div id="supplierImportStatus" class="import-status"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Product Requests -->
+        <div class="settings-section full-width">
+          <div class="section-header">
+            <div class="section-icon"><img src="icon/products.svg" alt=""></div>
+            <h2>Pending Product Requests <span id="pendingCountBadge" style="background:#e65c00;color:white;border-radius:10px;font-size:11px;padding:2px 8px;margin-left:6px;display:none;font-weight:600;"></span></h2>
+          </div>
+          <div class="section-body">
+            <p style="font-size:13px;color:#888;margin-bottom:14px;">Barcodes scanned in billing that were not found in the products database.</p>
+            <div id="pendingList">Loading…</div>
+          </div>
+        </div>
+
+      </div><!-- /settings-grid -->
+    </div><!-- /content-area -->
+  </div><!-- /main-content -->
+</div><!-- /app -->
+
+<!-- Pending product add modal -->
+<div class="modal-overlay" id="pendingAddModal">
+  <div class="modal-box">
+    <h2>Add Product from Pending</h2>
+    <div class="modal-field"><label>Barcode</label><input id="pndBarcode" readonly style="background:#f8f9fa;"></div>
+    <div class="modal-field"><label>Product Name</label><input id="pndName" placeholder="Enter name"></div>
+    <div class="modal-row">
+      <div class="modal-field"><label>MRP (Rs.)</label><input id="pndMrp" type="number" placeholder="0"></div>
+      <div class="modal-field"><label>Rate (Rs.)</label><input id="pndRate" type="number" placeholder="0"></div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-field"><label>Stock</label><input id="pndStock" type="number" value="1"></div>
+      <div class="modal-field"><label>Category</label>
+        <select id="pndCategory"><option value="readymade">Readymade</option><option value="general">General</option></select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closePendingModal()">Cancel</button>
+      <button class="modal-save" onclick="savePendingProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- SheetJS for Excel export/import -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, getDocs, query,
+  orderBy, doc, updateDoc, setDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey:            "AIzaSyCVXql_12NNa9_bUXYfWhj8Z7ZUqTyD1ak",
+  authDomain:        "sp-fashion-beca2.firebaseapp.com",
+  projectId:         "sp-fashion-beca2",
+  storageBucket:     "sp-fashion-beca2.firebasestorage.app",
+  messagingSenderId: "734725526616",
+  appId:             "1:734725526616:web:4ed1410e441789653e262d"
+});
+const db = getFirestore(app);
+
+// expose to window for onclick handlers
+window._db = db;
+window._col = collection;
+window._addDoc = addDoc;
+window._getDocs = getDocs;
+window._query = query;
+window._orderBy = orderBy;
+window._doc = doc;
+window._updateDoc = updateDoc;
+window._setDoc = setDoc;
+window._serverTimestamp = serverTimestamp;
+window._fbReady = true;
+document.dispatchEvent(new Event('fbReady'));
+
+
+  import { checkPageAccess, applySidebarPermissions,
+          applyQuickActionPermissions, addLogoutToSidebar } from './auth.js';
+  if (!checkPageAccess()) throw new Error('Access denied');
+  applySidebarPermissions();
+  addLogoutToSidebar();
+</script>
+
+<script>
+/* ──────────────────────────────────────────
+   TEMPLATES
+────────────────────────────────────────── */
+const TEMPLATES = [
+  { file:'template-thermal.html',   name:'Thermal Slip',  desc:'80mm / 57mm thermal' },
+  { file:'template-a4-orange.html', name:'A4 Orange',     desc:'A4 orange design' },
+  { file:'template-a4-green.html',  name:'A4 Green',      desc:'A4 green design' },
+  { file:'template-a4-plain.html',  name:'A4 Plain',      desc:'Simple A4 layout', soon: true },
+];
+let selectedTemplate = 'template-thermal.html';
+
+/* ──────────────────────────────────────────
+   HELPERS
+────────────────────────────────────────── */
+function _s() { return JSON.parse(localStorage.getItem('shopSettings') || '{}'); }
+function _save(obj) { localStorage.setItem('shopSettings', JSON.stringify({ ..._s(), ...obj })); }
+function _flash(id) { const el = document.getElementById(id); if (!el) return; el.style.display = 'inline'; setTimeout(() => el.style.display = 'none', 2500); }
+function _chk(id, v) { const el = document.getElementById(id); if (el) el.checked = !!v; }
+
+function toast(msg, ms = 2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+function showStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'import-status ' + type;
+  el.style.display = 'block';
+  if (type !== 'loading') setTimeout(() => el.style.display = 'none', 4000);
+}
+
+/* ──────────────────────────────────────────
+   LOAD SETTINGS
+────────────────────────────────────────── */
+function loadSettings() {
+  const s = _s();
+  if (s.shopName)    document.getElementById('shopName').value    = s.shopName;
+  if (s.shopAddress) document.getElementById('shopAddress').value = s.shopAddress;
+  if (s.shopPhone)   document.getElementById('shopPhone').value   = s.shopPhone;
+
+  selectedTemplate = s.selectedTemplate || 'template-thermal.html';
+  const size = s.thermalSize || '80mm';
+  const sz = document.querySelector(`input[name="thermalSize"][value="${size}"]`);
+  if (sz) sz.checked = true;
+
+  const io = s.invoiceOptions || {};
+  _chk('showUpdatedRate',    io.showUpdatedRate    === true);
+  _chk('showBillStatus',     io.showBillStatus     !== false);
+  _chk('showProductRate',    io.showProductRate    !== false);
+  _chk('showFinalPayment',   io.showFinalPayment   !== false);
+  _chk('showReceivedAmount', io.showReceivedAmount !== false);
+  _chk('showDueAmount',      io.showDueAmount      !== false);
+  _chk('showFinalPaymentField', s.showFinalPayment  !== false);
+  _chk('showCashReceivedField', s.showCashReceived  !== false);
+  _chk('showCouponField',       s.showCouponField   !== false);
+  _chk('showPurchasingRate',    s.showPurchasingRate !== false);
+
+  renderTemplates();
+  renderPending();
+}
+
+/* ──────────────────────────────────────────
+   TEMPLATE
+────────────────────────────────────────── */
+function renderTemplates() {
+  document.getElementById('templateGrid').innerHTML = TEMPLATES.map(t => `
+    <div class="template-card ${t.file === selectedTemplate ? 'selected' : ''} ${t.soon ? 'soon' : ''}"
+         ${t.soon ? '' : `onclick="selectTemplate('${t.file}')"`}>
+      <div class="tpl-name">${t.name}</div>
+      <div class="tpl-desc">${t.desc}</div>
+      ${t.file === selectedTemplate ? '<span class="tpl-badge">Selected</span>' : ''}
+      ${t.soon ? '<span class="soon-tag">Coming Soon</span>' : ''}
+    </div>`).join('');
+}
+window.selectTemplate = function(f) { selectedTemplate = f; renderTemplates(); };
+window.previewTemplate = function() {
+  const w = window.open('templates/' + selectedTemplate, '_blank', 'width=700,height=900');
+  if (!w) toast('Pop-ups blocked. Please allow pop-ups for this site.');
+};
+
+/* ──────────────────────────────────────────
+   SAVE FUNCTIONS
+────────────────────────────────────────── */
+window.saveShopInfo = function() {
+  _save({
+    shopName:    document.getElementById('shopName').value.trim(),
+    shopAddress: document.getElementById('shopAddress').value.trim(),
+    shopPhone:   document.getElementById('shopPhone').value.trim()
+  });
+  _flash('shopInfoSuccess');
+};
+
+window.saveTemplateSettings = function() { _save({ selectedTemplate }); _flash('tplSuccess'); };
+
+window.saveThermalSize = function() {
+  const el = document.querySelector('input[name="thermalSize"]:checked');
+  if (el) _save({ thermalSize: el.value });
+  _flash('thermalSuccess');
+};
+
+window.saveInvoiceOptions = function() {
+  _save({ invoiceOptions: {
+    showUpdatedRate:    document.getElementById('showUpdatedRate').checked,
+    showBillStatus:     document.getElementById('showBillStatus').checked,
+    showProductRate:    document.getElementById('showProductRate').checked,
+    showFinalPayment:   document.getElementById('showFinalPayment').checked,
+    showReceivedAmount: document.getElementById('showReceivedAmount').checked,
+    showDueAmount:      document.getElementById('showDueAmount').checked,
+  }});
+  _flash('invoiceOptSuccess');
+};
+
+window.saveBillingSettings = function() {
+  _save({
+    showFinalPayment: document.getElementById('showFinalPaymentField').checked,
+    showCashReceived: document.getElementById('showCashReceivedField').checked,
+    showCouponField:  document.getElementById('showCouponField').checked,
+  });
+  _flash('billingSuccess');
+};
+
+window.saveProductSettings = function() {
+  _save({ showPurchasingRate: document.getElementById('showPurchasingRate').checked });
+  _flash('productSettingsSuccess');
+};
+
+/* ──────────────────────────────────────────
+   EXCEL EXPORT HELPERS
+────────────────────────────────────────── */
+function downloadXLSX(data, filename, headers) {
+  const ws = XLSX.utils.json_to_sheet(data, { header: headers });
+  // Auto column width
+  const wscols = headers.map(h => ({ wch: Math.max(h.length + 2, 14) }));
+  ws['!cols'] = wscols;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data');
+  XLSX.writeFile(wb, filename);
+}
+
+function formatDateStr(ts) {
+  if (!ts) return '';
+  if (ts && typeof ts.toDate === 'function') return ts.toDate().toLocaleDateString('en-IN');
+  return new Date(ts).toLocaleDateString('en-IN');
+}
+
+/* ──────────────────────────────────────────
+   EXPORT PRODUCTS
+────────────────────────────────────────── */
+window.exportProducts = async function() {
+  if (!window._fbReady) { toast('Firebase not ready yet.'); return; }
+  toast('Preparing Products export...');
+  try {
+    const snap = await window._getDocs(window._col(window._db, 'products'));
+    const rows = [];
+    snap.forEach(d => {
+      const p = d.data();
+      rows.push({
+        'Barcode':          p.barcode || '',
+        'SP Barcode':       p.spBarcode || '',
+        'Product Name':     p.productName || '',
+        'Category':         p.category || 'readymade',
+        'Stock':            p.stock || 0,
+        'MRP (Rs.)':        p.mrp || 0,
+        'Rate (Rs.)':       p.rate || 0,
+        'Purchasing Rate':  p.purchasingRate || 0,
+        'Unit':             p.unit || '',
+        'Sales Count':      p.salesCount || 0,
+      });
+    });
+    if (!rows.length) { toast('No products found to export.'); return; }
+    downloadXLSX(rows, 'SP_Fashion_Products.xlsx', Object.keys(rows[0]));
+    toast('Products exported successfully — ' + rows.length + ' records');
+  } catch(e) { toast('Export failed: ' + e.message); }
+};
+
+/* ──────────────────────────────────────────
+   IMPORT PRODUCTS
+────────────────────────────────────────── */
+window.importProducts = async function(input) {
+  const file = input.files[0]; if (!file) return;
+  showStatus('productImportStatus', 'Reading file...', 'loading');
+  try {
+    const data = await readExcelFile(file);
+    if (!data.length) { showStatus('productImportStatus', 'No data rows found in file.', 'error'); return; }
+
+    showStatus('productImportStatus', 'Importing ' + data.length + ' products...', 'loading');
+    let added = 0, skipped = 0;
+
+    // Get existing products for duplicate check
+    const existingSnap = await window._getDocs(window._col(window._db, 'products'));
+    const existingBarcodes = new Set();
+    existingSnap.forEach(d => { if (d.data().barcode) existingBarcodes.add(d.data().barcode.trim()); });
+
+    // Get max SP barcode number
+    let maxSP = 0;
+    existingSnap.forEach(d => {
+      const raw = (d.data().spBarcode || '').replace(/\*/g, '');
+      const n = raw.startsWith('SP') ? parseInt(raw.substring(2), 10) : parseInt(raw, 10);
+      if (!isNaN(n) && n > maxSP) maxSP = n;
+    });
+
+    for (const row of data) {
+      const barcode = String(row['Barcode'] || row['barcode'] || '').trim();
+      if (barcode && existingBarcodes.has(barcode)) { skipped++; continue; }
+      maxSP++;
+      const spBarcode = String(maxSP).padStart(6, '0');
+      await window._addDoc(window._col(window._db, 'products'), {
+        barcode:        barcode,
+        spBarcode:      spBarcode,
+        productName:    String(row['Product Name'] || row['productName'] || '').trim(),
+        category:       String(row['Category'] || row['category'] || 'readymade').toLowerCase(),
+        stock:          parseFloat(row['Stock'] || row['stock'] || 0),
+        mrp:            parseFloat(row['MRP (Rs.)'] || row['MRP'] || row['mrp'] || 0),
+        rate:           parseFloat(row['Rate (Rs.)'] || row['Rate'] || row['rate'] || 0),
+        purchasingRate: parseFloat(row['Purchasing Rate'] || row['purchasingRate'] || 0),
+        unit:           String(row['Unit'] || row['unit'] || ''),
+        salesCount:     0,
+        createdAt:      new Date().toISOString(),
+        updatedAt:      new Date().toISOString(),
+      });
+      existingBarcodes.add(barcode);
+      added++;
+    }
+    showStatus('productImportStatus', added + ' products imported, ' + skipped + ' skipped (duplicate barcode).', 'success');
+    input.value = '';
+  } catch(e) { showStatus('productImportStatus', 'Import failed: ' + e.message, 'error'); input.value = ''; }
+};
+
+/* ──────────────────────────────────────────
+   EXPORT INVOICES
+────────────────────────────────────────── */
+window.exportInvoices = async function() {
+  if (!window._fbReady) { toast('Firebase not ready yet.'); return; }
+  toast('Preparing Invoices export...');
+  try {
+    const snap = await window._getDocs(window._col(window._db, 'bills'));
+    const rows = [];
+    snap.forEach(d => {
+      const b = d.data();
+      const items = (b.items || []).map(it => `${it.name || ''} x${it.qty || 1} @${it.rate || 0}`).join(' | ');
+      rows.push({
+        'Bill Number':      b.billNumber || '',
+        'Customer Name':    b.customerName || '',
+        'Customer Phone':   b.customerPhone || '',
+        'Date':             formatDateStr(b.timestamp),
+        'Status':           b.status || 'due',
+        'Total Amount':     b.totalAmount || 0,
+        'Effective Total':  b.effectiveTotal || b.totalAmount || 0,
+        'Received Amount':  b.receivedAmount || 0,
+        'Coupon Code':      b.couponCode || '',
+        'Coupon Discount':  b.couponDiscount || 0,
+        'Items':            items,
+      });
+    });
+    if (!rows.length) { toast('No invoices found to export.'); return; }
+    downloadXLSX(rows, 'SP_Fashion_Invoices.xlsx', Object.keys(rows[0]));
+    toast('Invoices exported successfully — ' + rows.length + ' records');
+  } catch(e) { toast('Export failed: ' + e.message); }
+};
+
+/* ──────────────────────────────────────────
+   IMPORT INVOICES
+────────────────────────────────────────── */
+window.importInvoices = async function(input) {
+  const file = input.files[0]; if (!file) return;
+  showStatus('invoiceImportStatus', 'Reading file...', 'loading');
+  try {
+    const data = await readExcelFile(file);
+    if (!data.length) { showStatus('invoiceImportStatus', 'No data rows found.', 'error'); return; }
+
+    showStatus('invoiceImportStatus', 'Importing ' + data.length + ' invoices...', 'loading');
+
+    // Get max bill number
+    const existingSnap = await window._getDocs(window._col(window._db, 'bills'));
+    const existingBills = new Set();
+    existingSnap.forEach(d => { if (d.data().billNumber) existingBills.add(d.data().billNumber.trim()); });
+
+    let added = 0, skipped = 0;
+    for (const row of data) {
+      const bn = String(row['Bill Number'] || row['billNumber'] || '').trim();
+      if (bn && existingBills.has(bn)) { skipped++; continue; }
+
+      const totalAmt = parseFloat(row['Total Amount'] || row['totalAmount'] || 0);
+      const effTotal = parseFloat(row['Effective Total'] || row['effectiveTotal'] || totalAmt);
+      const received = parseFloat(row['Received Amount'] || row['receivedAmount'] || 0);
+      const status   = String(row['Status'] || row['status'] || 'due').toLowerCase();
+
+      await window._addDoc(window._col(window._db, 'bills'), {
+        billNumber:     bn || ('IMP-' + Date.now()),
+        customerName:   String(row['Customer Name']  || row['customerName']  || '').trim(),
+        customerPhone:  String(row['Customer Phone'] || row['customerPhone'] || '').trim(),
+        totalAmount:    totalAmt,
+        effectiveTotal: effTotal,
+        receivedAmount: received,
+        status:         status,
+        couponCode:     String(row['Coupon Code']    || row['couponCode']    || '').trim(),
+        couponDiscount: parseFloat(row['Coupon Discount'] || 0),
+        items:          [],
+        timestamp:      new Date().toISOString(),
+        createdAt:      new Date().toISOString(),
+      });
+      existingBills.add(bn);
+      added++;
+    }
+    showStatus('invoiceImportStatus', added + ' invoices imported, ' + skipped + ' skipped (duplicate bill number).', 'success');
+    input.value = '';
+  } catch(e) { showStatus('invoiceImportStatus', 'Import failed: ' + e.message, 'error'); input.value = ''; }
+};
+
+/* ──────────────────────────────────────────
+   EXPORT SUPPLIERS
+────────────────────────────────────────── */
+window.exportSuppliers = async function() {
+  if (!window._fbReady) { toast('Firebase not ready yet.'); return; }
+  toast('Preparing Suppliers export...');
+  try {
+    const shopsSnap = await window._getDocs(window._col(window._db, 'shops'));
+    const billsSnap = await window._getDocs(window._col(window._db, 'billinbox'));
+
+    const billsByShop = {};
+    billsSnap.forEach(d => {
+      const b = d.data();
+      if (!billsByShop[b.shopId]) billsByShop[b.shopId] = [];
+      billsByShop[b.shopId].push(b);
+    });
+
+    const rows = [];
+    shopsSnap.forEach(d => {
+      const s = d.data();
+      const bills = billsByShop[d.id] || [];
+      let totalPurchase = 0, totalPayment = 0;
+      bills.forEach(b => {
+        if (b.type === 'purchase') totalPurchase += b.amount || 0;
+        else if (b.type === 'payment') totalPayment += b.amount || 0;
+      });
+      rows.push({
+        'Shop Name':         s.shopName || '',
+        'Contact':           s.contact  || '',
+        'Address':           s.address  || '',
+        'Total Purchase':    totalPurchase,
+        'Total Payment':     totalPayment,
+        'Balance (Due)':     totalPurchase - totalPayment,
+        'Extra Payment':     s.extraPayment || 0,
+      });
+    });
+    if (!rows.length) { toast('No suppliers found to export.'); return; }
+    downloadXLSX(rows, 'SP_Fashion_Suppliers.xlsx', Object.keys(rows[0]));
+    toast('Suppliers exported successfully — ' + rows.length + ' records');
+  } catch(e) { toast('Export failed: ' + e.message); }
+};
+
+/* ──────────────────────────────────────────
+   IMPORT SUPPLIERS
+────────────────────────────────────────── */
+window.importSuppliers = async function(input) {
+  const file = input.files[0]; if (!file) return;
+  showStatus('supplierImportStatus', 'Reading file...', 'loading');
+  try {
+    const data = await readExcelFile(file);
+    if (!data.length) { showStatus('supplierImportStatus', 'No data rows found.', 'error'); return; }
+
+    showStatus('supplierImportStatus', 'Importing ' + data.length + ' suppliers...', 'loading');
+
+    const existingSnap = await window._getDocs(window._col(window._db, 'shops'));
+    const existingShops = new Map();
+    existingSnap.forEach(d => existingShops.set((d.data().shopName || '').toLowerCase().trim(), d.id));
+
+    let added = 0, skipped = 0;
+    for (const row of data) {
+      const name = String(row['Shop Name'] || row['shopName'] || '').trim();
+      if (!name) continue;
+      if (existingShops.has(name.toLowerCase())) { skipped++; continue; }
+      await window._addDoc(window._col(window._db, 'shops'), {
+        shopName:     name,
+        contact:      String(row['Contact'] || row['contact'] || '').trim(),
+        address:      String(row['Address'] || row['address'] || '').trim(),
+        extraPayment: parseFloat(row['Extra Payment'] || 0),
+        createdAt:    new Date().toISOString(),
+      });
+      existingShops.set(name.toLowerCase(), 'imported');
+      added++;
+    }
+    showStatus('supplierImportStatus', added + ' suppliers imported, ' + skipped + ' skipped (duplicate name).', 'success');
+    input.value = '';
+  } catch(e) { showStatus('supplierImportStatus', 'Import failed: ' + e.message, 'error'); input.value = ''; }
+};
+
+/* ──────────────────────────────────────────
+   READ EXCEL FILE (SheetJS)
+────────────────────────────────────────── */
+function readExcelFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb   = XLSX.read(data, { type: 'array' });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        resolve(json);
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+/* ──────────────────────────────────────────
+   PENDING PRODUCT REQUESTS
+────────────────────────────────────────── */
+function renderPending() {
+  const pending = JSON.parse(localStorage.getItem('pendingProducts') || '[]');
+  const badge   = document.getElementById('pendingCountBadge');
+  if (badge) { badge.style.display = pending.length > 0 ? 'inline' : 'none'; badge.textContent = pending.length; }
+  const list = document.getElementById('pendingList');
+  if (!list) return;
+  if (!pending.length) { list.innerHTML = '<div class="no-pending">No pending requests. All barcodes are in the database.</div>'; return; }
+  list.innerHTML = pending.map(p => `
+    <div class="pending-item">
+      <div>
+        <div class="pend-barcode">${p.barcode}</div>
+        <div class="pend-date">${new Date(p.createdAt).toLocaleString('en-IN')}</div>
+      </div>
+      <div class="pend-actions">
+        <button class="pend-btn pend-btn-add" onclick="openPendingAdd('${p.barcode}')">Add Product</button>
+        <button class="pend-btn pend-btn-del" onclick="deletePending('${p.barcode}')">Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+window.openPendingAdd = function(b) {
+  ['pndBarcode','pndName','pndMrp','pndRate'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pndBarcode').value = b;
+  document.getElementById('pndStock').value   = '1';
+  document.getElementById('pndCategory').value = 'readymade';
+  document.getElementById('pendingAddModal').classList.add('show');
+};
+
+window.closePendingModal = function() { document.getElementById('pendingAddModal').classList.remove('show'); };
+
+window.savePendingProduct = async function() {
+  const barcode  = document.getElementById('pndBarcode').value.trim();
+  const name     = document.getElementById('pndName').value.trim();
+  const mrp      = parseFloat(document.getElementById('pndMrp').value);
+  const rate     = parseFloat(document.getElementById('pndRate').value);
+  const stock    = parseInt(document.getElementById('pndStock').value) || 1;
+  const category = document.getElementById('pndCategory').value;
+  if (!name || isNaN(mrp) || isNaN(rate)) { alert('Fill Name, MRP and Rate.'); return; }
+  if (!window._fbReady) { alert('Firebase not ready.'); return; }
+  try {
+    let spBarcode = '000001';
+    try {
+      const snap = await window._getDocs(window._query(window._col(window._db, 'products'), window._orderBy('spBarcode', 'desc')));
+      snap.forEach(d => {
+        const raw = (d.data().spBarcode || '').replace(/\*/g, '');
+        const n = raw.startsWith('SP') ? parseInt(raw.substring(2), 10) : parseInt(raw, 10);
+        if (!isNaN(n)) { const cur = Math.max(0, n); if (cur >= parseInt(spBarcode, 10)) spBarcode = String(cur + 1).padStart(6, '0'); }
+      });
+    } catch(e) {}
+    await window._addDoc(window._col(window._db, 'products'), {
+      productName: name, barcode, mrp, rate, stock, category, spBarcode,
+      salesCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+    });
+    const p = JSON.parse(localStorage.getItem('pendingProducts') || '[]');
+    localStorage.setItem('pendingProducts', JSON.stringify(p.filter(x => x.barcode !== barcode)));
+    window.closePendingModal();
+    renderPending();
+    toast('"' + name + '" added to products.');
+  } catch(e) { alert('Error: ' + e.message); }
+};
+
+window.deletePending = function(b) {
+  if (!confirm('Remove this pending request?')) return;
+  const p = JSON.parse(localStorage.getItem('pendingProducts') || '[]');
+  localStorage.setItem('pendingProducts', JSON.stringify(p.filter(x => x.barcode !== b)));
+  renderPending();
+};
+
+/* ──────────────────────────────────────────
+   SIDEBAR TOGGLE
+────────────────────────────────────────── */
+const sidebar       = document.getElementById('appSidebar');
+const menuToggle    = document.getElementById('menuToggle');
+const mobileOverlay = document.getElementById('mobileOverlay');
+
+menuToggle.addEventListener('click', () => sidebar.classList.contains('active') ? closeSidebar() : openSidebar());
+mobileOverlay.addEventListener('click', closeSidebar);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+function openSidebar()  { sidebar.classList.add('active'); mobileOverlay.classList.add('active'); }
+function closeSidebar() { sidebar.classList.remove('active'); mobileOverlay.classList.remove('active'); }
+
+// Close pending modal on outside click
+document.getElementById('pendingAddModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('pendingAddModal')) window.closePendingModal();
+});
+
+/* ──────────────────────────────────────────
+   INIT
+────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', loadSettings);
+</script>
+
+<script>
+(function(){
+  try { var d=JSON.parse(localStorage.getItem('staffAuth')||'null');
+    if(!d||!d.userId){location.href='login.html?redirect=billing.html';return;}
+  } catch(e){location.href='login.html';return;}
+  var o=document.createElement('div');
+  o.id='__auth_guard__';
+  o.style.cssText='position:fixed;inset:0;background:#000;z-index:99999;';
+  document.documentElement.appendChild(o);
+})();
+</script>
+</body>
+</html>

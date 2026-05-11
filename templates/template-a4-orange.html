@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Invoice - SP Fashion</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    @page { size: A4; margin: 0; }
+    html, body { width: 210mm; height: 297mm; overflow: hidden; }
+    .invoice-page { position: relative; width: 210mm; height: 297mm; overflow: hidden; background: #fff; }
+    .bg-img { position: absolute; top: 0; left: 0; width: 210mm; height: 297mm; display: block; }
+    .overlay { position: absolute; top: 0; left: 0; width: 210mm; height: 297mm; pointer-events: none; }
+    .d { position: absolute; font-family: 'Inter', Arial, sans-serif; line-height: 1; white-space: nowrap; }
+    /* Figma: .shravan-jangid left=100,top=494,font=48,w=500,ls=0.1em */
+    #tpl-cust-name  { left:8.47mm; top:41.85mm; font-size:4.06mm; font-weight:500; letter-spacing:0.1em; color:#000; }
+    /* Figma: ._8000351905   left=100,top=552,font=48,w=500 */
+    #tpl-cust-phone { left:8.47mm; top:46.76mm; font-size:4.06mm; font-weight:500; letter-spacing:0.1em; color:#000; }
+    /* Figma: .sp-035692     left=887,top=540,font=48,w=500 */
+    #tpl-bill-no    { left:75.09mm; top:45.74mm; font-size:4.06mm; font-weight:500; letter-spacing:0.1em; color:#000; }
+    /* Figma: ._11-03-2026   left=1483,top=540,font=48,w=600 */
+    #tpl-date       { left:125.59mm; top:45.74mm; font-size:4.06mm; font-weight:500; color:#000; }
+    /* Figma: ._4 (items)    left=2131,top=2761,font=50,w=600 */
+    #tpl-total-qty  { left:180.51mm; top:233.91mm; font-size:4.23mm; font-weight:500; letter-spacing:0.1em; color:#000; }
+    /* Figma: ._230 (subtotal) left=2085,top=2861,font=50,w=600 */
+    #tpl-subtotal   { left:176.61mm; top:242.38mm; font-size:4.23mm; font-weight:500; color:#000; }
+    /* Figma: .total left=1908,top=2964,font=64,w=700,color=#fff,text-align=right */
+    #tpl-total      { left:161.60mm; top:251.10mm; font-size:5.42mm; font-weight:550; color:#fff; text-align:right; }
+    @media print { html, body { width:210mm; height:297mm; } }
+  </style>
+</head>
+<body>
+<div class="invoice-page">
+  <img class="bg-img" src="A4 invoice2.svg" alt=""/>
+  <div class="overlay">
+    <div class="d" id="tpl-cust-name">CUSTOMER NAME</div>
+    <div class="d" id="tpl-cust-phone">0000000000</div>
+    <div class="d" id="tpl-bill-no">SP000000</div>
+    <div class="d" id="tpl-date">DD/MM/YYYY</div>
+    <div id="tpl-items-container"></div>
+    <div class="d" id="tpl-total-qty">0</div>
+    <div class="d" id="tpl-subtotal">₹0</div>
+    <div class="d" id="tpl-total">₹ 0 /-</div>
+  </div>
+</div>
+<script>
+  const SX = 210 / 2480;
+  const SY = 297 / 3508;
+  const mmX = px => (px * SX).toFixed(4) + 'mm';
+  const mmY = px => (px * SY).toFixed(4) + 'mm';
+  function fmt(n) { return parseFloat(n || 0).toLocaleString('en-IN'); }
+
+  const EXAMPLE_DATA = {
+    customerName:  'Shravan Jangid',
+    customerPhone: '8000351905',
+    billNumber:    'SP035692',
+    date:          '11/03/2026',
+    items: [
+      { name: 'Class Note Book', barcode: '8902519002617', qty: 2, rate: 45,  amount: 90  },
+      { name: 'Garment 05',      barcode: 'SP23563615696', qty: 4, rate: 50,  amount: 200 }
+    ]
+  };
+
+  function loadAndRender() {
+    let data = {};
+    try { data = JSON.parse(localStorage.getItem('printBillData') || '{}'); } catch(e) {}
+    if (!data.items || data.items.length === 0) data = EXAMPLE_DATA;
+
+    const settings = JSON.parse(localStorage.getItem('shopSettings') || '{}');
+    const io = settings.invoiceOptions || {};
+    const showRate    = io.showProductRate  !== false;
+    const showUpdRate = io.showUpdatedRate  === true;
+    const showFinal   = io.showFinalPayment !== false;
+    const showStatus  = io.showBillStatus   !== false;
+
+    const setT = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    setT('tpl-cust-name',  data.customerName  || 'CUSTOMER NAME');
+    setT('tpl-cust-phone', data.customerPhone || '');
+    setT('tpl-bill-no',    data.billNumber    || 'SP000000');
+    setT('tpl-date',       data.date          || new Date().toLocaleDateString('en-GB'));
+
+    const COL = { sn:155, detail:282, hsn:1087, qty:1660, rate:1832, amount:2253 };
+    const fItem = (55 * SX).toFixed(4);
+    const fHsn  = (46 * SX).toFixed(4);
+    const items = data.items || [];
+    let html = '';
+
+    items.slice(0, 15).forEach((item, i) => {
+      const topMM = ((849 + i * 100) * SY).toFixed(4);
+      const base  = `position:absolute; top:${topMM}mm; font-family:Arial,sans-serif; color:#000; white-space:nowrap; overflow:hidden;`;
+      const displayRate = showUpdRate
+        ? (item.updatedRate !== undefined ? item.updatedRate : item.rate)
+        : (item.originalRate !== undefined ? item.originalRate : item.rate);
+      html += `
+        <div style="${base} left:${mmX(COL.sn)};     font-size:${fItem}mm; font-weight:600; max-width:8mm;">${i+1}.</div>
+        <div style="${base} left:${mmX(COL.detail)};  font-size:${fItem}mm; font-weight:500; max-width:48mm;">${item.name||''}</div>
+        <div style="${base} left:${mmX(COL.hsn)};     font-size:${fHsn}mm;  font-weight:500; color:#555; max-width:36mm;">${item.barcode||item.spBarcode||''}</div>
+        <div style="${base} left:${mmX(COL.qty)};     font-size:${fItem}mm; font-weight:500; max-width:10mm;">${fmt(item.qty)}</div>
+        ${showRate ? `<div style="${base} left:${mmX(COL.rate)};font-size:${fItem}mm; font-weight:500; max-width:12mm;">${fmt(displayRate)}</div>` : ''}
+        <div style="${base} left:${mmX(COL.amount)};  font-size:${fItem}mm; font-weight:500; text-align:right; max-width:18mm;">${fmt(item.amount)}</div>`;
+    });
+
+    document.getElementById('tpl-items-container').innerHTML = html;
+
+    const totalQty    = items.reduce((s,it) => s + (parseFloat(it.qty)||0), 0);
+    const totalAmount = data.totalAmount || items.reduce((s,it) => s + (parseFloat(it.amount)||0), 0);
+    const fp          = data.finalPayment;
+    const effTotal    = (showFinal && fp !== null && fp !== undefined && fp < totalAmount) ? fp : totalAmount;
+    const status      = (data.status || 'paid').toUpperCase();
+
+    setT('tpl-total-qty', fmt(totalQty));
+    setT('tpl-subtotal',  '₹' + fmt(totalAmount));
+
+    // Show effective total (with negotiation) or plain total
+    let totalDisplay = '₹ ' + fmt(effTotal) + ' /-';
+    if (showStatus) totalDisplay += '  [' + status + ']';
+    setT('tpl-total', totalDisplay);
+  }
+
+  loadAndRender();
+  window.addEventListener('load', () => { setTimeout(() => window.print(), 500); });
+</script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Invoice - SP Fashion</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    @page { size: A4; margin: 0; }
+
+    html, body {
+      width: 210mm;
+      height: 297mm;
+      overflow: hidden;
+    }
+
+    /* ── ROOT PAGE ──
+       Figma canvas  : 2480 × 3508 px  (A4 @ 300 dpi)
+       CSS target    : 210 × 297 mm
+       Scale X : 210 / 2480 = 0.084677 mm/px
+       Scale Y : 297 / 3508 = 0.084664 mm/px
+    */
+    .invoice-page {
+      position: relative;
+      width: 210mm;
+      height: 297mm;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .bg-img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 210mm;
+      height: 297mm;
+      display: block;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 210mm;
+      height: 297mm;
+      pointer-events: none;
+    }
+
+    .d {
+      position: absolute;
+      font-family: 'Inter', Arial, sans-serif;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    /* ── CUSTOMER / INVOICE META ──
+       Figma: left=102,top=390,font=64,w=600,uppercase → CSS mm */
+    #tpl-cust-name {
+      left: 8.64mm; top: 33.09mm;
+      font-size: 4.5mm; font-weight: 500;
+      text-transform: uppercase; color: #000;
+    }
+    /* Figma: left=102,top=467,font=64,w=500 */
+    #tpl-cust-phone {
+      left: 8.64mm; top: 39.55mm;
+      font-size: 4.5mm; font-weight: 500; color: #000;
+    }
+    /* Figma: left=2048,top=390,font=64,w=600,color=#84b245 */
+    #tpl-bill-no {
+      left: 178.39mm; top: 33.09mm;
+      font-size: 4.5mm; font-weight: 500;
+      color: #84b245; text-transform: uppercase;
+    }
+    /* Figma: left=2011,top=467,font=64,w=500 */
+    #tpl-date {
+      left: 175.25mm; top: 39.55mm;
+      font-size: 4.5mm; font-weight: 500; color: #000;
+    }
+
+    /* ── TOTALS ──
+       .qty : left=2155,top=2562,font=55,w=600 */
+    #tpl-total-qty {
+      left: 182.58mm; top: 216.92mm;
+      font-size: 4.66mm; font-weight: 500; color: #000;
+    }
+    /* .sub-total : left=2155,top=2652,font=55,w=600 */
+    #tpl-subtotal {
+      left: 182.58mm; top: 224.54mm;
+      font-size: 4.66mm; font-weight: 500; color: #000;
+    }
+    /* .total : left=2017,top=2816,font=64,w=700,color=#fff */
+    #tpl-total {
+      left: 170.82mm; top: 238.41mm;
+      font-size: 5.42mm; font-weight: 600;
+      color: #ffffff; text-transform: uppercase;
+    }
+
+    @media print {
+      html, body { width: 210mm; height: 297mm; }
+    }
+  </style>
+</head>
+<body>
+<div class="invoice-page">
+
+
+
+
+  <!-- BACKGROUND SVG FILE -->
+  <img class="bg-img" src="A4 invoice.svg" alt=""/>
+
+  <!-- ═══ DATA OVERLAY ═══ -->
+  <div class="overlay">
+
+    <!-- Bill meta (CSS classes match Figma exactly) -->
+    <div class="d" id="tpl-cust-name">CUSTOMER NAME</div>
+    <div class="d" id="tpl-cust-phone">0000000000</div>
+    <div class="d" id="tpl-bill-no">SP000000</div>
+    <div class="d" id="tpl-date">DD-MM-YYYY</div>
+
+    <!-- Items rows injected by JS -->
+    <div id="tpl-items-container"></div>
+
+    <!-- Totals -->
+    <div class="d" id="tpl-total-qty">0</div>
+    <div class="d" id="tpl-subtotal">₹ 0</div>
+    <div class="d" id="tpl-total">₹ 0 /-</div>
+
+  </div>
+</div>
+
+
+<script>
+  /*
+    Figma canvas: 2480 × 3508 px  (A4 @ 300 dpi)
+    CSS target  : 210 × 297 mm
+    SX = 210/2480 = 0.084677 mm per figma-px (horizontal / font)
+    SY = 297/3508 = 0.084664 mm per figma-px (vertical)
+  */
+  const SX = 210 / 2480;
+  const SY = 297 / 3508;
+
+  const mm = (px, axis) => (px * (axis === 'y' ? SY : SX)).toFixed(4) + 'mm';
+
+  function fmt(n) {
+    return parseFloat(n || 0).toLocaleString('en-IN');
+  }
+
+  // Example fallback data — jab localStorage empty ho tab dikhega
+  const EXAMPLE_DATA = {
+    customerName:  'Shravan Kumar',
+    customerPhone: '8000351905',
+    billNumber:    'SP088094',
+    date:          '10-03-2026',
+    items: [
+      { name: 'Class Note Book', barcode: '8902519002617', qty: 2, rate: 45,  amount: 90  },
+      { name: 'Garment 05',      barcode: 'SP23563615696', qty: 4, rate: 50,  amount: 200 },
+      { name: 'Match box',      barcode: '890268953646', qty: 1, rate: 10,  amount: 10 }
+    ]
+  };
+
+  function loadAndRender() {
+    let data = {};
+    try { data = JSON.parse(localStorage.getItem('printBillData') || '{}'); } catch(e) {}
+    if (!data.items || data.items.length === 0) data = EXAMPLE_DATA;
+
+    const settings = JSON.parse(localStorage.getItem('shopSettings') || '{}');
+    const io = settings.invoiceOptions || {};
+    const showRate    = io.showProductRate  !== false;
+    const showUpdRate = io.showUpdatedRate  === true;
+    const showFinal   = io.showFinalPayment !== false;
+    const showStatus  = io.showBillStatus   !== false;
+
+    const setT = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    setT('tpl-cust-name',  data.customerName  || 'Customer');
+    setT('tpl-cust-phone', data.customerPhone || '');
+    setT('tpl-bill-no',    data.billNumber    || 'SP000000');
+    setT('tpl-date',       data.date          || new Date().toLocaleDateString('en-GB').replace(/\//g,'-'));
+
+    const RIGHT_MM = ((2480 - 2378) * SX).toFixed(4);
+    const items    = data.items || [];
+    let html = '';
+
+    items.slice(0, 15).forEach((item, i) => {
+      const topMM  = ((765 + i * 100) * SY).toFixed(4);
+      const fItem  = (55 * SX).toFixed(4);
+      const fSn    = (55 * SX).toFixed(4);
+      const fHsn   = (46 * SX).toFixed(4);
+      const base   = `position:absolute; top:${topMM}mm; font-family:Arial,sans-serif; color:#000; white-space:nowrap; overflow:hidden;`;
+      const displayRate = showUpdRate
+        ? (item.updatedRate !== undefined ? item.updatedRate : item.rate)
+        : (item.originalRate !== undefined ? item.originalRate : item.rate);
+
+      html += `
+        <div style="${base} left:${mm(168,'x')}; font-size:${fSn}mm; font-weight:500; max-width:8mm;">${i+1}.</div>
+        <div style="${base} left:${mm(295,'x')}; font-size:${fItem}mm; font-weight:500; max-width:48mm;">${item.name||''}</div>
+        <div style="${base} left:${mm(1100,'x')}; font-size:${fHsn}mm; font-weight:500; color:#666; max-width:36mm;">${item.barcode||item.spBarcode||''}</div>
+        <div style="${base} left:${mm(1673,'x')}; font-size:${fItem}mm; font-weight:500; max-width:10mm;">${fmt(item.qty)}</div>
+        ${showRate ? `<div style="${base} left:${mm(1845,'x')}; font-size:${fItem}mm; font-weight:500; max-width:12mm;">${fmt(displayRate)}</div>` : ''}
+        <div style="${base} right:${RIGHT_MM}mm; font-size:${fItem}mm; font-weight:550; text-align:right; max-width:18mm;">${fmt(item.amount)}</div>`;
+    });
+
+    document.getElementById('tpl-items-container').innerHTML = html;
+
+    const totalQty    = items.reduce((s,it) => s + (parseFloat(it.qty)||0), 0);
+    const totalAmount = data.totalAmount || items.reduce((s,it) => s + (parseFloat(it.amount)||0), 0);
+    const fp          = data.finalPayment;
+    const effTotal    = (showFinal && fp !== null && fp !== undefined && fp < totalAmount) ? fp : totalAmount;
+    const status      = (data.status || 'paid').toUpperCase();
+
+    setT('tpl-total-qty', fmt(totalQty));
+    setT('tpl-subtotal',  '₹ ' + fmt(totalAmount));
+
+    let totalDisplay = '₹ ' + fmt(effTotal) + ' /-';
+    if (showStatus) totalDisplay += '  [' + status + ']';
+    setT('tpl-total', totalDisplay);
+  }
+
+  loadAndRender();
+
+  window.addEventListener('load', () => {
+    setTimeout(() => window.print(), 500);
+  });
+</script>
+</body>
+</html>

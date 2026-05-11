@@ -1,0 +1,2722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Customer Cash Book - SP Fashion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-green: #10bf39; --accent-red: #e30202;
+      --accent-blue: #0066cc;
+      --font: "DM Sans","Inter",sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: #f5f5f5; min-height: 100vh; overflow-x: hidden; }
+    .app { display: flex; width: 100%; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { background: #1a1a1a; color: white; width: 200px; padding: 20px 0; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 1100; overflow-y: auto; transition: transform 0.3s ease-in-out; }
+    .brand { font-size: 18px; font-weight: bold; margin-bottom: 30px; text-align: center; color: white; }
+    .nav-link { text-decoration: none; color: white; display: block; margin-bottom: 5px; }
+    .nav-inner { display: flex; align-items: center; gap: 12px; padding: 12px 20px; transition: background .3s; font-size: 14px; }
+    .nav-link:hover .nav-inner { background-color: #333; }
+    .nav-link.active .nav-inner { background: #0066cc; border-left: 3px solid #fff; }
+    .nav-inner img { width: 16px; height: 16px; }
+
+    /* ── Mobile sidebar overlay ── */
+    .mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1099; opacity: 0; visibility: hidden; transition: opacity .3s; }
+    .mobile-overlay.active { opacity: 1; visibility: visible; }
+
+    /* ── Layout ── */
+    .main-content { margin-left: 200px; width: calc(100% - 200px); background: #fff; display: flex; flex-direction: column; min-height: 100vh; }
+    .top-header { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,.1); position: sticky; top: 0; z-index: 1050; min-height: 60px; }
+    .page-title { font-size: 20px; font-weight: 600; color: #333; }
+    .menu-toggle { display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: #333; }
+    .content-area { padding: 20px 30px; flex-grow: 1; background: #f8f9fa; overflow-y: auto; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Status bar ── */
+    .status-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 14px; color: #666; flex-wrap: wrap; }
+    .status-bar a { color: #0066cc; text-decoration: none; cursor: pointer; }
+    .status-bar span { color: #333; font-weight: 500; }
+
+    /* ── Customer info card ── */
+    .shop-info-detail { background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.1); margin-bottom: 20px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .shop-info-detail p { margin: 5px 0; }
+    .shop-info-detail .totals { display: flex; gap: 16px; font-weight: 500; flex-wrap: wrap; }
+
+    /* ── Search/filter bar ── */
+    .search-filters-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.1); gap: 20px; flex-wrap: wrap; }
+    .search-section { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    .search-box { position: relative; }
+    .search-input { padding: 8px 40px 8px 15px; border: 1px solid #ddd; border-radius: 20px; width: 250px; font-size: 14px; outline: none; font-family: var(--font); }
+    .filter-dropdown { position: relative; display: inline-block; }
+    .filters-btn { display: flex; align-items: center; gap: 8px; padding: 8px 15px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: var(--font); }
+    .filter-options { display: none; position: absolute; background: white; min-width: 160px; box-shadow: 0 2px 5px rgba(0,0,0,.2); z-index: 1001; border-radius: 4px; padding: 5px 0; top: 100%; left: 0; }
+    .filter-options a { color: #333; padding: 8px 16px; text-decoration: none; display: block; font-size: 14px; }
+    .filter-options a:hover { background: #f5f5f5; }
+    .filter-options.show { display: block; }
+    .action-section { display: flex; align-items: center; gap: 10px; }
+    .primary-btn { background: #10bf39; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: var(--font); white-space: nowrap; }
+    .primary-btn:hover { background: #0da02f; }
+    .secondary-btn { background: white; border: 1px solid #ddd; padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; font-family: var(--font); white-space: nowrap; }
+    .secondary-btn:hover { background: #f5f5f5; }
+    .wa-btn { background: #25D366; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: var(--font); white-space: nowrap; font-weight: 600; }
+    .wa-btn:hover { background: #1da851; }
+    .bulk-wa-btn { background: #25D366; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: var(--font); white-space: nowrap; font-weight: 600; box-shadow: 0 2px 6px rgba(37,211,102,.35); }
+    .bulk-wa-btn:hover { background: #1da851; }
+    /* Bulk WA Modal */
+    .bulk-wa-modal { max-width: 540px; }
+    .bwa-summary { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .bwa-stat { flex: 1; min-width: 120px; background: #f8f9fa; border-radius: 8px; padding: 12px 14px; text-align: center; }
+    .bwa-stat .bws-val { font-size: 20px; font-weight: 700; color: #333; }
+    .bwa-stat .bws-lbl { font-size: 11px; color: #888; margin-top: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: .3px; }
+    .bwa-customer-list { max-height: 280px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-bottom: 14px; }
+    .bwa-cust-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #f5f5f5; font-size: 13px; gap: 10px; }
+    .bwa-cust-row:last-child { border-bottom: none; }
+    .bwa-cust-row:hover { background: #fafafa; }
+    .bwa-cust-info { flex: 1; }
+    .bwa-cust-name { font-weight: 600; color: #222; }
+    .bwa-cust-phone { font-size: 11px; color: #888; margin-top: 2px; }
+    .bwa-cust-due { color: #e30202; font-weight: 700; white-space: nowrap; }
+    .bwa-msg-preview { background: #f0fff4; border: 1px solid #c8e6c9; border-radius: 8px; padding: 12px 14px; font-size: 12px; color: #555; line-height: 1.6; margin-bottom: 14px; white-space: pre-wrap; max-height: 130px; overflow-y: auto; }
+    .bwa-send-status { font-size: 13px; color: #555; text-align: center; padding: 8px 0; display: none; }
+    .bwa-progress { height: 4px; background: #e0e0e0; border-radius: 2px; margin-bottom: 10px; overflow: hidden; display: none; }
+    .bwa-progress-bar { height: 100%; background: #25D366; border-radius: 2px; transition: width .3s; }
+    .bwa-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+    /* ── Table ── */
+    .table-container { background: white; border-radius: 8px; overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+    .data-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+    .data-table th { background: #f8f9fa; padding: 12px 15px; text-align: left; font-weight: 600; color: #333; border-bottom: 1px solid #e0e0e0; font-size: 14px; }
+    .data-table td { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #555; vertical-align: top; }
+    .data-table tbody tr { cursor: pointer; }
+    .data-table tbody tr:hover { background: #f8f9fa; }
+
+    /* ── Labels & colours ── */
+    .clickable { color: #0066cc; text-decoration: underline; cursor: pointer; }
+    .due-bill  { color: #e30202; text-decoration: underline; cursor: pointer; }
+    .dr-label  { display: inline; font-size: 11px; font-weight: 700; color: #333; letter-spacing: .5px; margin-left: 2px; }
+    .cr-label  { display: inline; font-size: 11px; font-weight: 700; color: #333; letter-spacing: .5px; margin-left: 2px; }
+    .bal-positive .dr-label, .bal-positive { color: #10bf39 !important; font-weight: 600; }
+    .bal-negative .cr-label, .bal-negative { color: #e30202 !important; font-weight: 600; }
+    .bal-zero  { color: #555 !important; }
+    .due-tag   { font-size: 10px; background: #fdecea; color: #e30202; border: 1px solid #e30202; border-radius: 10px; padding: 1px 5px; margin-left: 4px; font-weight: 700; vertical-align: middle; }
+
+    /* ── Mobile cards ── */
+    .mobile-cards { display: none; }
+
+    /* Customer cards */
+    .cust-card {
+      background: white; border-radius: 12px; padding: 14px 16px;
+      margin-bottom: 8px; box-shadow: 0 2px 6px rgba(0,0,0,.05);
+      cursor: pointer; transition: box-shadow .15s;
+      border: 1px solid #f0f0f0;
+    }
+    .cust-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+    .cust-card-name { font-size: 16px; font-weight: 700; color: #222; margin-bottom: 4px; }
+    .cust-card-phone { font-size: 13px; color: #888; }
+    .cust-card-bal { font-size: 16px; font-weight: 700; text-align: right; flex-shrink: 0; margin-left: 8px; }
+    .cust-bal-due   { color: #e30202; }
+    .cust-bal-adv   { color: #10bf39; }
+    .cust-bal-clear { color: #10bf39; }
+
+    /* Ledger cards — supplier bill-card style */
+    .ledger-card {
+      background: white;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+      cursor: pointer;
+      border: 1px solid #f0f0f0;
+      transition: background .15s;
+    }
+    .ledger-card:hover { background: #fafafa; }
+    /* Bill icon — same as supplier */
+    .l-icon {
+      width: 40px; height: 40px; border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 18px; color: white; flex-shrink: 0;
+    }
+    .l-icon.sale     { background: #e8f5e9; color: #2e7d32; }
+    .l-icon.payment  { background: #e3f2fd; color: #1565c0; }
+    .l-icon.ret      { background: #f3e5f5; color: #7b1fa2; }
+    /* Ledger amount colors */
+    .l-amt-sale    { color: #2e7d32; }
+    .l-amt-payment { color: #1565c0; }
+    .l-amt-ret     { color: #7b1fa2; }
+    /* Alloc lines (full width below) */
+    .l-alloc { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #eee; font-size: 12px; }
+    .l-alloc-line { color: #0066cc; padding: 2px 0; line-height: 1.5; }
+    .l-alloc-line.adv-line { color: #f57f17; }
+    .l-alloc-amt { font-weight: 500; color: #333; }
+    .l-due-badge { display: inline-block; background: #fdecea; color: #e30202; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; margin-top: 6px; border: 1px solid #ffcdd2; }
+    .disc-pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 8px; background: #f3e5f5; color: #7b1fa2; margin-top: 3px; }
+
+    /* ── Modals ── */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.5); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 15px; }
+    .modal-content { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-title { font-size: 18px; font-weight: 600; }
+    .close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; line-height: 1; }
+    .close-modal:hover { color: #333; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: 500; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: var(--font); outline: none; }
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent-green); }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+    .form-actions button { padding: 9px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: var(--font); font-weight: 500; }
+    .cancel-btn { background: white; border: 1px solid #ddd; }
+    .save-btn   { background: #10bf39; color: white; border: 1px solid #10bf39; }
+
+    /* ── Allocation UI ── */
+    .payment-allocation { margin-top: 15px; border: 1px solid #eee; border-radius: 6px; padding: 12px; }
+    .payment-allocation h4 { font-size: 14px; margin-bottom: 10px; color: #333; }
+    .allocation-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap; }
+    .allocation-item:last-child { border-bottom: none; }
+    .allocation-item .alloc-label { flex: 1; font-size: 13px; line-height: 1.5; min-width: 150px; }
+    .allocation-item input[type="number"] { width: 120px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; flex-shrink: 0; }
+    .alloc-header { display: flex; gap: 10px; padding: 0 0 8px; border-bottom: 1px solid #eee; font-size: 12px; font-weight: 600; color: #666; }
+    .alloc-header .alloc-label { flex: 1; }
+    .alloc-header span { width: 120px; text-align: center; }
+
+    /* ── Extra payment banner ── */
+    .extra-payment-banner { background: linear-gradient(135deg, #e8f5e9, #f1f8e9); border: 1.5px solid #10bf39; border-radius: 8px; padding: 12px 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .ep-info { font-size: 13px; color: #2e7d32; font-weight: 600; }
+    .ep-badge { background: #10bf39; color: white; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+    .use-extra-btn { background: #10bf39; color: white; border: none; padding: 6px 12px; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font); }
+
+    /* ── Extra alloc section ── */
+    .extra-alloc-section { background: #fffde7; border: 1px solid #fdd835; border-radius: 6px; padding: 12px; margin-top: 10px; }
+    .extra-alloc-section h4 { font-size: 13px; font-weight: 600; color: #f57f17; margin-bottom: 8px; }
+    .extra-alloc-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #fff9c4; flex-wrap: wrap; }
+    .extra-alloc-item:last-child { border-bottom: none; }
+    .eai-label { flex: 1; min-width: 140px; font-size: 13px; }
+    .extra-alloc-item input[type="number"] { width: 110px; padding: 5px 7px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+    .extra-alloc-item input.input-error { border-color: #e30202 !important; background: #fff5f5; }
+    .extra-available-note { font-size: 12px; color: #888; margin-top: 6px; }
+    .extra-input-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e8e8e8; flex-wrap: wrap; }
+    .extra-input-row label { font-size: 13px; font-weight: 500; flex: 1; min-width: 100px; }
+    .extra-input-row input { width: 150px; padding: 7px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+
+    /* ── Bill detail tables ── */
+    .detail-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+    .detail-table td { padding: 3px 0; border: none; font-size: 13px; }
+    .detail-table .amount { text-align: right; font-weight: 500; white-space: nowrap; }
+    .payment-note { font-weight: 600; margin-bottom: 5px; font-size: 13px; color: #333; }
+    .agst-row td:first-child { color: #0066cc; }
+    .extra-agst-row td:first-child { color: #f57f17; }
+
+    /* ── Images ── */
+    .image-previews { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .image-container { position: relative; display: inline-block; }
+    .image-preview { width: 80px; height: 80px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; }
+    .delete-image-btn { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; border: none; }
+
+    /* ── Type choice grid ── */
+    .type-choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+    .type-choice-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 25px 15px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 600; color: #333; background: white; transition: all .2s; font-family: var(--font); }
+    .type-choice-btn:hover { border-color: #10bf39; background: #f0fff4; }
+    .type-choice-btn .t-icon { font-size: 28px; }
+
+    /* ── Bill items table ── */
+    .bill-items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .bill-items-table th { background: #f8f9fa; padding: 7px 10px; text-align: left; font-weight: 600; color: #333; }
+    .bill-items-table td { padding: 6px 10px; border-bottom: 1px solid #f5f5f5; color: #555; }
+    .bill-detail-sec { margin-bottom: 14px; }
+    .bill-detail-sec h4 { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 7px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
+
+    /* ── Bill details action buttons ── */
+    .bill-action-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px 0 0; border-top: 1px solid #eee; margin-top: 10px; }
+    .bill-action-btn { display: flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: 6px; border: 1px solid #ddd; background: white; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: background .2s; }
+    .bill-action-btn:hover { background: #f5f5f5; }
+    .bill-action-btn.preview-btn { border-color: #9c27b0; color: #9c27b0; }
+    .bill-action-btn.print-btn   { border-color: #ff6b35; color: #ff6b35; }
+    .bill-action-btn.dl-btn      { border-color: #007bff; color: #007bff; }
+    .bill-action-btn.share-btn   { border-color: #25D366; color: #25D366; background: #25D366; color: white; }
+    .bill-action-btn.share-btn:hover { background: #1da851; }
+
+    /* ── Return Modal ── */
+    .return-method-row { display: flex; gap: 12px; margin-top: 8px; }
+    .return-method-opt { flex: 1; display: flex; align-items: center; gap: 8px; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all .2s; }
+    .return-method-opt.selected { border-color: var(--accent-green); background: #f0fff4; }
+    .return-item-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8f9fa; border-radius: 6px; margin-bottom: 8px; gap: 10px; flex-wrap: wrap; }
+    .return-item-name { flex: 1; min-width: 100px; font-size: 13px; font-weight: 500; }
+    .return-item-meta { font-size: 12px; color: #888; }
+    .return-item-qty { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .return-item-qty label { font-size: 12px; color: #666; }
+    .return-item-qty input { width: 70px; padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: center; font-family: var(--font); }
+    .return-summary-box { background: #fff8e1; border: 1px solid #ffd54f; border-radius: 8px; padding: 12px 14px; margin-top: 12px; font-size: 14px; font-weight: 600; color: #e65c00; }
+
+    /* ── Return history in bill details ── */
+    .return-history-item { background: #fff8f0; border: 1px solid #ffd5a8; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; }
+    .return-history-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .return-history-header strong { color: #e65c00; }
+    .return-history-method { font-size: 11px; background: #fff; border: 1px solid #ffd5a8; border-radius: 10px; padding: 1px 7px; }
+
+    /* ── Coupon badge in bill details ── */
+    .coupon-badge { display: inline-flex; align-items: center; gap: 6px; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 8px; padding: 6px 12px; margin-top: 6px; font-size: 13px; }
+    .coupon-badge strong { color: #7b1fa2; }
+
+    /* ── Utility ── */
+    .spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid #ccc; border-top-color: #10bf39; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 5px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-row td { text-align: center; color: #aaa; font-size: 14px; padding: 30px; }
+    #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 22px; border-radius: 8px; font-size: 14px; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,.2); white-space: nowrap; }
+    #toast.show { display: block; }
+    .pay-bn-badge { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 20px; border: 1px solid #90caf9; }
+    .empty-state { text-align: center; padding: 40px 20px; color: #aaa; font-size: 14px; }
+
+    /* ── Mobile header icon buttons ── */
+    .header-icon-btns { display: none; align-items: center; gap: 6px; }
+    .hdr-icon-btn {
+      width: 36px; height: 36px;
+      border: none; border-radius: 8px;
+      background: #1c1c1c; color: white;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 17px; transition: background .2s;
+      flex-shrink: 0;
+    }
+    .hdr-icon-btn.green  { background: var(--accent-green); }
+    .hdr-icon-btn.wa     { background: #25D366; }
+    .hdr-icon-btn:hover  { opacity: .85; }
+    .hdr-icon-btn img    { width: 18px; height: 18px; filter: brightness(0) invert(1); }
+
+    /* ══════════════════ RESPONSIVE ══════════════════ */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .menu-toggle { display: block; }
+      .main-content { margin-left: 0; width: 100%; }
+      .top-header { position: fixed; top: 0; width: 100%; padding: 10px 15px; }
+      .content-area { padding: 15px; margin-top: 60px; }
+      .search-input { width: 100%; }
+      .search-filters-bar { flex-direction: column; align-items: stretch; padding: 12px 15px; gap: 10px; }
+      .search-section { width: 100%; justify-content: space-between; }
+      .action-section { justify-content: flex-end; }
+      /* Hide ledger action buttons on mobile — they're in the header */
+      #ledgerActionSection { display: none !important; }
+      /* Hide bulk WA button in content area on mobile — header icon is used */
+      #bulkWaBtn { display: none !important; }
+      .search-box { flex: 1; }
+      .shop-info-detail { flex-direction: column; align-items: stretch; }
+      .shop-info-detail .totals { flex-direction: column; gap: 5px; }
+      .table-container { display: none; }
+      .mobile-cards { display: block; }
+      .modal-content { padding: 18px; }
+      .modal-overlay { align-items: flex-end; padding: 0; }
+      .modal-content { border-radius: 14px 14px 0 0; max-height: 92vh; }
+      .type-choice-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .type-choice-btn { padding: 18px 10px; font-size: 14px; }
+      .return-method-row { flex-direction: column; }
+      .bill-action-bar { gap: 6px; }
+      .bill-action-btn { padding: 7px 10px; font-size: 12px; }
+      .wa-btn { padding: 8px 10px; font-size: 13px; }
+      .header-icon-btns { display: flex !important; }
+    }
+    @media (min-width: 769px) {
+      .mobile-cards { display: none !important; }
+    }
+
+    /* ── Scroll to Top Button ── */
+    #scrollTopBtn {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1a1a1a;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 1200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #scrollTopBtn.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    #scrollTopBtn:hover { background: #333; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="appSidebar">
+    <div class="brand">SP Fashion</div>
+    <a href="dashboard.html" class="nav-link"><div class="nav-inner"><img src="icon/deshboard.svg" width="20"/><span>Dashboard</span></div></a>
+    <a href="product.html"   class="nav-link"><div class="nav-inner"><img src="icon/products.svg" width="20"/><span>Products</span></div></a>
+    <a href="suppliers.html" class="nav-link"><div class="nav-inner"><img src="icon/Suppliers.svg" width="20"/><span>Suppliers</span></div></a>
+    <a href="staff.html"     class="nav-link"><div class="nav-inner"><img src="icon/customer.svg" width="20"/><span>Staff Members</span></div></a>
+    <a href="billing.html"   class="nav-link"><div class="nav-inner"><img src="icon/Bill.svg" width="20"/><span>Billing</span></div></a>
+    <a href="invoices.html"  class="nav-link"><div class="nav-inner"><img src="icon/invoices.svg" width="20"/><span>Invoices</span></div></a>
+    <a href="cashBook.html"  class="nav-link active"><div class="nav-inner"><img src="icon/cashbook.svg" width="20"/><span>Cash Book</span></div></a>
+    <a href="coupon.html"    class="nav-link"><div class="nav-inner"><img src="icon/coupon.svg" width="20"/><span>Coupons</span></div></a>
+    <a href="settings.html"  class="nav-link"><div class="nav-inner"><img src="icon/setting.svg" width="20"/><span>Settings</span></div></a>
+  </aside>
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main-content">
+    <div class="top-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="menu-toggle" id="menuToggle">☰</button>
+        <h1 class="page-title">Customer Cash Book</h1>
+      </div>
+      <!-- Mobile header icon buttons -->
+      <div class="header-icon-btns" id="headerIconBtns" style="display:none;">
+        <!-- Bulk WA — customer list view par dikhega -->
+        <button class="hdr-icon-btn wa" id="hdrBulkWaBtn" title="Sabhi Due Customers ko WhatsApp" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </button>
+        <!-- Single customer WA reminder — ledger view par dikhega -->
+        <button class="hdr-icon-btn wa" id="hdrWaBtn" title="WhatsApp Due Reminder" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="white" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </button>
+        <!-- Add Entry — ledger view par dikhega -->
+        <button class="hdr-icon-btn green" id="hdrAddBtn" title="Add Entry" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="content-area">
+
+      <!-- ─── VIEW 1: Customer List ─── -->
+      <div id="customerListView" class="view active">
+        <div class="search-filters-bar">
+          <div class="search-section">
+            <div class="search-box">
+              <input type="text" id="customerSearchInput" class="search-input" placeholder="Search name or mobile" />
+            </div>
+            <div class="filter-dropdown">
+              <div class="filters-btn" id="customerFilterBtn"><span id="customerFilterValue">All</span><span>▼</span></div>
+              <div id="customerFilterOptions" class="filter-options">
+                <a href="#" data-filter="All">All</a>
+                <a href="#" data-filter="Due">Due</a>
+                <a href="#" data-filter="Paid">Paid</a>
+              </div>
+            </div>
+          </div>
+          <div class="action-section">
+            <button class="bulk-wa-btn" id="bulkWaBtn" title="Sabhi due customers ko WhatsApp message bhejo">
+              <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Bulk Due Reminder
+            </button>
+          </div>
+        </div>
+        <!-- Desktop table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead><tr>
+              <th>Customer Name</th><th>Mobile Number</th>
+              <th>Total Debit</th><th>Total Credit</th><th>Remaining Balance</th>
+            </tr></thead>
+            <tbody id="customerTableBody">
+              <tr class="loading-row"><td colspan="5"><span class="spinner"></span>Loading customers…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Mobile cards -->
+        <div class="mobile-cards" id="customerMobileCards"></div>
+      </div>
+
+      <!-- ─── VIEW 2: Customer Ledger ─── -->
+      <div id="customerDetailView" class="view">
+        <div class="status-bar">
+          <a id="backToList">Customer Cash Book</a><span>/</span><span id="currentCustomerLabel"></span>
+        </div>
+        <div class="shop-info-detail">
+          <div>
+            <p><strong>Customer:</strong> <span id="detailName"></span></p>
+            <p><strong>Mobile:</strong> <span id="detailPhone"></span></p>
+          </div>
+          <div class="totals" id="detailTotals"></div>
+        </div>
+        <div class="search-filters-bar">
+          <div class="search-section">
+            <div class="search-box">
+              <input type="text" id="ledgerSearchInput" class="search-input" placeholder="Search date or bill number" />
+            </div>
+            <div class="filter-dropdown">
+              <div class="filters-btn" id="ledgerFilterBtn"><span id="ledgerFilterValue">All</span><span>▼</span></div>
+              <div id="ledgerFilterOptions" class="filter-options">
+                <a href="#" data-filter="All">All</a>
+                <a href="#" data-filter="Sale">Sale</a>
+                <a href="#" data-filter="Payment">Payment</a>
+                <a href="#" data-filter="Due">Due Bills</a>
+              </div>
+            </div>
+          </div>
+          <div class="action-section" id="ledgerActionSection">
+            <button class="wa-btn" id="waDueBtn" title="Send WhatsApp due reminder">📱 WhatsApp</button>
+            <button class="primary-btn" id="addEntryBtn">+ Add</button>
+          </div>
+        </div>
+        <!-- Desktop table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead><tr>
+              <th>Date</th><th>Details</th><th>Type</th>
+              <th>Bill Number</th><th>Debit</th><th>Credit</th>
+            </tr></thead>
+            <tbody id="ledgerTableBody"></tbody>
+          </table>
+        </div>
+        <!-- Mobile ledger cards -->
+        <div class="mobile-cards" id="ledgerMobileCards"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ MODALS ═══════════════════════ -->
+
+<!-- Add Entry Type Choice -->
+<div id="addEntryChoiceModal" class="modal-overlay">
+  <div class="modal-content" style="max-width:400px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Add Entry</h3>
+      <button class="close-modal" onclick="closeModal('addEntryChoiceModal')">&times;</button>
+    </div>
+    <div class="type-choice-grid">
+      <button class="type-choice-btn" id="choosePaymentBtn">
+        <span class="t-icon">💰</span>Payment
+      </button>
+      <button class="type-choice-btn" id="chooseReturnBtn">
+        <span class="t-icon">↩️</span>Return
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Payment Modal -->
+<div id="paymentModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title" id="paymentModalTitle">Record Payment</h3>
+      <button class="close-modal" onclick="closeModal('paymentModal')">&times;</button>
+    </div>
+    <form id="paymentForm">
+      <input type="hidden" id="editPaymentId" />
+      <input type="hidden" id="generatedPayBN" />
+      <div class="form-group">
+        <label>Payment Bill Number</label>
+        <span class="pay-bn-badge" id="payBNDisplay">Generating…</span>
+      </div>
+      <div class="form-group">
+        <label>Date *</label>
+        <input type="date" id="paymentDate" required />
+      </div>
+      <div class="form-group">
+        <label>Notes (optional)</label>
+        <textarea id="paymentNotes" rows="2" placeholder="Payment notes…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Upload Receipt (optional)</label>
+        <input type="file" id="paymentImages" multiple accept="image/*" />
+        <div class="image-previews" id="paymentImagePreviews"></div>
+      </div>
+      <div id="extraPaymentBannerWrap"></div>
+      <div class="payment-allocation">
+        <h4>Allocate Payment to Due Bills</h4>
+        <div id="unpaidBillsList"><p style="color:#999;font-size:13px;"><span class="spinner"></span>Loading due bills…</p></div>
+      </div>
+      <div class="extra-input-row">
+        <label>Extra / Advance — unallocated amount saved as customer advance</label>
+        <input type="number" id="extraPaymentInput" step="0.01" value="0" min="0" placeholder="₹0" />
+      </div>
+      <div id="extraAllocSection" class="extra-alloc-section" style="display:none;">
+        <h4>🟡 Allocate Advance Balance to Due Bills</h4>
+        <div id="extraAllocList"></div>
+        <p class="extra-available-note" id="extraAvailableNote"></p>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="cancel-btn" onclick="closeModal('paymentModal')">Cancel</button>
+        <button type="submit" class="save-btn" id="savePaymentBtn">Save Payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Return Modal -->
+<div id="returnModal" class="modal-overlay">
+  <div class="modal-content" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Process Return</h3>
+      <button class="close-modal" onclick="closeModal('returnModal')">&times;</button>
+    </div>
+    <div id="recentBillsForReturn" style="display:none;margin-bottom:14px;"></div>
+    <div class="form-group">
+      <label>Search Bill by Number *</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="returnBillSearch" class="form-input" placeholder="Enter bill number e.g. SP123456" style="flex:1;text-transform:uppercase;">
+        <button type="button" class="save-btn" onclick="searchReturnBill()" style="flex-shrink:0;padding:8px 14px;">Search</button>
+      </div>
+    </div>
+    <div id="returnBillSearchResult" style="display:none;background:#f8f9fa;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;"></div>
+    <div id="returnCouponInfo" style="display:none;"></div>
+    <div id="returnItemsSection" style="display:none;">
+      <div class="bill-detail-sec">
+        <h4>Select Items to Return</h4>
+        <div id="returnItemsList"></div>
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label id="returnMethodLabel">Refund / Return Method *</label>
+        <div class="return-method-row" id="returnMethodRowNormal">
+          <label class="return-method-opt" id="methodCashOpt">
+            <input type="radio" name="returnMethod" value="cash" style="margin:0;"> 💵 Cash Refund
+          </label>
+          <label class="return-method-opt" id="methodExtraOpt">
+            <input type="radio" name="returnMethod" value="extra" style="margin:0;"> 💰 Extra Credit
+          </label>
+          <label class="return-method-opt" id="methodReplOpt">
+            <input type="radio" name="returnMethod" value="replacement" style="margin:0;"> ↩️ Replacement + Coupon
+          </label>
+        </div>
+      </div>
+      <div class="form-group" id="replacementProductGroup" style="display:none;">
+        <label>Replacement Product Name (optional)</label>
+        <input type="text" id="replacementProductName" placeholder="Replacement item name…">
+      </div>
+      <div class="form-group">
+        <label>Return Note (optional)</label>
+        <input type="text" id="returnNote" placeholder="Reason for return…">
+      </div>
+      <div class="return-summary-box" id="returnSummaryBox" style="display:none;"></div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="cancel-btn" onclick="closeModal('returnModal')">Cancel</button>
+      <button type="button" class="save-btn" id="processReturnBtn" style="display:none;">Process Return</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bill Details Modal -->
+<div id="billDetailsModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Bill Details</h3>
+      <button class="close-modal" onclick="closeModal('billDetailsModal')">&times;</button>
+    </div>
+    <div id="billDetailsContent"></div>
+    <div class="bill-action-bar" id="billActionBar"></div>
+  </div>
+</div>
+
+<!-- Payment Details Modal -->
+<div id="paymentDetailsModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Payment Details</h3>
+      <button class="close-modal" onclick="closeModal('paymentDetailsModal')">&times;</button>
+    </div>
+    <div id="paymentDetailsContent"></div>
+    <div class="form-actions">
+      <button class="secondary-btn" id="addMoreImagesBtn">Add More Images</button>
+      <button class="secondary-btn" id="editPaymentOpenBtn" style="background:#0066cc;color:white;border-color:#0066cc;">Edit Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add More Images to Payment -->
+<div id="addImagesModal" class="modal-overlay">
+  <div class="modal-content" style="max-width:420px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Add More Images</h3>
+      <button class="close-modal" onclick="closeModal('addImagesModal')">&times;</button>
+    </div>
+    <form id="addImagesForm">
+      <input type="hidden" id="moreImagesPayId" />
+      <div class="form-group">
+        <label>Upload Images</label>
+        <input type="file" id="moreImagesInput" multiple accept="image/*" />
+      </div>
+      <div class="form-actions">
+        <button type="button" class="cancel-btn" onclick="closeModal('addImagesModal')">Cancel</button>
+        <button type="submit" class="save-btn">Add Images</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Bulk WhatsApp Due Reminder Modal -->
+<div id="bulkWaModal" class="modal-overlay">
+  <div class="modal-content bulk-wa-modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Bulk Due Reminder</h3>
+      <button class="close-modal" onclick="closeModal('bulkWaModal')">&times;</button>
+    </div>
+    <div class="bwa-summary" id="bwaSummary"></div>
+    <div class="bwa-customer-list" id="bwaCustomerList"></div>
+    <div id="bwaModeNote" style="margin-bottom:10px;"></div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:12px;font-weight:600;color:#666;display:block;margin-bottom:6px;">Message Preview:</label>
+      <div class="bwa-msg-preview" id="bwaMsgPreview"></div>
+    </div>
+    <div class="bwa-send-status" id="bwaSendStatus"></div>
+    <div class="bwa-actions">
+      <button class="cancel-btn" onclick="closeModal('bulkWaModal')" style="padding:9px 18px;border-radius:6px;cursor:pointer;font-size:14px;font-family:var(--font);">Cancel</button>
+      <button id="bwaSendAllBtn" style="background:#25D366;color:white;border:none;padding:9px 18px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:6px;">
+        <svg viewBox="0 0 24 24" fill="white" width="15" height="15"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        <span id="bwaSendBtnTxt">Send</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ═══════════════════════ SCRIPT ═══════════════════════ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, getDocs, getDoc,
+  doc, updateDoc, setDoc, query, where, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCVXql_12NNa9_bUXYfWhj8Z7ZUqTyD1ak",
+  authDomain: "sp-fashion-beca2.firebaseapp.com",
+  projectId: "sp-fashion-beca2",
+  storageBucket: "sp-fashion-beca2.firebasestorage.app",
+  messagingSenderId: "734725526616",
+  appId: "1:734725526616:web:4ed1410e441789653e262d",
+  measurementId: "G-3PFB7B7MZZ"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const CLOUD_NAME    = "df0aitccb";
+const UPLOAD_PRESET = "SP_Fashion";
+
+// ══ STATE ══
+let allBills = [], allPayments = [], customers = [];
+let currentCustomer = null, currentLedger = [];
+let customerFilter = 'All', ledgerFilter = 'All', ledgerSearch = '';
+let currentExtraBalance = 0;
+let _currentBillForActions = null; // bill object for action buttons
+
+// ══ SIDEBAR TOGGLE ══
+const sidebar       = document.getElementById('appSidebar');
+const menuToggle    = document.getElementById('menuToggle');
+const mobileOverlay = document.getElementById('mobileOverlay');
+menuToggle.addEventListener('click', () => sidebar.classList.contains('active') ? closeSidebar() : openSidebar());
+mobileOverlay.addEventListener('click', closeSidebar);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+function openSidebar()  { sidebar.classList.add('active'); mobileOverlay.classList.add('active'); }
+function closeSidebar() { sidebar.classList.remove('active'); mobileOverlay.classList.remove('active'); }
+
+// ══ HELPERS ══
+function formatDate(s) {
+  if (!s) return '';
+  if (s && typeof s.toDate === 'function') s = s.toDate().toISOString();
+  const d = new Date(s);
+  return isNaN(d) ? String(s) : d.toLocaleDateString('en-IN');
+}
+function toISODate(s) {
+  if (!s) return '';
+  if (s && typeof s.toDate === 'function') s = s.toDate().toISOString();
+  const d = new Date(s);
+  return isNaN(d) ? '' : d.toISOString().split('T')[0];
+}
+function toFullISO(s) {
+  if (!s) return '';
+  if (s && typeof s.toDate === 'function') s = s.toDate().toISOString();
+  const d = new Date(s);
+  return isNaN(d) ? '' : d.toISOString();
+}
+function formatCurrency(v) {
+  const n = parseFloat(v || 0);
+  return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
+}
+function imgUrl(img)  { return typeof img === 'string' ? img : (img && img.url ? img.url : ''); }
+function imgPid(img)  {
+  if (typeof img === 'object' && img && img.public_id) return img.public_id;
+  const u = imgUrl(img); if (!u) return null;
+  const m = u.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^./]+)?$/);
+  return m ? m[1] : null;
+}
+window.closeModal = id => { document.getElementById(id).style.display = 'none'; };
+function toast(msg, ms = 2600) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ══ IMAGE UPLOAD / DELETE ══
+function compressImage(file, maxKB) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader(); reader.readAsDataURL(file);
+    reader.onload = e => {
+      const img = new Image(); img.src = e.target.result;
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        let w = img.width, h = img.height, m = 1024;
+        if (w > h && w > m) { h = h * m / w; w = m; } else if (h > m) { w = w * m / h; h = m; }
+        c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h);
+        let q = 0.9, s = c.toDataURL('image/jpeg', q);
+        while ((s.length * .75) > maxKB * 1024 && q > 0.1) { q -= .05; s = c.toDataURL('image/jpeg', q); }
+        res(s);
+      };
+      img.onerror = rej;
+    };
+    reader.onerror = rej;
+  });
+}
+async function uploadToCloudinary(file) {
+  const kb = file.size / 1024;
+  const target = kb <= 500 ? 100 : kb <= 1000 ? 200 : 250;
+  let f = file;
+  if (kb > target) {
+    const du = await compressImage(file, target);
+    f = new File([await fetch(du).then(r => r.blob())], file.name, { type: 'image/jpeg' });
+  }
+  const fd = new FormData();
+  fd.append('file', f); fd.append('upload_preset', UPLOAD_PRESET);
+  const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
+  const d = await r.json();
+  return { url: d.secure_url, public_id: d.public_id, delete_token: d.delete_token || null };
+}
+async function uploadImages(files) {
+  if (!files || !files.length) return [];
+  return Promise.all(Array.from(files).map(uploadToCloudinary));
+}
+async function deleteFromCloudinary(imgOrId) {
+  const isObj = typeof imgOrId === 'object' && imgOrId !== null;
+  const token = isObj && imgOrId.delete_token ? imgOrId.delete_token : null;
+  const pid   = isObj ? imgPid(imgOrId) : imgOrId;
+  if (token) {
+    try {
+      const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/delete_by_token`,
+        { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({token}) });
+      if ((await r.json()).result === 'ok') return true;
+    } catch {}
+  }
+  if (pid) {
+    try { return (await fetch('/delete-image', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({public_id: pid}) })).ok; }
+    catch { return false; }
+  }
+  return false;
+}
+
+// ══ PAYMENT BILL NUMBER GENERATOR ══
+async function generatePaymentBillNumber() {
+  const snap = await getDocs(collection(db, 'customerCashBook'));
+  let max = 0;
+  snap.forEach(d => {
+    const m = (d.data().paymentBillNumber || '').match(/^PAY-(\d+)$/);
+    if (m) max = Math.max(max, parseInt(m[1]));
+  });
+  return `PAY-${String(max + 1).padStart(4, '0')}`;
+}
+
+// ══ LOAD ALL DATA ══
+async function loadAllData() {
+  document.getElementById('customerTableBody').innerHTML =
+    '<tr class="loading-row"><td colspan="5"><span class="spinner"></span>Loading customers…</td></tr>';
+  document.getElementById('customerMobileCards').innerHTML = '<div class="empty-state"><span class="spinner"></span> Loading…</div>';
+
+  const [bs, ps] = await Promise.all([
+    getDocs(collection(db, 'bills')),
+    getDocs(collection(db, 'customerCashBook'))
+  ]);
+  allBills    = bs.docs.map(d => ({ id: d.id, _src: 'bill',    ...d.data() }));
+  allPayments = ps.docs.map(d => ({ id: d.id, _src: 'payment', ...d.data() }));
+  buildCustomers();
+  renderCustomerTable();
+}
+
+function buildCustomers() {
+  const m = {};
+  allBills.forEach(b => {
+    const ph = (b.customerPhone || '').trim() || 'unknown';
+    if (!m[ph]) m[ph] = { phone: ph, name: b.customerName || 'Unknown', bills: [], payments: [] };
+    if (b.customerName) m[ph].name = b.customerName;
+    m[ph].bills.push(b);
+  });
+  allPayments.forEach(p => {
+    const ph = (p.customerPhone || '').trim() || 'unknown';
+    if (!m[ph]) m[ph] = { phone: ph, name: p.customerName || 'Unknown', bills: [], payments: [] };
+    m[ph].payments.push(p);
+  });
+  customers = Object.values(m);
+}
+
+function getCBPaidMap(phone, excludePayId = null) {
+  const map = {};
+  allPayments.filter(p => (p.customerPhone || '').trim() === phone && p.id !== excludePayId)
+    .forEach(pay => {
+      (pay.allocations      || []).forEach(a => { map[a.billId] = (map[a.billId] || 0) + (a.amount || 0); });
+      (pay.extraAllocations || []).forEach(a => { map[a.billId] = (map[a.billId] || 0) + (a.amount || 0); });
+    });
+  return map;
+}
+
+function calcCustomerTotals(customer) {
+  const cbPaid = getCBPaidMap(customer.phone);
+  let totalDebit = 0, totalCredit = 0;
+  customer.bills.forEach(b => {
+    const rawTotal   = parseFloat(b.totalAmount || 0);
+    // effectiveTotal is saved in Firebase by billing.html
+    const effTotal   = b.effectiveTotal !== undefined ? parseFloat(b.effectiveTotal) : rawTotal;
+    const isPaid     = b.status === 'paid';
+    // 'replaced' and 'returned' bills are also considered settled — no due
+    const isSettled  = isPaid || b.status === 'replaced' || b.status === 'returned';
+
+    // Debit = what customer was actually charged
+    totalDebit += effTotal;
+
+    // Credit = what was received
+    if (isSettled) {
+      totalCredit += effTotal; // fully settled
+    } else {
+      totalCredit += parseFloat(b.receivedAmount || 0);
+      totalCredit += cbPaid[b.id] || 0;
+    }
+  });
+  return { totalDebit, totalCredit, remaining: totalDebit - totalCredit };
+}
+
+// ══ CUSTOMER TABLE ══
+function renderCustomerTable() {
+  const tbody      = document.getElementById('customerTableBody');
+  const mobileDiv  = document.getElementById('customerMobileCards');
+  tbody.innerHTML = '';
+  mobileDiv.innerHTML = '';
+  const q = document.getElementById('customerSearchInput').value.toLowerCase();
+
+  let list = customers.filter(c =>
+    c.phone && c.phone !== 'unknown' && c.phone.replace(/\D/g,'').length >= 10 &&
+    (c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q))
+  );
+  if (customerFilter !== 'All') {
+    list = list.filter(c => {
+      const { remaining } = calcCustomerTotals(c);
+      return customerFilter === 'Due' ? remaining > 0.01 : remaining <= 0.01;
+    });
+  }
+  if (!list.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="5" style="color:#aaa;">No customers found.</td></tr>';
+    mobileDiv.innerHTML = '<div class="empty-state">No customers found.</div>';
+    return;
+  }
+  // Sort by latest bill timestamp (newest customer activity first)
+  list.sort((a, b) => {
+    const latestA = Math.max(...(a.bills.map(bill => {
+      const ts = bill.timestamp;
+      if (!ts) return 0;
+      if (ts.seconds) return ts.seconds;
+      return new Date(ts).getTime() / 1000;
+    })), 0);
+    const latestB = Math.max(...(b.bills.map(bill => {
+      const ts = bill.timestamp;
+      if (!ts) return 0;
+      if (ts.seconds) return ts.seconds;
+      return new Date(ts).getTime() / 1000;
+    })), 0);
+    return latestB - latestA;
+  });
+  list.forEach(c => {
+    const { totalDebit, totalCredit, remaining } = calcCustomerTotals(c);
+    let cls = 'bal-zero', suf = '';
+    if      (remaining >  0.01) { cls = 'bal-negative'; suf = ' <span class="cr-label">Due</span>'; }
+    else if (remaining < -0.01) { cls = 'bal-positive';  suf = ' <span class="dr-label">Advance</span>'; }
+
+    // Desktop row
+    const tr = tbody.insertRow();
+    tr.innerHTML = `
+      <td>${c.name}</td><td>${c.phone}</td>
+      <td>${formatCurrency(totalDebit)} <span class="dr-label">Dr</span></td>
+      <td>${formatCurrency(totalCredit)} <span class="cr-label">Cr</span></td>
+      <td class="${cls}">${formatCurrency(Math.abs(remaining))}${suf}</td>`;
+    tr.onclick = () => openCustomerLedger(c.phone, c.name);
+
+    // Mobile card
+    const pilClass = remaining > 0.01 ? 'due' : remaining < -0.01 ? 'adv' : 'clear';
+    const pilText  = remaining > 0.01 ? `Due ${formatCurrency(remaining)}` : remaining < -0.01 ? `Advance ${formatCurrency(Math.abs(remaining))}` : '✓ Clear';
+    const card = document.createElement('div');
+    card.className = 'cust-card';
+    card.onclick = () => openCustomerLedger(c.phone, c.name);
+    const balLabel = remaining > 0.01 ? 'Due' : remaining < -0.01 ? 'Adv' : '✓';
+    const balColor = remaining > 0.01 ? 'cust-bal-due' : remaining < -0.01 ? 'cust-bal-adv' : 'cust-bal-clear';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="cust-card-name">${c.name}</div>
+          <div class="cust-card-phone">📞 ${c.phone}</div>
+        </div>
+        <div class="cust-card-bal ${balColor}">
+          ${formatCurrency(Math.abs(remaining))}<br>
+          <span style="font-size:12px;font-weight:600;">${balLabel}</span>
+        </div>
+      </div>`;
+    mobileDiv.appendChild(card);
+  });
+}
+
+// ══ OPEN CUSTOMER LEDGER ══
+async function openCustomerLedger(phone, name) {
+  currentCustomer = { phone, name };
+  document.getElementById('currentCustomerLabel').textContent = name;
+  document.getElementById('detailName').textContent  = name;
+  document.getElementById('detailPhone').textContent = phone;
+
+  const ps = await getDocs(query(collection(db, 'customerCashBook'), where('customerPhone', '==', phone)));
+  allPayments = allPayments.filter(p => (p.customerPhone || '').trim() !== phone);
+  ps.docs.forEach(d => allPayments.push({ id: d.id, _src: 'payment', ...d.data() }));
+  buildCustomers();
+
+  const cs = await getDoc(doc(db, 'customers', phone));
+  currentExtraBalance = cs.exists() ? (cs.data().extraPayment || 0) : 0;
+
+  buildLedger();
+  document.getElementById('customerListView').classList.remove('active');
+  document.getElementById('customerDetailView').classList.add('active');
+  ledgerFilter = 'All'; ledgerSearch = '';
+  document.getElementById('ledgerSearchInput').value       = '';
+  document.getElementById('ledgerFilterValue').textContent = 'All';
+  // Mobile header buttons: ledger view
+  updateMobileHeaderBtns('ledger');
+  renderLedgerTable();
+  updateDetailTotals();
+  window.scrollTo(0, 0);
+}
+
+function updateDetailTotals() {
+  const c = customers.find(x => x.phone === currentCustomer.phone);
+  if (!c) return;
+  const { totalDebit, totalCredit, remaining } = calcCustomerTotals(c);
+  let rHtml;
+  if      (remaining >  0.01) rHtml = `<span class="bal-negative">${formatCurrency(remaining)} <span class="cr-label">Due</span></span>`;
+  else if (remaining < -0.01) rHtml = `<span class="bal-positive">${formatCurrency(Math.abs(remaining))} <span class="dr-label">Advance</span></span>`;
+  else                        rHtml = `<span class="bal-zero">₹0</span>`;
+  document.getElementById('detailTotals').innerHTML = `
+    <span>Total Debit: ${formatCurrency(totalDebit)} <span class="dr-label">Dr</span></span>
+    <span>Total Credit: ${formatCurrency(totalCredit)} <span class="cr-label">Cr</span></span>
+    <span>Balance: ${rHtml}</span>`;
+}
+
+function buildLedger() {
+  currentLedger = [];
+  const c = customers.find(x => x.phone === currentCustomer.phone);
+  if (!c) return;
+  const cbPaid = getCBPaidMap(currentCustomer.phone);
+
+  c.bills.forEach(b => {
+    const receivedAtBill = parseFloat(b.receivedAmount || 0);
+    const cbAllocated    = cbPaid[b.id] || 0;
+    const rawTotal       = parseFloat(b.totalAmount || 0);
+    // effectiveTotal saved by billing.html = actual amount charged (after coupon + finalPayment)
+    const effTotal       = b.effectiveTotal !== undefined ? parseFloat(b.effectiveTotal) : rawTotal;
+    const isPaidStatus   = b.status === 'paid' || b.status === 'replaced' || b.status === 'returned';
+    const totalPaid      = receivedAtBill + cbAllocated;
+    const remaining      = isPaidStatus ? 0 : Math.max(0, effTotal - totalPaid);
+    const creditForRow   = isPaidStatus ? effTotal : receivedAtBill;
+    // discount = difference between items sum and effective (coupon + negotiation)
+    const discountAmt    = rawTotal - effTotal;
+
+    currentLedger.push({
+      _type:      'bill',
+      id:         b.id,
+      date:       toISODate(b.timestamp),
+      _sortKey:   toFullISO(b.timestamp),
+      billNumber: b.billNumber || '',
+      debit:      effTotal,
+      credit:     creditForRow,
+      cbAllocated,
+      remaining,
+      rawBill:    b,
+      effectiveTotal: effTotal,
+      rawTotal,
+      discountAmt
+    });
+  });
+
+  c.payments.forEach(p => {
+    const allocCredit = (p.allocations      || []).reduce((s, a) => s + (a.amount || 0), 0)
+                      + (p.extraAllocations || []).reduce((s, a) => s + (a.amount || 0), 0);
+    currentLedger.push({
+      _type:         'payment',
+      id:            p.id,
+      date:          p.date || '',
+      _sortKey:      p.createdAt ? toFullISO(p.createdAt) : (p.date || ''),
+      billNumber:    p.paymentBillNumber || '',
+      debit:         0,
+      credit:        allocCredit,
+      totalReceived: parseFloat(p.amount || 0),
+      rawPayment:    p
+    });
+  });
+
+  currentLedger.sort((a, b) => (b._sortKey || b.date || '').localeCompare(a._sortKey || a.date || ''));
+}
+
+// ══ LEDGER TABLE ══
+function renderLedgerTable() {
+  const tbody     = document.getElementById('ledgerTableBody');
+  const mobileDiv = document.getElementById('ledgerMobileCards');
+  tbody.innerHTML = '';
+  mobileDiv.innerHTML = '';
+
+  let list = currentLedger.filter(e => {
+    if (ledgerFilter === 'Sale')    return e._type === 'bill';
+    if (ledgerFilter === 'Payment') return e._type === 'payment';
+    if (ledgerFilter === 'Due')     return e._type === 'bill' && e.remaining > 0.01;
+    if (ledgerSearch) {
+      const s = ledgerSearch.toLowerCase();
+      return (e.date || '').includes(s) || (e.billNumber || '').toLowerCase().includes(s);
+    }
+    return true;
+  });
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="6" style="color:#aaa;">No entries found.</td></tr>';
+    mobileDiv.innerHTML = '<div class="empty-state">No entries found.</div>';
+    return;
+  }
+
+  list.forEach(entry => {
+    const tr = tbody.insertRow();
+    let detailsHtml = '';
+
+    if (entry._type === 'payment') {
+      const p = entry.rawPayment;
+      detailsHtml = `<div class="payment-note">${p.notes || 'Payment'}</div><table class="detail-table">`;
+      (p.allocations || []).forEach(a => {
+        detailsHtml += `<tr class="agst-row"><td>Agst: <span class="clickable agst-link" data-bill-id="${a.billId}">${a.billNumber || a.billId}</span></td><td class="amount">${formatCurrency(a.amount)} <span class="cr-label">Cr</span></td></tr>`;
+      });
+      (p.extraAllocations || []).forEach(a => {
+        detailsHtml += `<tr class="extra-agst-row"><td>Adv Agst: <span class="clickable agst-link" data-bill-id="${a.billId}">${a.billNumber || a.billId}</span></td><td class="amount">${formatCurrency(a.amount)} <span class="cr-label">Cr</span></td></tr>`;
+      });
+      if ((p.extraPayment || 0) > 0.001) {
+        detailsHtml += `<tr><td style="color:#f57f17;font-weight:600;">⬆ Advance saved</td><td class="amount" style="color:#f57f17;">${formatCurrency(p.extraPayment)}</td></tr>`;
+      }
+      if (!(p.allocations || []).length && !(p.extraAllocations || []).length) {
+        detailsHtml += `<tr><td colspan="2" style="color:#999;font-size:12px;">Full amount saved as advance</td></tr>`;
+      }
+      detailsHtml += '</table>';
+    } else {
+      // Bill row — combined Sale info
+      const b = entry.rawBill;
+      const discAmt = entry.discountAmt || 0;
+      detailsHtml = 'Sale';
+      if (discAmt > 0.01) detailsHtml += ` <span style="color:#7b1fa2;font-size:11px;background:#f3e5f5;padding:1px 6px;border-radius:8px;">🏷️ -${formatCurrency(discAmt)}</span>`;
+      if (entry.remaining > 0.01)
+        detailsHtml += ` <span class="due-tag">DUE ${formatCurrency(entry.remaining)}</span>`;
+      else
+        detailsHtml += ` <span style="color:#10bf39;font-size:11px;font-weight:600;">✓ Paid</span>`;
+    }
+
+    let bnClass = 'clickable';
+    if (entry._type === 'bill' && entry.remaining > 0.01) bnClass = 'due-bill';
+    const bnHtml = entry.billNumber ? `<span class="${bnClass}" data-eid="${entry.id}" data-etype="${entry._type}">${entry.billNumber}</span>` : '—';
+    let typeLabel = entry._type === 'bill' ? 'Sale' : 'Payment';
+    
+    // Debit column: bill row shows debit; payment row = empty
+    const drHtml = entry._type === 'bill' ? `${formatCurrency(entry.debit)} <span class="dr-label">Dr</span>` : '';
+    
+    // Credit column: bill row shows credit (received at billing); payment row shows alloc credit
+    let crHtml = '';
+    if (entry._type === 'bill' && entry.credit > 0.001) {
+      crHtml = `${formatCurrency(entry.credit)} <span class="cr-label">Cr</span>`;
+    } else if (entry._type === 'payment') {
+      if (entry.credit > 0.001) {
+        crHtml = `${formatCurrency(entry.credit)} <span class="cr-label">Cr</span>`;
+      } else if ((entry.rawPayment.extraPayment || 0) > 0.001) {
+        crHtml = `<span style="color:#aaa;font-size:12px;">₹0 (advance only)</span>`;
+      }
+    }
+
+    tr.innerHTML = `<td>${formatDate(entry.date)}</td><td></td><td>${typeLabel}</td><td>${bnHtml}</td><td>${drHtml}</td><td>${crHtml}</td>`;
+    tr.cells[1].innerHTML = detailsHtml;
+    tr.cells[1].querySelectorAll('.agst-link').forEach(el => {
+      el.addEventListener('click', e => { e.stopPropagation(); showBillDetails(el.dataset.billId); });
+    });
+    const bnSpan = tr.cells[3].querySelector('span');
+    if (bnSpan) {
+      bnSpan.addEventListener('click', e => {
+        e.stopPropagation();
+        if (entry._type === 'bill') showBillDetails(entry.id);
+        else showPaymentDetails(entry.id);
+      });
+    }
+    tr.onclick = () => {
+      if (entry._type === 'bill') showBillDetails(entry.id);
+      else showPaymentDetails(entry.id);
+    };
+
+    // Mobile ledger card — supplier bill-card style
+    const mobileCard = document.createElement('div');
+    const isPayment      = entry._type === 'payment';
+    const isReturnCoupon = isPayment && entry.rawPayment && entry.rawPayment.type === 'return-coupon';
+    const hasCoupon      = !isPayment && !!(entry.rawBill && (entry.rawBill.couponCode || (entry.rawBill.appliedCoupon && entry.rawBill.appliedCoupon.code)));
+
+    // Icon: Sale=↑ green, Payment=↓ blue, Return/Coupon=↩ purple
+    const lIconClass  = isReturnCoupon ? 'ret' : isPayment ? 'payment' : 'sale';
+    const lIconSymbol = isReturnCoupon ? '↩' : isPayment ? '↓' : '↑';
+    const lAmtClass   = isReturnCoupon ? 'l-amt-ret' : isPayment ? 'l-amt-payment' : 'l-amt-sale';
+    const mobAmount   = isPayment ? formatCurrency(entry.credit || 0) : formatCurrency(entry.debit);
+    const amtLabel    = isPayment ? 'Cr' : 'Dr';
+    const amtLabelColor = isPayment ? '#1565c0' : '#2e7d32';
+
+    mobileCard.className = 'ledger-card';
+
+    // Notes text
+    const notesText = isPayment ? ((entry.rawPayment && entry.rawPayment.notes) ? entry.rawPayment.notes.substring(0,22) : '') : '';
+
+    // Right-side badge: Due/Paid under amount
+    let rightBadge = '';
+    if (!isPayment) {
+      const discAmt = entry.discountAmt || 0;
+      if (entry.remaining > 0.01) {
+        rightBadge = `<div class="l-due-badge" style="margin-top:4px;display:inline-block;">Due ${formatCurrency(entry.remaining)}</div>`;
+      } else {
+        rightBadge = `<div style="font-size:11px;color:#10bf39;font-weight:600;margin-top:4px;">✓ Paid</div>`;
+      }
+      if (discAmt > 0.01) rightBadge += `<div class="disc-pill" style="margin-top:3px;display:block;">🏷️ -${formatCurrency(discAmt)}</div>`;
+    }
+
+    // Alloc block (full width below) — only for payments
+    let allocHtml = '';
+    if (isPayment) {
+      const p = entry.rawPayment;
+      const allocs      = p.allocations      || [];
+      const extraAllocs = p.extraAllocations || [];
+      if (allocs.length || extraAllocs.length || (p.extraPayment||0) > 0) {
+        allocHtml = '<div class="l-alloc">';
+        allocs.forEach(a => {
+          allocHtml += `<div class="l-alloc-line">Agst ${a.billNumber || a.billId} — <span class="l-alloc-amt">${formatCurrency(a.amount)} Cr</span></div>`;
+        });
+        extraAllocs.forEach(a => {
+          allocHtml += `<div class="l-alloc-line adv-line">Adv Agst ${a.billNumber || a.billId} — <span class="l-alloc-amt">${formatCurrency(a.amount)} Cr</span></div>`;
+        });
+        if ((p.extraPayment||0) > 0) {
+          allocHtml += `<div class="l-alloc-line adv-line">Advance Saved — <span class="l-alloc-amt">${formatCurrency(p.extraPayment)}</span></div>`;
+        }
+        allocHtml += '</div>';
+      }
+    }
+
+    mobileCard.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div class="l-icon ${lIconClass}">${lIconSymbol}</div>
+          <div>
+            <div style="font-size:15px;font-weight:600;color:#1e1e1e;margin-bottom:2px;">${entry.billNumber || '—'}</div>
+            <div style="font-size:12px;color:#888;">
+              ${formatDate(entry.date)}${notesText ? ' · ' + notesText : ''}
+            </div>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:16px;font-weight:700;" class="${lAmtClass}">${mobAmount} <span style="font-size:11px;font-weight:700;color:${amtLabelColor};">${amtLabel}</span></div>
+          ${rightBadge}
+        </div>
+      </div>
+      ${allocHtml}`;
+
+    mobileCard.onclick = () => {
+      if (entry._type === 'bill') showBillDetails(entry.id);
+      else showPaymentDetails(entry.id);
+    };
+    mobileDiv.appendChild(mobileCard);
+  });
+}
+
+// ══ BILL DETAILS MODAL ══
+async function showBillDetails(billId) {
+  // Always fetch fresh from Firebase to get appliedCoupon, couponCode, couponDiscount
+  let bill;
+  try {
+    const s = await getDoc(doc(db, 'bills', billId));
+    if (!s.exists()) { toast('Bill not found.'); return; }
+    bill = { id: s.id, _src: 'bill', ...s.data() };
+  } catch(e) {
+    bill = allBills.find(b => b.id === billId);
+    if (!bill) { toast('Bill not found.'); return; }
+  }
+  _currentBillForActions = bill;
+
+  const cbPaid      = currentCustomer ? getCBPaidMap(currentCustomer.phone) : {};
+  const cbAllocated = cbPaid[bill.id] || 0;
+  const receivedAtBill = parseFloat(bill.receivedAmount || 0);
+  const rawTotal    = parseFloat(bill.totalAmount || 0);
+  // Use effectiveTotal from Firebase (saved by billing.html) = actual amount charged
+  const effTotal    = bill.effectiveTotal !== undefined ? parseFloat(bill.effectiveTotal) : rawTotal;
+  const discountAmt = rawTotal - effTotal; // coupon + any negotiation discount
+  const fp          = bill.finalPayment ? parseFloat(bill.finalPayment) : null;
+  const isPaidStatus = bill.status === 'paid' || bill.status === 'replaced' || bill.status === 'returned';
+  const totalPaid   = receivedAtBill + cbAllocated;
+  const rem         = isPaidStatus ? 0 : Math.max(0, effTotal - totalPaid);
+  const displayReceivedAtBilling = (bill.status === 'paid') ? effTotal : receivedAtBill;
+
+  let badge = '';
+  if (bill.status === 'replaced') badge = '<span style="color:#7b1fa2;font-weight:600;">↩️ Replaced (Coupon Issued)</span>';
+  else if (bill.status === 'returned') badge = '<span style="color:#e65c00;font-weight:600;">↩ Returned</span>';
+  else if (rem <= 0.01 || isPaidStatus) badge = '<span style="color:#10bf39;font-weight:600;">✓ Fully Paid</span>';
+  else if (totalPaid > 0.01) badge = `<span style="color:#f57c00;font-weight:600;">Partial — Due ${formatCurrency(rem)}</span>`;
+  else badge = `<span style="color:#e30202;font-weight:600;">Unpaid — Due ${formatCurrency(rem)}</span>`;
+
+  // Items table
+  let itemsHtml = '<p style="color:#aaa;font-size:13px;">No items.</p>';
+  if (bill.items && bill.items.length) {
+    itemsHtml = `<table class="bill-items-table">
+      <thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
+      <tbody>
+        ${bill.items.map((it, i) => {
+          const qty   = parseFloat(it.qty || it.quantity || 1);
+          const rate  = parseFloat(it.rate || it.price || 0);
+          const amt   = parseFloat(it.amount || it.total || qty * rate);
+          return `<tr><td>${i+1}</td><td>${it.name||it.itemName||'—'}</td><td>${qty}</td><td>${formatCurrency(rate)}</td><td>${formatCurrency(amt)}</td></tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+  }
+
+  // Coupon/Discount section — read from appliedCoupon field saved by billing.html
+  let couponHtml = '';
+  const ac = bill.appliedCoupon;
+  const savedCouponCode = (ac && ac.code) ? ac.code : (bill.couponCode || null);
+  const savedCouponDisc = parseFloat(bill.couponDiscount || 0);
+
+  if (savedCouponCode && savedCouponDisc > 0) {
+    // Full coupon details from Firebase
+    let discLabel = '';
+    if (ac) {
+      if (ac.discountType === 'cash') {
+        discLabel = `₹${ac.discountValue} Cash OFF`;
+      } else if (ac.discountSubType === 'product_percent') {
+        discLabel = `${ac.discountValue}% OFF on Product`;
+      } else {
+        discLabel = `${ac.discountValue}% OFF on Bill`;
+      }
+    }
+    couponHtml = `<div class="coupon-badge" style="flex-direction:column;align-items:flex-start;gap:5px;padding:10px 14px;margin-top:6px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:16px;">🏷️</span>
+        <strong style="color:#7b1fa2;font-size:14px;letter-spacing:.5px;">${savedCouponCode}</strong>
+        ${discLabel ? `<span style="background:#7b1fa2;color:white;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px;">${discLabel}</span>` : ''}
+      </div>
+      <div style="font-size:13px;color:#555;">
+        Discount: <strong style="color:#10bf39;font-size:14px;">-${formatCurrency(savedCouponDisc)}</strong>
+      </div>
+    </div>`;
+  } else if (discountAmt > 0.01) {
+    // Old bills — no coupon code saved, just show discount amount
+    couponHtml = `<div class="coupon-badge" style="margin-top:6px;">
+      🏷️ Discount Applied: <strong style="color:#10bf39;">-${formatCurrency(discountAmt)}</strong>
+      &nbsp;<span style="font-size:11px;color:#888;">(Coupon / Negotiation)</span>
+    </div>`;
+  }
+
+  // Return history section
+  let returnsHtml = '';
+  if (bill.returns && bill.returns.length) {
+    returnsHtml = `<div class="bill-detail-sec">
+      <h4>Return History</h4>
+      ${bill.returns.map(r => `
+        <div class="return-history-item">
+          <div class="return-history-header">
+            <strong>↩ ${formatCurrency(r.totalAmount)} Returned</strong>
+            <span class="return-history-method">${r.method === 'extra' ? '💰 Extra Credit' : r.method === 'replacement' ? '↩️ Replacement' : '💵 Cash Refund'}</span>
+          </div>
+          <div style="font-size:12px;color:#888;">📅 ${formatDate(r.date)} ${r.note ? `· ${r.note}` : ''}</div>
+          <div style="font-size:12px;color:#666;margin-top:3px;">${(r.items || []).map(i => `${i.name} ×${i.qty}`).join(', ')}</div>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  document.getElementById('billDetailsContent').innerHTML = `
+    <div class="bill-detail-sec">
+      <h4>Bill Info</h4>
+      <p style="margin-bottom:6px;"><strong>Bill No:</strong> ${bill.billNumber || '—'}</p>
+      <p style="margin-bottom:6px;"><strong>Date:</strong> ${formatDate(bill.timestamp)}</p>
+      <p style="margin-bottom:6px;"><strong>Customer:</strong> ${bill.customerName || '—'} &nbsp; <span style="color:#888;">${bill.customerPhone || ''}</span></p>
+      <p style="margin-bottom:6px;"><strong>Status:</strong> ${badge}</p>
+      ${couponHtml}
+    </div>
+    <div class="bill-detail-sec"><h4>Items</h4>${itemsHtml}</div>
+    ${returnsHtml}
+    <div class="bill-detail-sec">
+      <table class="detail-table">
+        <tr><td>Sub Total (Items)</td><td class="amount">${formatCurrency(rawTotal)}</td></tr>
+        ${savedCouponCode && savedCouponDisc > 0
+          ? `<tr style="font-weight:700;"><td>Total</td><td class="amount"><strong>${formatCurrency(rawTotal)}</strong></td></tr>
+             <tr><td style="color:#7b1fa2;">🏷️ Coupon (${savedCouponCode})</td><td class="amount" style="color:#7b1fa2;font-weight:700;">-${formatCurrency(savedCouponDisc)}</td></tr>
+             <tr style="border-top:1px solid #eee;"><td style="color:#e65c00;font-weight:700;"><strong>Final Amt</strong></td><td class="amount" style="color:#e65c00;font-weight:700;"><strong>${formatCurrency(effTotal)}</strong></td></tr>`
+          : `<tr style="border-top:1px solid #eee;font-weight:700;"><td><strong>Total</strong></td><td class="amount"><strong>${formatCurrency(effTotal)}</strong></td></tr>`
+        }
+        <tr><td>Received at Billing</td><td class="amount" style="color:#10bf39;">${formatCurrency(displayReceivedAtBilling)}</td></tr>
+        ${!isPaidStatus && cbAllocated > 0.001 ? `<tr><td>Paid via Cash Book</td><td class="amount" style="color:#10bf39;">${formatCurrency(cbAllocated)}</td></tr>` : ''}
+        ${rem > 0.01 ? `<tr><td style="color:#e30202;font-weight:600;">Remaining Due</td><td class="amount" style="color:#e30202;font-weight:600;">${formatCurrency(rem)}</td></tr>` : ''}
+      </table>
+    </div>`;
+
+  // Action buttons
+  const bar = document.getElementById('billActionBar');
+  bar.innerHTML = `
+    <button class="bill-action-btn preview-btn" id="billPreviewBtn">👁️ Preview</button>
+    <button class="bill-action-btn print-btn"   id="billPrintBtn">🖨️ Print</button>
+    <button class="bill-action-btn dl-btn"       id="billDlBtn">⬇ Download</button>
+    <button class="bill-action-btn share-btn"    id="billShareBtn">📤 WhatsApp</button>`;
+
+  bar.querySelector('#billPreviewBtn').onclick  = () => openBillTemplate(bill, false);
+  bar.querySelector('#billPrintBtn').onclick    = () => openBillTemplate(bill, true);
+  bar.querySelector('#billDlBtn').onclick       = () => downloadBillImg(bill);
+  bar.querySelector('#billShareBtn').onclick    = () => shareBillWhatsApp(bill);
+
+  document.getElementById('billDetailsModal').style.display = 'flex';
+}
+
+// ══ BILL TEMPLATE FUNCTIONS ══
+function formatBillForTemplate(bill) {
+  const settings = JSON.parse(localStorage.getItem('shopSettings') || '{}');
+  const io = settings.invoiceOptions || {};
+
+  // Items
+  const items = (bill.items || []).map(it => ({
+    name:         it.name || it.itemName || '—',
+    barcode:      it.barcode || it.spBarcode || '',
+    qty:          parseFloat(it.qty || 1),
+    mrp:          parseFloat(it.mrp || it.rate || 0),
+    rate:         parseFloat(it.rate || 0),
+    amount:       parseFloat(it.amount || 0),
+    originalRate: parseFloat(it.originalRate !== undefined ? it.originalRate : (it.mrp || it.rate || 0)),
+  }));
+
+  // Firebase mein:
+  // totalAmount   = rawBillTotal (items ki sum, coupon se pehle)
+  // effectiveTotal = effectivePayable (coupon + negotiation ke baad final payable)
+  // couponDiscount = coupon discount amount
+  // couponCode     = coupon code string
+  // appliedCoupon  = full coupon object
+
+  const rawTotal    = parseFloat(bill.totalAmount   || 0);   // items sum
+  const effTotal    = parseFloat(bill.effectiveTotal !== undefined ? bill.effectiveTotal : rawTotal);
+  const couponDisc  = parseFloat(bill.couponDiscount || 0);
+  const ac          = bill.appliedCoupon;
+  const couponCode  = (ac && ac.code) ? ac.code : (bill.couponCode || null);
+
+  // Template ke liye:
+  // totalAmount   = SubTotal row = item rates sum (mrmSubTotal)
+  // effectiveTotal = Total row = before coupon = effTotal + couponDisc (kyunki Firebase ne coupon ghata ke save kiya)
+  // couponCode, couponDiscount = coupon row
+  // finalPayment = Final Amt row = effTotal (jo actually charge hua)
+
+  // SubTotal = actual billing rates × qty (not MRP)
+  // billing.html saves item.rate as the actual rate charged
+  const mrmSubTotal = items.reduce((s, it) => s + it.rate * it.qty, 0);
+  const billTotalBeforeCoupon = couponDisc > 0 ? (effTotal + couponDisc) : effTotal;
+  const hasBillLevelCoupon = !!(couponCode && couponDisc > 0);
+
+  // finalPayment: agar coupon hai to effTotal hi final payable hai
+  const finalPayment = hasBillLevelCoupon ? effTotal : null;
+
+  const receivedAmount = parseFloat(bill.receivedAmount || 0);
+  const netPayable     = finalPayment !== null ? finalPayment : effTotal;
+  const displayReceived = bill.status === 'paid' ? netPayable : receivedAmount;
+  const dueAmount = bill.status === 'paid' ? 0 : Math.max(0, netPayable - receivedAmount);
+
+  let dateStr = '';
+  if (bill.timestamp) {
+    const d = bill.timestamp.toDate ? bill.timestamp.toDate() : new Date(bill.timestamp);
+    dateStr = d.toLocaleDateString('en-GB');
+  } else if (bill.billDate) {
+    dateStr = new Date(bill.billDate).toLocaleDateString('en-GB');
+  }
+
+  return {
+    billNumber:     bill.billNumber   || 'SP00000',
+    customerName:   bill.customerName || 'Customer',
+    customerPhone:  bill.customerPhone || '',
+    date:           dateStr || new Date().toLocaleDateString('en-GB'),
+    time:           '',
+    items,
+    // Template fields — exactly matching billing.html _printMeta:
+    totalAmount:    mrmSubTotal,              // SubTotal row  (original rates × qty)
+    effectiveTotal: billTotalBeforeCoupon,    // Total row     (before coupon)
+    couponCode:     couponCode,               // Coupon row    (code string)
+    couponDiscount: hasBillLevelCoupon ? couponDisc : null,  // Coupon row (amount)
+    finalPayment:   finalPayment,             // Final Amt row (after coupon)
+    receivedAmount: displayReceived,
+    dueAmount,
+    status:         bill.status || 'due',
+    thermalSize:    settings.thermalSize || '80mm',
+    invoiceOptions: io
+  };
+}
+
+function openBillTemplate(bill, autoPrint = true) {
+  const data = formatBillForTemplate(bill);
+  localStorage.setItem('printBillData', JSON.stringify(data));
+  const settings = JSON.parse(localStorage.getItem('shopSettings') || '{}');
+  const tpl = settings.selectedTemplate || 'template-thermal.html';
+  const win = window.open('templates/' + tpl, '_blank', 'width=500,height=700');
+  if (!win) toast('⚠️ Pop-up blocked! Please allow pop-ups.', 3000);
+}
+
+async function downloadBillImg(bill) {
+  const data = formatBillForTemplate(bill);
+  localStorage.setItem('printBillData', JSON.stringify(data));
+  const settings = JSON.parse(localStorage.getItem('shopSettings') || '{}');
+  const tpl = settings.selectedTemplate || 'template-thermal.html';
+  const billNo = bill.billNumber || 'SP';
+  toast('⏳ Preparing download…');
+
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = [
+    'position:fixed',
+    'top:-99999px',
+    'left:-99999px',
+    'width:500px',
+    'height:1000px',
+    'border:none',
+    'opacity:0',
+    'pointer-events:none',
+    'z-index:-1'
+  ].join(';');
+  document.body.appendChild(iframe);
+
+  const cleanup = () => { try { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); } catch(_) {} };
+  const safetyTimer = setTimeout(() => { cleanup(); toast('Download timed out.', 3000); }, 30000);
+
+  iframe.onload = async () => {
+    try {
+      const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+      const iWin = iframe.contentWindow;
+      // Wait for fonts, images, barcode to render
+      await new Promise(r => setTimeout(r, 1800));
+
+      const doCapture = async (h2c) => {
+        const contentEl =
+          iDoc.querySelector('.receipt-container') ||
+          iDoc.querySelector('.bill-container') ||
+          iDoc.querySelector('.invoice-container') ||
+          iDoc.querySelector('.template-container') ||
+          iDoc.querySelector('main') ||
+          iDoc.body;
+
+        iDoc.documentElement.style.minHeight = '0';
+        iDoc.documentElement.style.height = 'auto';
+        iDoc.body.style.minHeight = '0';
+        iDoc.body.style.height = 'auto';
+        iDoc.body.style.overflow = 'visible';
+        iDoc.body.style.webkitFontSmoothing = 'antialiased';
+        iDoc.body.style.textRendering = 'optimizeLegibility';
+        await new Promise(r => setTimeout(r, 200));
+
+        const rect = contentEl.getBoundingClientRect();
+        const elW = Math.ceil(contentEl.scrollWidth || contentEl.offsetWidth || rect.width || 400);
+        const elH = Math.ceil(contentEl.scrollHeight || contentEl.offsetHeight || rect.height || 600);
+
+        iframe.style.width  = elW + 'px';
+        iframe.style.height = elH + 'px';
+        iDoc.documentElement.style.width = elW + 'px';
+        iDoc.body.style.width = elW + 'px';
+        await new Promise(r => setTimeout(r, 150));
+
+        const SCALE = 5;
+        const canvas = await h2c(contentEl, {
+          scale: SCALE,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          width: elW,
+          height: elH,
+          x: 0, y: 0,
+          scrollX: 0, scrollY: 0,
+          logging: false,
+          allowTaint: true,
+          imageTimeout: 8000,
+          removeContainer: true
+        });
+
+        canvas.toBlob(blob => {
+          clearTimeout(safetyTimer);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Bill_${billNo}.png`;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+          cleanup();
+          toast('✅ Bill downloaded!');
+        }, 'image/png', 1.0);
+      };
+
+      if (iWin.html2canvas) {
+        await doCapture(iWin.html2canvas);
+      } else {
+        const script = iDoc.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.onload = async () => {
+          try { await doCapture(iWin.html2canvas); }
+          catch(e2) { clearTimeout(safetyTimer); cleanup(); toast('Download failed. Use Print instead.', 3000); }
+        };
+        script.onerror = () => { clearTimeout(safetyTimer); cleanup(); toast('Download library failed.', 3000); };
+        iDoc.head.appendChild(script);
+      }
+    } catch(e) {
+      clearTimeout(safetyTimer); cleanup();
+      toast('Download error: ' + e.message, 3000);
+    }
+  };
+  iframe.onerror = () => { clearTimeout(safetyTimer); cleanup(); toast('Could not load bill template.', 3000); };
+  iframe.src = 'templates/' + tpl;
+}
+
+function shareBillWhatsApp(bill) {
+  const data  = formatBillForTemplate(bill);
+  const io    = data.invoiceOptions || {};
+  const showRate   = io.showProductRate    !== false;
+  const showStatus = io.showBillStatus     !== false;
+  const showFinal  = io.showFinalPayment   !== false;
+  const itemsText  = (data.items || []).map((it, i) => {
+    let line = `${i+1}. ${it.name}  Qty:${it.qty}`;
+    if (showRate) line += ` × ₹${it.rate}`;
+    line += ` = ₹${it.amount}`;
+    return line;
+  }).join('\n');
+  let msg = `*SP Fashion - Bill*\nBill No: ${data.billNumber} | Date: ${data.date}\n`;
+  msg += `Customer: ${data.customerName}${data.customerPhone ? ` (${data.customerPhone})` : ''}\n\n`;
+  msg += `*Items:*\n${itemsText}\n\n`;
+  const hasFinal = showFinal && data.finalPayment && data.finalPayment < data.totalAmount;
+  if (hasFinal) {
+    msg += `Sub Total: ₹${data.totalAmount}\n*Total: ₹${data.finalPayment}*`;
+  } else {
+    msg += `*Total: ₹${data.effectiveTotal}*`;
+  }
+  if (data.receivedAmount > 0) msg += `\nReceived: ₹${data.receivedAmount}`;
+  if (data.dueAmount > 0)      msg += `\nDue: ₹${data.dueAmount}`;
+  if (showStatus)              msg += `\nStatus: *${(data.status || 'DUE').toUpperCase()}*`;
+  msg += `\n\nThank you for shopping at SP Fashion! 🙏`;
+  const phone = (data.customerPhone || '').replace(/\D/g, '');
+  const url = phone ? `https://wa.me/91${phone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
+
+// ══ WhatsApp DUE REMINDER ══
+function sendDueReminder() {
+  if (!currentCustomer) return;
+  const c = customers.find(x => x.phone === currentCustomer.phone);
+  if (!c) return;
+  const { remaining } = calcCustomerTotals(c);
+  if (remaining <= 0.01) { toast('✓ No due amount for this customer.'); return; }
+  const msg = `Dear ${c.name},\n\nYe SP Fashion ki taraf se payment reminder hai.\n\nAapka *₹${remaining.toFixed(0)}* ka payment pending hai.\n\nPlease 3 din ke andar payment clear karein.\n\nDhanyavaad! 🙏\n*SP Fashion*`;
+  const url = `https://wa.me/91${c.phone}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
+
+// ══ PAYMENT DETAILS MODAL ══
+async function showPaymentDetails(payId) {
+  let pay = allPayments.find(p => p.id === payId);
+  if (!pay) {
+    const s = await getDoc(doc(db, 'customerCashBook', payId));
+    if (!s.exists()) { toast('Payment not found.'); return; }
+    pay = { id: s.id, _src: 'payment', ...s.data() };
+  }
+
+  let imgsHtml = '<p style="color:#999;font-size:13px;">No images attached.</p>';
+  if (pay.images && pay.images.length) {
+    imgsHtml = pay.images.map((img, idx) => {
+      const url = imgUrl(img);
+      const jj  = encodeURIComponent(JSON.stringify(img));
+      return `<div class="image-container">
+        <img src="${url}" class="image-preview" onclick="window.open('${url}','_blank')">
+        <button class="delete-image-btn" data-pay-id="${payId}" data-idx="${idx}" data-img="${jj}">×</button>
+      </div>`;
+    }).join('');
+  }
+
+  let allocHtml = '';
+  if ((pay.allocations || []).length) {
+    allocHtml += `<div style="margin-top:10px;"><strong style="font-size:13px;">Against Bills:</strong><table class="detail-table" style="margin-top:4px;">`;
+    pay.allocations.forEach(a => {
+      allocHtml += `<tr class="agst-row"><td><span class="clickable agst-det-link" data-bill-id="${a.billId}">${a.billNumber || a.billId}</span></td><td class="amount">${formatCurrency(a.amount)} <span class="cr-label">Cr</span></td></tr>`;
+    });
+    allocHtml += '</table></div>';
+  }
+  if ((pay.extraAllocations || []).length) {
+    allocHtml += `<div style="margin-top:8px;"><strong style="font-size:13px;color:#f57f17;">Advance Allocated:</strong><table class="detail-table" style="margin-top:4px;">`;
+    pay.extraAllocations.forEach(a => {
+      allocHtml += `<tr class="extra-agst-row"><td><span class="clickable agst-det-link" data-bill-id="${a.billId}">${a.billNumber || a.billId}</span></td><td class="amount">${formatCurrency(a.amount)} <span class="cr-label">Cr</span></td></tr>`;
+    });
+    allocHtml += '</table></div>';
+  }
+  if ((pay.extraPayment || 0) > 0.001) {
+    allocHtml += `<p style="margin-top:8px;font-size:13px;"><strong>⬆ Advance Saved (unallocated):</strong> <span style="color:#f57f17;font-weight:700;">${formatCurrency(pay.extraPayment)}</span></p>`;
+  }
+
+  const content = document.getElementById('paymentDetailsContent');
+  content.innerHTML = `
+    <p style="margin-bottom:6px;"><strong>Payment Bill No:</strong> ${pay.paymentBillNumber || '—'}</p>
+    <p style="margin-bottom:6px;"><strong>Date:</strong> ${formatDate(pay.date)}</p>
+    <p style="margin-bottom:6px;"><strong>Total Received:</strong> <span style="color:#333;font-weight:700;">${formatCurrency(pay.amount)}</span></p>
+    ${pay.notes ? `<p style="margin-bottom:6px;"><strong>Notes:</strong> ${pay.notes}</p>` : ''}
+    ${pay.type === 'return-coupon' && pay.couponDetails ? `
+      <div style="background:#f3e5f5;border:1.5px solid #7b1fa2;border-radius:10px;padding:14px;margin:12px 0;">
+        <div style="font-size:13px;font-weight:700;color:#7b1fa2;margin-bottom:8px;">🏷️ Replacement Coupon Generated</div>
+        <div style="font-size:22px;font-weight:900;letter-spacing:3px;color:#7b1fa2;margin-bottom:4px;">${pay.couponDetails.code}</div>
+        <div style="font-size:14px;font-weight:700;color:#2e7d32;">₹${pay.couponDetails.discountValue} Cash OFF</div>
+        <div style="font-size:12px;color:#888;margin-top:3px;">Valid until: ${pay.couponDetails.validity} | Return Bill: ${pay.couponDetails.returnBillNo}</div>
+        ${pay.couponDetails.returnItems ? `
+          <div style="margin-top:10px;border-top:1px solid #e1bee7;padding-top:8px;">
+            <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px;">Returned Items</div>
+            ${pay.couponDetails.returnItems.map(ri => `
+              <div style="font-size:12px;color:#555;padding:3px 0;">
+                ${ri.name} × ${ri.qty} — Refund: ₹${parseFloat(ri.amount || 0).toFixed(2)}
+              </div>`).join('')}
+          </div>` : ''}
+      </div>` : ''}
+    ${allocHtml}
+    <div class="image-previews" style="margin-top:12px;">${imgsHtml}</div>`;
+
+  content.querySelectorAll('.agst-det-link').forEach(el => {
+    el.addEventListener('click', e => { e.stopPropagation(); closeModal('paymentDetailsModal'); showBillDetails(el.dataset.billId); });
+  });
+  content.querySelectorAll('.delete-image-btn').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (!confirm('Delete this image?')) return;
+      const pId = btn.dataset.payId; const idx = parseInt(btn.dataset.idx);
+      let imgObj = null;
+      try { imgObj = JSON.parse(decodeURIComponent(btn.dataset.img || '{}')); } catch {}
+      await deleteFromCloudinary(imgObj);
+      const ref = doc(db, 'customerCashBook', pId); const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const imgs = [...(snap.data().images || [])]; imgs.splice(idx, 1);
+        await updateDoc(ref, { images: imgs });
+        allPayments = allPayments.map(p => p.id === pId ? { ...snap.data(), images: imgs, id: pId, _src: 'payment' } : p);
+        showPaymentDetails(pId);
+      }
+    });
+  });
+  document.getElementById('addMoreImagesBtn').onclick = () => { closeModal('paymentDetailsModal'); document.getElementById('moreImagesPayId').value = payId; document.getElementById('addImagesModal').style.display = 'flex'; };
+  document.getElementById('editPaymentOpenBtn').onclick = () => { closeModal('paymentDetailsModal'); openPaymentModal(pay); };
+  document.getElementById('paymentDetailsModal').style.display = 'flex';
+}
+
+// ══ ADD MORE IMAGES ══
+document.getElementById('addImagesForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const pId   = document.getElementById('moreImagesPayId').value;
+  const files = document.getElementById('moreImagesInput').files;
+  if (!files.length) return;
+  const newImgs = await uploadImages(files);
+  const ref = doc(db, 'customerCashBook', pId); const snap = await getDoc(ref);
+  if (snap.exists()) {
+    const combined = [...(snap.data().images || []), ...newImgs];
+    await updateDoc(ref, { images: combined });
+    allPayments = allPayments.map(p => p.id === pId ? { ...snap.data(), images: combined, id: pId, _src: 'payment' } : p);
+  }
+  closeModal('addImagesModal'); e.target.reset();
+  toast('✅ Images added');
+  await openCustomerLedger(currentCustomer.phone, currentCustomer.name);
+});
+
+// ══ LOAD DUE BILLS FOR ALLOCATION ══
+async function loadDueBills(excludePayId = null) {
+  const phone  = currentCustomer.phone;
+  const bills  = allBills.filter(b => (b.customerPhone || '').trim() === phone);
+  const cbPaid = getCBPaidMap(phone, excludePayId);
+  const due = [];
+  bills.forEach(b => {
+    if (b.status === 'paid') return;
+    const receivedAtBill = parseFloat(b.receivedAmount || 0);
+    const cbAllocated    = cbPaid[b.id] || 0;
+    const totalPaid      = receivedAtBill + cbAllocated;
+    const rem            = parseFloat(b.totalAmount || 0) - totalPaid;
+    if (rem > 0.01) {
+      due.push({ id: b.id, billNumber: b.billNumber || '', date: formatDate(b.timestamp), totalAmount: parseFloat(b.totalAmount || 0), alreadyPaid: totalPaid, remaining: rem });
+    }
+  });
+  return due;
+}
+
+function renderAllocationList(dueBills, existingAllocs = []) {
+  const list = document.getElementById('unpaidBillsList');
+  const extraRow = document.querySelector('.extra-input-row');
+  list.innerHTML = '';
+  if (!dueBills.length) {
+    list.innerHTML = '<p style="color:#999;font-size:13px;">No due bills found. All bills are fully paid.</p>';
+    // Koi due bill nahi — extra/advance dikhao
+    if (extraRow) extraRow.style.display = '';
+    return;
+  }
+  // Due bills hain — extra/advance row hide karo
+  if (extraRow) extraRow.style.display = 'none';
+  const hdr = document.createElement('div');
+  hdr.className = 'alloc-header';
+  hdr.innerHTML = `<span class="alloc-label">Bill # — Date — Details</span><span>Allocate ₹</span>`;
+  list.appendChild(hdr);
+  dueBills.forEach(b => {
+    const prevAlloc = (existingAllocs.find(a => a.billId === b.id) || {}).amount || 0;
+    const div = document.createElement('div'); div.className = 'allocation-item';
+    div.innerHTML = `<span class="alloc-label"><strong>${b.billNumber || 'No#'}</strong> &nbsp; ${b.date}<br>
+      <span style="font-size:12px;color:#666;">Total: ${formatCurrency(b.totalAmount)} &nbsp;|&nbsp; Paid: ${formatCurrency(b.alreadyPaid)} &nbsp;|&nbsp; <span style="color:#e30202;font-weight:700;">Due: ${formatCurrency(b.remaining)}</span></span></span>
+      <input type="number" class="payment-alloc-input" data-bill-id="${b.id}" data-bill-number="${b.billNumber}" data-due="${b.remaining}" placeholder="₹0" min="0" max="${b.remaining}" step="0.01" value="${prevAlloc > 0 ? prevAlloc.toFixed(2) : ''}">`;
+    list.appendChild(div);
+    const inp = div.querySelector('.payment-alloc-input');
+    inp.addEventListener('input', () => {
+      let v = parseFloat(inp.value) || 0;
+      const ei = document.querySelector(`.extra-alloc-input[data-bill-id="${b.id}"]`);
+      const extraUsed = ei ? (parseFloat(ei.value) || 0) : 0;
+      const maxAllowed = Math.max(0, b.remaining - extraUsed);
+      if (v > maxAllowed + 0.001) { inp.value = maxAllowed.toFixed(2); }
+      if (ei) { const newEMax = Math.max(0, b.remaining - (parseFloat(inp.value) || 0)); ei.max = newEMax; if ((parseFloat(ei.value) || 0) > newEMax + 0.001) ei.value = newEMax.toFixed(0); }
+    });
+  });
+}
+
+async function renderExtraPaymentBanner(excludePayId = null) {
+  const wrap = document.getElementById('extraPaymentBannerWrap');
+  const allocSec = document.getElementById('extraAllocSection');
+  wrap.innerHTML = ''; allocSec.style.display = 'none';
+  const cs = await getDoc(doc(db, 'customers', currentCustomer.phone));
+  let extra = cs.exists() ? (cs.data().extraPayment || 0) : 0;
+  if (excludePayId) { const ep = allPayments.find(p => p.id === excludePayId); if (ep) extra -= parseFloat(ep.extraPayment || 0); }
+  currentExtraBalance = Math.max(0, extra);
+  if (currentExtraBalance <= 0.01) return;
+  wrap.innerHTML = `<div class="extra-payment-banner">
+    <span class="ep-info">💰 Advance Balance Available</span>
+    <span class="ep-badge">${formatCurrency(currentExtraBalance)}</span>
+    <button type="button" class="use-extra-btn" id="useExtraBtn">Use Advance</button>
+  </div>`;
+  document.getElementById('useExtraBtn').addEventListener('click', async () => {
+    const vis = allocSec.style.display !== 'none';
+    if (vis) { allocSec.style.display = 'none'; document.getElementById('useExtraBtn').textContent = 'Use Advance'; }
+    else { await renderExtraAllocList(currentExtraBalance, excludePayId); allocSec.style.display = 'block'; document.getElementById('useExtraBtn').textContent = 'Hide'; }
+  });
+}
+
+async function renderExtraAllocList(availExtra, excludePayId = null, existingExtraAllocs = []) {
+  const list = document.getElementById('extraAllocList');
+  const note = document.getElementById('extraAvailableNote');
+  list.innerHTML = '';
+  const dueBills = await loadDueBills(excludePayId);
+  if (!dueBills.length) { list.innerHTML = '<p style="color:#888;font-size:13px;">No due bills.</p>'; note.textContent = ''; return; }
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;gap:8px;align-items:center;padding:4px 0 8px;border-bottom:1px solid #fdd835;font-size:12px;font-weight:600;color:#666;';
+  hdr.innerHTML = `<span style="flex:1;">Bill # — Due Amount</span><span style="width:110px;text-align:center;">Use Advance</span>`;
+  list.appendChild(hdr);
+  function recalc() {
+    let used = 0;
+    list.querySelectorAll('.extra-alloc-input').forEach(i => { used += parseFloat(i.value) || 0; });
+    const rem2 = availExtra - used;
+    note.innerHTML = `Available: <strong>${formatCurrency(availExtra)}</strong> &nbsp;|&nbsp; Used: <strong style="color:#f57f17;">${formatCurrency(used)}</strong> &nbsp;|&nbsp; Remaining: <strong style="color:${rem2 < -0.001 ? '#e30202' : '#10bf39'}">${formatCurrency(Math.max(0, rem2))}</strong>`;
+    list.querySelectorAll('.extra-alloc-input').forEach(i => { i.style.display = (rem2 <= 0.001 && (parseFloat(i.value) || 0) === 0) ? 'none' : ''; });
+  }
+  dueBills.forEach(b => {
+    const prevExtra = (existingExtraAllocs.find(a => a.billId === b.id) || {}).amount || 0;
+    const div = document.createElement('div'); div.className = 'extra-alloc-item';
+    div.innerHTML = `<span class="eai-label"><strong>${b.billNumber || 'No#'}</strong> — Due: <span style="color:#e30202;font-weight:600;">${formatCurrency(b.remaining)}</span></span>
+      <input type="number" class="extra-alloc-input" data-bill-id="${b.id}" data-bill-number="${b.billNumber}" data-due="${b.remaining}" placeholder="Adv ₹" min="0" max="${Math.min(b.remaining, availExtra)}" step="1" value="${prevExtra > 0 ? prevExtra : ''}">`;
+    list.appendChild(div);
+    const ei = div.querySelector('.extra-alloc-input');
+    ei.addEventListener('input', () => {
+      let v = parseFloat(ei.value) || 0;
+      const ni = document.querySelector(`.payment-alloc-input[data-bill-id="${b.id}"]`);
+      const normalUsed = ni ? (parseFloat(ni.value) || 0) : 0;
+      let usedByOthers = 0;
+      list.querySelectorAll('.extra-alloc-input').forEach(x => { if (x !== ei) usedByOthers += parseFloat(x.value) || 0; });
+      const maxAllowed = Math.min(b.remaining - normalUsed, availExtra - usedByOthers);
+      if (v > maxAllowed + 0.001) {
+        ei.classList.add('input-error');
+        setTimeout(() => { ei.value = Math.max(0, maxAllowed).toFixed(0); ei.classList.remove('input-error'); recalc(); if (ni) ni.max = Math.max(0, b.remaining - (parseFloat(ei.value) || 0)); }, 600);
+        v = maxAllowed;
+      } else { ei.classList.remove('input-error'); }
+      if (ni) ni.max = Math.max(0, b.remaining - v);
+      recalc();
+    });
+    if (prevExtra > 0) recalc();
+  });
+  recalc();
+}
+
+// ══ OPEN PAYMENT MODAL ══
+async function openPaymentModal(existingPayment = null) {
+  const isEdit = !!existingPayment;
+  document.getElementById('paymentModalTitle').textContent = isEdit ? 'Edit Payment' : 'Record Payment';
+  document.getElementById('editPaymentId').value = isEdit ? existingPayment.id : '';
+  let bn = isEdit ? (existingPayment.paymentBillNumber || existingPayment.billNumber || '') : await generatePaymentBillNumber();
+  document.getElementById('payBNDisplay').textContent = bn;
+  document.getElementById('generatedPayBN').value = bn;
+  document.getElementById('paymentDate').value = isEdit ? (existingPayment.date || '') : new Date().toISOString().split('T')[0];
+  document.getElementById('paymentNotes').value = isEdit ? (existingPayment.notes || '') : '';
+  document.getElementById('paymentImages').value = '';
+  document.getElementById('extraPaymentInput').value = isEdit ? (existingPayment.extraPayment || 0) : 0;
+  document.getElementById('extraAllocSection').style.display = 'none';
+  document.getElementById('extraPaymentBannerWrap').innerHTML = '';
+  document.getElementById('savePaymentBtn').textContent = isEdit ? 'Update Payment' : 'Save Payment';
+  const prev = document.getElementById('paymentImagePreviews');
+  prev.innerHTML = '';
+  if (isEdit && existingPayment.images && existingPayment.images.length) {
+    existingPayment.images.forEach(img => {
+      const url = imgUrl(img); const el = document.createElement('img');
+      el.src = url; el.className = 'image-preview'; el.title = 'Existing image';
+      el.onclick = () => window.open(url, '_blank'); prev.appendChild(el);
+    });
+    const note = document.createElement('p'); note.style.cssText = 'font-size:12px;color:#888;margin-top:4px;';
+    note.textContent = 'Existing images shown above. Upload new images to add more.'; prev.appendChild(note);
+  }
+  const dueBills = await loadDueBills(isEdit ? existingPayment.id : null);
+  renderAllocationList(dueBills, isEdit ? (existingPayment.allocations || []) : []);
+  await renderExtraPaymentBanner(isEdit ? existingPayment.id : null);
+  if (isEdit && (existingPayment.extraAllocations || []).length > 0 && currentExtraBalance > 0.01) {
+    const allocSec = document.getElementById('extraAllocSection');
+    await renderExtraAllocList(currentExtraBalance, existingPayment.id, existingPayment.extraAllocations || []);
+    allocSec.style.display = 'block';
+  }
+  document.getElementById('paymentModal').style.display = 'flex';
+}
+
+// ══ PAYMENT FORM SUBMIT ══
+document.getElementById('paymentForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('savePaymentBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const editId = document.getElementById('editPaymentId').value;
+    const isEdit = !!editId;
+    const phone  = currentCustomer.phone;
+    const date   = document.getElementById('paymentDate').value;
+    const notes  = document.getElementById('paymentNotes').value.trim();
+    const newExtra = parseFloat(document.getElementById('extraPaymentInput').value) || 0;
+    const bn       = document.getElementById('generatedPayBN').value;
+    const files    = document.getElementById('paymentImages').files;
+    const allocations = [], extraAllocations = [];
+    let totalNormalAlloc = 0, totalExtraUsed = 0;
+    document.querySelectorAll('.payment-alloc-input').forEach(inp => {
+      const v = parseFloat(inp.value) || 0;
+      if (v > 0.001) { totalNormalAlloc += v; allocations.push({ billId: inp.dataset.billId, billNumber: inp.dataset.billNumber, amount: v }); }
+    });
+    document.querySelectorAll('.extra-alloc-input').forEach(inp => {
+      const v = parseFloat(inp.value) || 0;
+      if (v > 0.001) { totalExtraUsed += v; extraAllocations.push({ billId: inp.dataset.billId, billNumber: inp.dataset.billNumber, amount: v }); }
+    });
+    const totalAmount = totalNormalAlloc + newExtra;
+    if (totalAmount < 0.01 && totalExtraUsed < 0.01) { alert('Please enter at least one allocation amount or advance amount.'); btn.disabled = false; btn.textContent = isEdit ? 'Update Payment' : 'Save Payment'; return; }
+    if (totalExtraUsed > currentExtraBalance + 0.001) { alert(`Advance allocation exceeds available balance (${formatCurrency(currentExtraBalance)}).`); btn.disabled = false; btn.textContent = isEdit ? 'Update Payment' : 'Save Payment'; return; }
+    const newImages = files.length ? await uploadImages(files) : [];
+    const payData = { customerPhone: phone, customerName: currentCustomer.name, type: 'payment', date, notes, paymentBillNumber: bn, amount: totalAmount, allocations, extraAllocations, extraPayment: newExtra, updatedAt: new Date().toISOString() };
+    if (isEdit) {
+      const oldPay = allPayments.find(p => p.id === editId);
+      const oldImgs = (oldPay && oldPay.images) ? oldPay.images : [];
+      payData.images = [...oldImgs, ...newImages];
+      await updateDoc(doc(db, 'customerCashBook', editId), payData);
+      const oldExtra = parseFloat((oldPay || {}).extraPayment || 0);
+      const cs = await getDoc(doc(db, 'customers', phone));
+      const prev = cs.exists() ? (cs.data().extraPayment || 0) : 0;
+      const updated = prev - oldExtra + newExtra - totalExtraUsed;
+      await setDoc(doc(db, 'customers', phone), { name: currentCustomer.name, phone, extraPayment: Math.max(0, updated), updatedAt: new Date().toISOString() }, { merge: true });
+      toast('✅ Payment updated successfully');
+    } else {
+      payData.images = newImages; payData.createdAt = new Date().toISOString();
+      await addDoc(collection(db, 'customerCashBook'), payData);
+      const cs = await getDoc(doc(db, 'customers', phone));
+      const prev = cs.exists() ? (cs.data().extraPayment || 0) : 0;
+      const updated = prev + newExtra - totalExtraUsed;
+      await setDoc(doc(db, 'customers', phone), { name: currentCustomer.name, phone, extraPayment: Math.max(0, updated), updatedAt: new Date().toISOString() }, { merge: true });
+      toast('✅ Payment saved successfully');
+    }
+    closeModal('paymentModal'); e.target.reset();
+    document.getElementById('paymentImagePreviews').innerHTML = '';
+    document.getElementById('extraAllocSection').style.display = 'none';
+    document.getElementById('extraPaymentBannerWrap').innerHTML = '';
+    await openCustomerLedger(phone, currentCustomer.name);
+  } catch (err) { console.error('Payment error:', err); alert('Failed to save payment. See console for details.'); }
+  finally { btn.disabled = false; btn.textContent = document.getElementById('editPaymentId').value ? 'Update Payment' : 'Save Payment'; }
+});
+
+async function getBillDue(billId, excludePayId = null) {
+  const bill = allBills.find(b => b.id === billId);
+  if (!bill || bill.status === 'paid') return 0;
+  const cbPaid = getCBPaidMap((currentCustomer || {}).phone || '', excludePayId);
+  const receivedAtBill = parseFloat(bill.receivedAmount || 0);
+  const cbAllocated    = cbPaid[billId] || 0;
+  return Math.max(0, parseFloat(bill.totalAmount || 0) - receivedAtBill - cbAllocated);
+}
+
+// ══ RETURN FEATURE ══
+let _returnSelectedBill = null;
+let _returnIsReplacement = false;
+
+async function openReturnModal() {
+  closeModal('addEntryChoiceModal');
+  _returnSelectedBill = null;
+  _returnIsReplacement = false;
+  const searchEl = document.getElementById('returnBillSearch');
+  if (searchEl) searchEl.value = '';
+  document.getElementById('returnBillSearchResult').style.display = 'none';
+  document.getElementById('returnBillSearchResult').innerHTML = '';
+  document.getElementById('returnItemsSection').style.display = 'none';
+  document.getElementById('processReturnBtn').style.display = 'none';
+  document.getElementById('returnCouponInfo').style.display = 'none';
+  document.getElementById('returnNote').value = '';
+  if (document.getElementById('replacementProductName')) document.getElementById('replacementProductName').value = '';
+  document.getElementById('returnSummaryBox').style.display = 'none';
+  document.getElementById('replacementProductGroup').style.display = 'none';
+  document.querySelectorAll('input[name="returnMethod"]').forEach(r => r.checked = false);
+  document.querySelectorAll('.return-method-opt').forEach(o => o.classList.remove('selected'));
+
+  // Latest 4 bills of current customer
+  const recentBillsEl = document.getElementById('recentBillsForReturn');
+  if (recentBillsEl && currentCustomer) {
+    const custBills = allBills
+      .filter(b => (b.customerPhone || '').trim() === currentCustomer.phone && b.status !== 'returned' && b.status !== 'replaced')
+      .sort((a, b) => {
+        const tsA = a.timestamp ? (a.timestamp.seconds ? a.timestamp.seconds : new Date(a.timestamp).getTime()/1000) : 0;
+        const tsB = b.timestamp ? (b.timestamp.seconds ? b.timestamp.seconds : new Date(b.timestamp).getTime()/1000) : 0;
+        return tsB - tsA;
+      })
+      .slice(0, 4);
+
+    if (custBills.length) {
+      recentBillsEl.innerHTML = `
+        <p style="font-size:12px;color:#888;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px;">Recent Bills — Click to Select</p>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${custBills.map(b => {
+            const rawTotal = parseFloat(b.totalAmount || 0);
+            const effTotal = b.effectiveTotal !== undefined ? parseFloat(b.effectiveTotal) : rawTotal;
+            const dateStr = b.timestamp ? new Date(b.timestamp.seconds ? b.timestamp.seconds * 1000 : b.timestamp).toLocaleDateString('en-IN') : '—';
+            return `<div onclick="document.getElementById('returnBillSearch').value='${b.billNumber || ''}'; searchReturnBill();"
+              style="display:flex;justify-content:space-between;align-items:center;background:#f8f9fa;border:1px solid #e8e8e8;border-radius:8px;padding:8px 12px;cursor:pointer;transition:background .15s;"
+              onmouseover="this.style.background='#e8f5e9'" onmouseout="this.style.background='#f8f9fa'">
+              <div>
+                <div style="font-size:13px;font-weight:700;color:#222;">${b.billNumber || '—'}</div>
+                <div style="font-size:11px;color:#888;">${dateStr}</div>
+              </div>
+              <div style="font-size:14px;font-weight:700;color:#2e7d32;">${formatCurrency(effTotal)}</div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      recentBillsEl.style.display = 'block';
+    } else {
+      recentBillsEl.innerHTML = '';
+      recentBillsEl.style.display = 'none';
+    }
+  }
+
+  document.getElementById('returnModal').style.display = 'flex';
+}
+
+// Search bill by number
+window.searchReturnBill = async function() {
+  const query = (document.getElementById('returnBillSearch').value || '').trim().toUpperCase();
+  const resultEl = document.getElementById('returnBillSearchResult');
+  if (!query) { toast('Bill number dalen.'); return; }
+
+  resultEl.innerHTML = '<span class="spinner"></span> Searching…';
+  resultEl.style.display = 'block';
+
+  try {
+    // Search in allBills first (current customer)
+    let bill = allBills.find(b =>
+      (b.billNumber || '').toUpperCase() === query &&
+      (b.customerPhone || '').trim() === currentCustomer.phone
+    );
+
+    // If not found in cache, query Firebase
+    if (!bill) {
+      const { getDocs: gd2, query: q2, where: w2, collection: col2 } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+      const snap = await getDocs(query(collection(db, 'bills'),
+        where('billNumber', '==', query),
+        where('customerPhone', '==', currentCustomer.phone)
+      ));
+      if (!snap.empty) {
+        bill = { id: snap.docs[0].id, ...snap.docs[0].data() };
+      }
+    }
+
+    if (!bill) {
+      resultEl.innerHTML = `<span style="color:#e30202;">❌ Bill "${query}" not found for this customer.</span>`;
+      return;
+    }
+
+    const raw = parseFloat(bill.totalAmount || 0);
+    const eff = bill.effectiveTotal !== undefined ? parseFloat(bill.effectiveTotal) : raw;
+    const hasCoupon = !!(bill.couponCode || (bill.appliedCoupon && bill.appliedCoupon.code));
+    resultEl.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div>
+        <strong style="color:#333;">${bill.billNumber}</strong>
+        <span style="color:#888;margin-left:8px;">${formatDate(bill.timestamp)}</span>
+        ${hasCoupon ? `<span style="background:#f3e5f5;color:#7b1fa2;font-size:11px;padding:1px 7px;border-radius:8px;margin-left:6px;">🏷️ Coupon</span>` : ''}
+      </div>
+      <div style="font-weight:700;color:#333;">₹${raw} <span style="font-size:11px;color:${eff<=0.01?'#10bf39':'#e65c00'};">[${(bill.status||'due').toUpperCase()}]</span></div>
+    </div>`;
+    resultEl.style.background = '#f0fff4';
+    resultEl.style.border = '1px solid #10bf39';
+    resultEl.style.borderRadius = '8px';
+    resultEl.style.padding = '10px 14px';
+
+    // Load this bill into return UI
+    await loadBillForReturn(bill);
+  } catch(e) {
+    resultEl.innerHTML = `<span style="color:#e30202;">Error: ${e.message}</span>`;
+  }
+};
+
+// Load selected bill into return form
+async function loadBillForReturn(bill) {
+  _returnSelectedBill = bill;
+
+  const rawTotal   = parseFloat(bill.totalAmount || 0);
+  const effTotal   = bill.effectiveTotal !== undefined ? parseFloat(bill.effectiveTotal) : rawTotal;
+  const couponDisc = parseFloat(bill.couponDiscount || 0);
+  const billTotalBC = effTotal + couponDisc;
+  const discRatio   = (couponDisc > 0 && billTotalBC > 0) ? (couponDisc / billTotalBC) : 0;
+
+  _returnIsReplacement = false; // All bills can now choose their method
+
+  // Show coupon info if applicable
+  const couponInfoEl = document.getElementById('returnCouponInfo');
+  if (couponDisc > 0 && bill.couponCode) {
+    couponInfoEl.style.display = 'block';
+    couponInfoEl.innerHTML = `<div style="background:#f3e5f5;border:1px solid #ce93d8;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+      🏷️ <strong style="color:#7b1fa2;">${bill.couponCode}</strong> — ₹${couponDisc} discount applied.
+      <br><span style="color:#888;font-size:11px;">Refund = Proportional effective price (coupon discount adjusted per item)</span>
+    </div>`;
+  } else {
+    couponInfoEl.style.display = 'none';
+  }
+
+  // Reset method selection
+  document.querySelectorAll('input[name="returnMethod"]').forEach(r => r.checked = false);
+  document.querySelectorAll('.return-method-opt').forEach(o => o.classList.remove('selected'));
+
+  // Render items — qty step=1 (integers only), effective price shown if coupon
+  const container = document.getElementById('returnItemsList');
+  container.innerHTML = '';
+  (bill.items || []).forEach((item, idx) => {
+    const qty       = parseFloat(item.qty || 1);
+    const itemAmt   = parseFloat(item.amount || item.rate * qty || 0);
+    const effAmt    = discRatio > 0 ? itemAmt * (1 - discRatio) : itemAmt;
+    const effRate   = qty > 0 ? effAmt / qty : 0;
+    const div = document.createElement('div');
+    div.className = 'return-item-row';
+    div.innerHTML = `
+      <div style="flex:1;min-width:120px;">
+        <div class="return-item-name">${item.name || '—'}</div>
+        <div class="return-item-meta">
+          Qty: ${qty} |
+          ${discRatio > 0
+            ? `MRP: ₹${item.rate || 0} → <strong style="color:#7b1fa2;">Effective: ₹${effRate.toFixed(2)}/unit</strong>`
+            : `Rate: ₹${item.rate || 0}`
+          }
+        </div>
+        ${discRatio > 0 ? `<div style="font-size:11px;color:#888;">Refund: ₹${effRate.toFixed(2)} × qty returned</div>` : ''}
+      </div>
+      <div class="return-item-qty">
+        <label>Return qty:</label>
+        <input type="number" class="return-qty-input"
+          data-idx="${idx}"
+          data-max="${qty}"
+          data-rate="${effRate.toFixed(4)}"
+          data-mrp-rate="${item.rate || 0}"
+          data-name="${(item.name||'').replace(/"/g,'')}"
+          min="0" max="${qty}" step="1" value="0" placeholder="0">
+      </div>`;
+    container.appendChild(div);
+    div.querySelector('.return-qty-input').addEventListener('input', function() {
+      // Enforce integer only
+      let v = Math.floor(parseFloat(this.value) || 0);
+      const maxV = Math.floor(parseFloat(this.dataset.max) || 0);
+      if (v < 0) v = 0;
+      if (v > maxV) v = maxV;
+      this.value = v;
+      updateReturnSummary();
+    });
+  });
+
+  document.getElementById('returnItemsSection').style.display = 'block';
+  document.getElementById('processReturnBtn').style.display = 'block';
+}
+
+// Return method radio styling
+document.querySelectorAll('input[name="returnMethod"]').forEach(radio => {
+  radio.addEventListener('change', function() {
+    document.querySelectorAll('.return-method-opt').forEach(o => o.classList.remove('selected'));
+    this.closest('.return-method-opt').classList.add('selected');
+    // Show replacement product name field only for replacement method
+    const replGroup = document.getElementById('replacementProductGroup');
+    if (replGroup) replGroup.style.display = this.value === 'replacement' ? 'block' : 'none';
+    updateReturnSummary();
+  });
+});
+
+function updateReturnSummary() {
+  const inputs  = document.querySelectorAll('.return-qty-input');
+  let totalAmt  = 0, totalMrp = 0, hasItems = false;
+  inputs.forEach(inp => {
+    const qty = parseFloat(inp.value) || 0;
+    if (qty > 0) {
+      totalAmt += qty * parseFloat(inp.dataset.rate);      // effective rate (after proportional discount)
+      totalMrp += qty * parseFloat(inp.dataset.mrpRate || inp.dataset.rate); // original MRP rate
+      hasItems = true;
+    }
+  });
+  const box = document.getElementById('returnSummaryBox');
+  if (!hasItems) { box.style.display = 'none'; return; }
+
+  const rounded = Math.round(totalAmt);
+  const hasCouponDisc = totalAmt < totalMrp - 0.005;
+
+  if (_returnIsReplacement) {
+    box.style.display = 'block';
+    box.style.cssText = 'display:block;background:#e8f5e9;border:1px solid #10bf39;border-radius:8px;padding:12px 14px;margin-top:12px;font-size:14px;font-weight:600;color:#2e7d32;';
+    box.innerHTML = `↩ Return Items (MRP ₹${totalMrp.toFixed(2)}) — Replacement only. No cash refund.`;
+    return;
+  }
+
+  const method = document.querySelector('input[name="returnMethod"]:checked');
+  if (!method) { box.style.display = 'none'; return; }
+  const methodLabel = method.value === 'cash' ? '💵 Cash Refund' : '💰 Extra Credit';
+
+  box.style.cssText = 'display:block;background:#fff8e1;border:1px solid #ffd54f;border-radius:8px;padding:12px 14px;margin-top:12px;font-size:13px;';
+  box.innerHTML = `
+    <div style="margin-bottom:6px;font-weight:700;color:#e65c00;">💰 Refund Calculation</div>
+    ${hasCouponDisc ? `
+    <div style="color:#666;margin-bottom:4px;">MRP Total: <strong>₹${totalMrp.toFixed(2)}</strong></div>
+    <div style="color:#7b1fa2;margin-bottom:4px;">Proportional Discount: <strong>-₹${(totalMrp - totalAmt).toFixed(2)}</strong></div>
+    <div style="color:#555;margin-bottom:6px;">Effective Paid Amount: <strong>₹${totalAmt.toFixed(2)}</strong></div>
+    ` : ''}
+    <div style="font-size:15px;font-weight:700;color:#e65c00;">Refund: ₹${totalAmt.toFixed(2)} <span style="font-size:12px;color:#888;">(≈ ₹${rounded} round kare)</span></div>
+    <div style="font-size:12px;color:#888;margin-top:4px;">Method: ${methodLabel}</div>
+  `;
+}
+
+document.getElementById('processReturnBtn').addEventListener('click', async () => {
+  if (!_returnSelectedBill) { toast('Please select a bill.'); return; }
+
+  const methodRadio = document.querySelector('input[name="returnMethod"]:checked');
+  if (!methodRadio) { toast('Please select a return method.'); return; }
+  const methodValue = methodRadio.value;
+
+  const inputs = document.querySelectorAll('.return-qty-input');
+  const returnItems = [];
+  inputs.forEach(inp => {
+    const qty = parseFloat(inp.value) || 0;
+    if (qty > 0) {
+      const idx  = parseInt(inp.dataset.idx);
+      const orig = _returnSelectedBill.items[idx];
+      const effRate  = parseFloat(inp.dataset.rate);             // effective (after proportional discount)
+      const mrpRate  = parseFloat(inp.dataset.mrpRate || inp.dataset.rate);
+      returnItems.push({
+        name: orig.name || '—', barcode: orig.barcode || '',
+        productId: orig.productId || null, qty,
+        rate:      mrpRate,                    // original MRP rate stored
+        effRate:   effRate,                    // effective refund rate
+        amount:    qty * effRate,              // effective refund amount
+        mrpAmount: qty * mrpRate,
+        unit: orig.unit || ''
+      });
+    }
+  });
+  if (!returnItems.length) { toast('Please enter quantity for at least one item.'); return; }
+
+  // Total refund = sum of effective amounts (proportional discount applied)
+  const totalReturnAmount = returnItems.reduce((s, i) => s + i.amount, 0);
+  const note     = document.getElementById('returnNote').value.trim();
+  const replName = document.getElementById('replacementProductName')?.value.trim() || '';
+  const btn      = document.getElementById('processReturnBtn');
+  btn.textContent = 'Processing…'; btn.disabled = true;
+
+  try {
+    const bill = _returnSelectedBill;
+
+    // 1. Update bill items
+    const updatedItemsByIdx = [];
+    (bill.items || []).forEach((item, idx) => {
+      const qtyInput  = document.querySelector(`.return-qty-input[data-idx="${idx}"]`);
+      const returnQty = qtyInput ? (parseFloat(qtyInput.value) || 0) : 0;
+      if (returnQty <= 0) { updatedItemsByIdx.push(item); return; }
+      const newQty = parseFloat(item.qty) - returnQty;
+      if (newQty > 0.001) updatedItemsByIdx.push({ ...item, qty: newQty, amount: newQty * parseFloat(item.rate || 0) });
+    });
+
+    const newTotal  = updatedItemsByIdx.reduce((s, i) => s + (i.amount || 0), 0);
+    const returnRecord = {
+      date: new Date().toISOString(),
+      items: returnItems.map(i => ({ name: i.name, barcode: i.barcode, productId: i.productId, qty: i.qty, rate: i.rate, effRate: i.effRate, amount: i.amount, unit: i.unit })),
+      totalAmount:    totalReturnAmount,
+      totalMrpAmount: returnItems.reduce((s, i) => s + i.mrpAmount, 0),
+      method: methodValue,
+      note:   note + (replName ? ` | Replacement: ${replName}` : ''),
+      isReplacement: methodValue === 'replacement'
+    };
+    const returns   = [...(bill.returns || []), returnRecord];
+    const newStatus = newTotal <= 0.01 ? (methodValue === 'replacement' ? 'replaced' : 'returned') : bill.status;
+
+    await updateDoc(doc(db, 'bills', bill.id), {
+      items: updatedItemsByIdx,
+      totalAmount: newTotal,
+      returns, status: newStatus,
+      updatedAt: serverTimestamp()
+    });
+
+    // 2. If Extra Credit — add to customer balance
+    if (methodValue === 'extra') {
+      const phone = currentCustomer.phone;
+      const cs    = await getDoc(doc(db, 'customers', phone));
+      const prevExtra = cs.exists() ? (cs.data().extraPayment || 0) : 0;
+      await setDoc(doc(db, 'customers', phone), {
+        name: currentCustomer.name, phone,
+        extraPayment: prevExtra + totalReturnAmount,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      const bn = await generatePaymentBillNumber();
+      await addDoc(collection(db, 'customerCashBook'), {
+        customerPhone: phone, customerName: currentCustomer.name,
+        type: 'return-credit', date: new Date().toISOString().split('T')[0],
+        paymentBillNumber: bn, amount: totalReturnAmount,
+        allocations: [], extraAllocations: [],
+        extraPayment: totalReturnAmount,
+        notes: `Return from Bill ${bill.billNumber || ''} — ${note || 'Item return'}`,
+        returnInfo: { billId: bill.id, billNumber: bill.billNumber || '', items: returnItems },
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    // 3. Replacement — generate COUPON + save as payment entry in customerCashBook
+    let generatedCouponCode = null;
+    if (methodValue === 'replacement') {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = 'RET';
+      for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+
+      const refundAmt = Math.round(totalReturnAmount * 100) / 100;
+      const validity  = new Date(); validity.setDate(validity.getDate() + 90);
+      const validityStr = validity.toISOString().split('T')[0];
+
+      // Save to coupons collection
+      try {
+        await addDoc(collection(db, 'coupons'), {
+          code,
+          audience:        'specific',
+          customerMobile:  currentCustomer.phone,
+          customerName:    currentCustomer.name,
+          discountType:    'cash',
+          discountSubType: 'flat_cash',
+          discountValue:   refundAmt,
+          validity:        validityStr,
+          claimed:         false,
+          claimedCount:    0,
+          claimedBy:       [],
+          notes:           `Return coupon from Bill ${bill.billNumber || ''} — ${note || 'Replacement'}`,
+          returnBillId:    bill.id,
+          returnBillNo:    bill.billNumber || '',
+          createdAt:       serverTimestamp()
+        });
+        generatedCouponCode = code;
+
+        // ALSO save as a payment-type entry in customerCashBook (visible in ledger)
+        const bn = await generatePaymentBillNumber();
+        await addDoc(collection(db, 'customerCashBook'), {
+          customerPhone:     currentCustomer.phone,
+          customerName:      currentCustomer.name,
+          type:              'return-coupon',
+          date:              new Date().toISOString().split('T')[0],
+          paymentBillNumber: bn,
+          amount:            0,          // no cash movement
+          allocations:       [],
+          extraAllocations:  [],
+          extraPayment:      0,
+          notes:             `↩ Replacement Coupon — Bill ${bill.billNumber || ''}`,
+          couponDetails: {
+            code,
+            discountValue: refundAmt,
+            validity:      validityStr,
+            returnItems:   returnItems.map(i => ({ name: i.name, qty: i.qty, effRate: i.effRate, amount: i.amount })),
+            returnBillNo:  bill.billNumber || '',
+            returnBillId:  bill.id,
+          },
+          createdAt: new Date().toISOString()
+        });
+      } catch(couponErr) {
+        console.warn('Coupon generate error:', couponErr);
+      }
+    }
+
+    // 4. Update product stock (+qty)
+    for (const ri of returnItems) {
+      if (ri.productId) {
+        try {
+          const prodRef  = doc(db, 'products', ri.productId);
+          const prodSnap = await getDoc(prodRef);
+          if (prodSnap.exists()) await updateDoc(prodRef, { stock: (prodSnap.data().stock || 0) + ri.qty });
+        } catch(se) { console.warn('Stock update error:', se); }
+      }
+    }
+
+    // 5. Show success message with coupon code if generated
+    let successMsg = '';
+    if (methodValue === 'replacement' && generatedCouponCode) {
+      successMsg = `✅ Replacement done! Coupon generated:\n🏷️ ${generatedCouponCode} = ₹${Math.round(totalReturnAmount)}\nBilling mein apply karein!`;
+      // Show prominent alert with coupon code
+      const alertDiv = document.createElement('div');
+      alertDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border-radius:14px;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:9999;text-align:center;max-width:320px;width:90%;';
+      alertDiv.innerHTML = `
+        <div style="font-size:32px;margin-bottom:8px;">🏷️</div>
+        <div style="font-size:16px;font-weight:700;color:#333;margin-bottom:4px;">Return Coupon Generated!</div>
+        <div style="font-size:13px;color:#666;margin-bottom:14px;">Customer ko yeh coupon code billing mein apply karne ko kahein</div>
+        <div style="background:#f3e5f5;border:2px solid #7b1fa2;border-radius:10px;padding:12px 20px;margin-bottom:12px;">
+          <div style="font-size:24px;font-weight:900;letter-spacing:3px;color:#7b1fa2;">${generatedCouponCode}</div>
+          <div style="font-size:14px;font-weight:700;color:#2e7d32;margin-top:4px;">₹${Math.round(totalReturnAmount)} Cash OFF</div>
+          <div style="font-size:11px;color:#888;margin-top:2px;">Valid for: ${currentCustomer.name} | 90 days</div>
+        </div>
+        <button onclick="this.closest('div[style]').remove()" style="background:#7b1fa2;color:white;border:none;border-radius:8px;padding:10px 28px;font-size:14px;font-weight:600;cursor:pointer;width:100%;">OK, Got It!</button>
+      `;
+      document.body.appendChild(alertDiv);
+    } else if (methodValue === 'replacement') {
+      successMsg = `✅ Replacement done! Stock wapas aa gaya.`;
+    } else if (methodValue === 'extra') {
+      successMsg = `✅ Return done! ₹${totalReturnAmount.toFixed(0)} added to account balance.`;
+    } else {
+      successMsg = `✅ Return done! Cash refund: ₹${Math.round(totalReturnAmount)}`;
+    }
+
+    toast(successMsg.split('\n')[0], 3500);
+    closeModal('returnModal');
+    await openCustomerLedger(currentCustomer.phone, currentCustomer.name);
+  } catch (err) {
+    console.error('Return error:', err);
+    alert('Failed to process return. See console for details.');
+  } finally {
+    btn.textContent = 'Process Return'; btn.disabled = false;
+  }
+});
+
+// ══ NAVIGATION & EVENTS ══
+
+// Helper: mobile header buttons ko view ke hisab se dikhao/chupao
+function updateMobileHeaderBtns(view) {
+  const iconBtns = document.getElementById('headerIconBtns');
+  const bulkWaIcon = document.getElementById('hdrBulkWaBtn');
+  const singleWaIcon = document.getElementById('hdrWaBtn');
+  const addIcon = document.getElementById('hdrAddBtn');
+  if (window.innerWidth > 768) return; // desktop par kuch nahi karna
+  iconBtns.style.cssText = 'display:flex;';
+  if (view === 'list') {
+    bulkWaIcon.style.display = 'flex';
+    singleWaIcon.style.display = 'none';
+    addIcon.style.display = 'none';
+  } else {
+    bulkWaIcon.style.display = 'none';
+    singleWaIcon.style.display = 'flex';
+    addIcon.style.display = 'flex';
+  }
+}
+
+document.getElementById('backToList').addEventListener('click', () => {
+  document.getElementById('customerDetailView').classList.remove('active');
+  document.getElementById('customerListView').classList.add('active');
+  currentCustomer = null;
+  updateMobileHeaderBtns('list');
+  window.scrollTo(0, 0);
+});
+
+document.getElementById('waDueBtn').addEventListener('click', sendDueReminder);
+document.getElementById('hdrWaBtn').addEventListener('click', sendDueReminder);
+document.getElementById('hdrAddBtn').addEventListener('click', () => {
+  document.getElementById('addEntryChoiceModal').style.display = 'flex';
+});
+document.getElementById('hdrBulkWaBtn').addEventListener('click', openBulkWaModal);
+
+document.getElementById('addEntryBtn').addEventListener('click', () => {
+  document.getElementById('addEntryChoiceModal').style.display = 'flex';
+});
+
+document.getElementById('choosePaymentBtn').addEventListener('click', async () => {
+  closeModal('addEntryChoiceModal');
+  await openPaymentModal();
+});
+
+document.getElementById('chooseReturnBtn').addEventListener('click', openReturnModal);
+
+document.getElementById('customerSearchInput').addEventListener('input', renderCustomerTable);
+document.getElementById('customerFilterBtn').addEventListener('click', () => {
+  document.getElementById('customerFilterOptions').classList.toggle('show');
+});
+document.querySelectorAll('#customerFilterOptions a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault(); customerFilter = e.target.dataset.filter;
+    document.getElementById('customerFilterValue').textContent = customerFilter;
+    document.getElementById('customerFilterOptions').classList.remove('show');
+    renderCustomerTable();
+  });
+});
+
+document.getElementById('ledgerSearchInput').addEventListener('input', e => {
+  ledgerSearch = e.target.value; renderLedgerTable();
+});
+document.getElementById('ledgerFilterBtn').addEventListener('click', () => {
+  document.getElementById('ledgerFilterOptions').classList.toggle('show');
+});
+document.querySelectorAll('#ledgerFilterOptions a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault(); ledgerFilter = e.target.dataset.filter;
+    document.getElementById('ledgerFilterValue').textContent = e.target.textContent;
+    document.getElementById('ledgerFilterOptions').classList.remove('show');
+    renderLedgerTable();
+  });
+});
+
+document.getElementById('paymentImages').addEventListener('change', e => {
+  const c = document.getElementById('paymentImagePreviews');
+  c.querySelectorAll('img').forEach(img => { if (!img.title) img.remove(); });
+  Array.from(e.target.files).forEach(file => {
+    const url = URL.createObjectURL(file);
+    const img = document.createElement('img');
+    img.src = url; img.className = 'image-preview';
+    img.onclick = () => window.open(url, '_blank');
+    c.insertBefore(img, c.querySelector('p'));
+  });
+});
+
+window.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) e.target.style.display = 'none';
+  if (!e.target.closest('.filter-dropdown')) {
+    document.getElementById('customerFilterOptions').classList.remove('show');
+    document.getElementById('ledgerFilterOptions').classList.remove('show');
+  }
+});
+
+// Jab page load ho ya resize ho — initial state set karo
+function initMobileHeader() {
+  if (window.innerWidth <= 768) {
+    document.getElementById('headerIconBtns').style.cssText = 'display:flex;';
+    updateMobileHeaderBtns('list'); // start on list view
+  }
+}
+window.addEventListener('resize', () => {
+  const isListActive = document.getElementById('customerListView').classList.contains('active');
+  updateMobileHeaderBtns(isListActive ? 'list' : 'ledger');
+});
+initMobileHeader();
+
+// ══ BULK WHATSAPP DUE REMINDER ══
+function getDueCustomers() {
+  return customers.map(c => {
+    const { remaining } = calcCustomerTotals(c);
+    return { ...c, remaining };
+  }).filter(c => c.remaining > 0.01)
+    .sort((a, b) => b.remaining - a.remaining);
+}
+
+function buildDueMsg(customer) {
+  const amt = Math.round(customer.remaining);
+  return `Dear ${customer.name},\n\nYe SP Fashion ki taraf se payment reminder hai.\n\nAapka *₹${amt.toLocaleString('en-IN')}* ka payment pending hai.\n\nPlease jald se jald payment clear karein.\n\nDhanyavaad! 🙏\n*SP Fashion*`;
+}
+
+// Ek combined message — sab due customers ki list ek hi WhatsApp mein (owner ke liye)
+function buildCombinedMsg(dueList) {
+  const total = dueList.reduce((s, c) => s + c.remaining, 0);
+  let msg = `*SP Fashion — Due Customers List*\n`;
+  msg += `📅 ${new Date().toLocaleDateString('en-IN')}\n`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+  dueList.forEach((c, i) => {
+    const amt = Math.round(c.remaining);
+    msg += `${i + 1}. *${c.name}*\n`;
+    msg += `   📞 ${c.phone}\n`;
+    msg += `   💰 Due: ₹${amt.toLocaleString('en-IN')}\n\n`;
+  });
+  msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+  msg += `*Total Due: ₹${Math.round(total).toLocaleString('en-IN')}*\n`;
+  msg += `Customers: ${dueList.length}`;
+  return msg;
+}
+
+function openBulkWaModal() {
+  const dueList = getDueCustomers();
+  if (!dueList.length) { toast('✓ Koi bhi customer ka due amount nahi hai!'); return; }
+
+  const totalDue = dueList.reduce((s, c) => s + c.remaining, 0);
+  const sendable = dueList.filter(c => {
+    const clean = (c.phone || '').replace(/\D/g, '');
+    return clean.length >= 10 && c.phone !== 'unknown';
+  });
+
+  // Summary stats
+  document.getElementById('bwaSummary').innerHTML = `
+    <div class="bwa-stat">
+      <div class="bws-val">${dueList.length}</div>
+      <div class="bws-lbl">Due Customers</div>
+    </div>
+    <div class="bwa-stat">
+      <div class="bws-val" style="color:#e30202;">${formatCurrency(totalDue)}</div>
+      <div class="bws-lbl">Total Due</div>
+    </div>
+    <div class="bwa-stat">
+      <div class="bws-val" style="color:#25D366;">${sendable.length}</div>
+      <div class="bws-lbl">Phone Hai</div>
+    </div>`;
+
+  // Customer list with individual send buttons
+  const listHtml = dueList.map(c => {
+    const clean = (c.phone || '').replace(/\D/g, '');
+    const hasPhone = clean.length >= 10 && c.phone !== 'unknown';
+    return `<div class="bwa-cust-row">
+      <div class="bwa-cust-info">
+        <div class="bwa-cust-name">${c.name}</div>
+        <div class="bwa-cust-phone">${hasPhone ? '📞 ' + c.phone : '⚠️ Phone number nahi'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="bwa-cust-due">${formatCurrency(c.remaining)}</span>
+        ${hasPhone
+          ? `<button onclick="sendSingleWA('${c.phone}','${c.name.replace(/'/g,"\\'")}',${Math.round(c.remaining)})" style="background:#25D366;color:white;border:none;padding:5px 10px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);">Send</button>`
+          : `<span style="font-size:11px;color:#aaa;">Skip</span>`}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('bwaCustomerList').innerHTML = listHtml;
+
+  // Message preview — pehle customer ka individual message
+  document.getElementById('bwaMsgPreview').textContent = dueList.length > 0 ? buildDueMsg(dueList[0]) : '';
+
+  // Mode tabs
+  document.getElementById('bwaModeNote').innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <button id="bwaModeIndiv" onclick="setBwaMode('individual')" style="flex:1;padding:8px;border-radius:6px;border:2px solid #25D366;background:#25D366;color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);">
+       Separate Message
+      </button>
+      <button id="bwaModeCombined" onclick="setBwaMode('combined')" style="flex:1;padding:8px;border-radius:6px;border:2px solid #ddd;background:white;color:#555;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);">
+        Combined List
+      </button>
+    </div>
+    <p id="bwaModeDesc" style="font-size:12px;color:#888;margin-bottom:8px;">Har customer ko uska personal message bhejega — ek-ek karke tabs khulengen.</p>`;
+
+  window._bwaMode = 'individual';
+  document.getElementById('bwaSendStatus').style.display = 'none';
+  document.getElementById('bwaSendAllBtn').disabled = false;
+  document.getElementById('bwaSendAllBtn').style.background = '#25D366';
+  document.getElementById('bwaSendAllBtn').textContent = ' Send';
+  document.getElementById('bulkWaModal').style.display = 'flex';
+}
+
+window.setBwaMode = function(mode) {
+  window._bwaMode = mode;
+  const dueList = getDueCustomers();
+  const sendable = dueList.filter(c => (c.phone||'').replace(/\D/g,'').length >= 10 && c.phone !== 'unknown');
+  const modeIndiv = document.getElementById('bwaModeIndiv');
+  const modeCombined = document.getElementById('bwaModeCombined');
+  const desc = document.getElementById('bwaModeDesc');
+  const preview = document.getElementById('bwaMsgPreview');
+  const sendBtn = document.getElementById('bwaSendAllBtn');
+
+  if (mode === 'individual') {
+    modeIndiv.style.background = '#25D366'; modeIndiv.style.color = 'white'; modeIndiv.style.borderColor = '#25D366';
+    modeCombined.style.background = 'white'; modeCombined.style.color = '#555'; modeCombined.style.borderColor = '#ddd';
+    desc.textContent = 'Har customer ko uska personal message bhejega — ek-ek karke tabs khulengen.';
+    preview.textContent = dueList.length > 0 ? buildDueMsg(dueList[0]) : '';
+    sendBtn.textContent = ' Send';
+  } else {
+    modeIndiv.style.background = 'white'; modeIndiv.style.color = '#555'; modeIndiv.style.borderColor = '#ddd';
+    modeCombined.style.background = '#25D366'; modeCombined.style.color = 'white'; modeCombined.style.borderColor = '#25D366';
+    desc.textContent = 'Sabhi customers ki list ek hi message mein (owner ke liye).';
+    preview.textContent = buildCombinedMsg(dueList);
+    sendBtn.textContent = 'Send';
+  }
+};
+
+// Send to a single customer
+window.sendSingleWA = function(phone, name, amount) {
+  const msg = `Dear ${name},\n\nYe SP Fashion ki taraf se payment reminder hai.\n\nAapka *₹${amount.toLocaleString('en-IN')}* ka payment pending hai.\n\nPlease jald se jald payment clear karein.\n\nDhanyavaad! 🙏\n*SP Fashion*`;
+  const cleanPhone = phone.replace(/\D/g, '');
+  window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+async function sendAllDueReminders() {
+  const dueList = getDueCustomers();
+  const sendable = dueList.filter(c => (c.phone||'').replace(/\D/g,'').length >= 10 && c.phone !== 'unknown');
+  const status = document.getElementById('bwaSendStatus');
+  const btn = document.getElementById('bwaSendAllBtn');
+
+  // COMBINED mode — sirf ek message apne khud ke WhatsApp par
+  if (window._bwaMode === 'combined') {
+    const msg = buildCombinedMsg(dueList);
+    // Apne shop ka number settings se lo, warna blank
+    const settings = JSON.parse(localStorage.getItem('shopSettings') || '{}');
+    const shopPhone = (settings.shopPhone || '').replace(/\D/g, '');
+    const url = shopPhone
+      ? `https://wa.me/91${shopPhone}?text=${encodeURIComponent(msg)}`
+      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+    status.style.display = 'block';
+    status.innerHTML = `<span style="color:#25D366;font-weight:600;">✅ Combined list aapke WhatsApp par bhej di gayi!</span>`;
+    btn.textContent = '✓ Bheja Gaya';
+    return;
+  }
+
+  // INDIVIDUAL mode — har customer ko alag tab
+  if (!sendable.length) { toast('Phone number wale koi due customer nahi hain.'); return; }
+
+  btn.disabled = true;
+  status.style.display = 'block';
+
+  for (let i = 0; i < sendable.length; i++) {
+    const c = sendable[i];
+    status.textContent = `${i + 1}/${sendable.length} — ${c.name} ko bhej raha hai…`;
+    const msg = buildDueMsg(c);
+    const cleanPhone = c.phone.replace(/\D/g, '');
+    window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+    if (i < sendable.length - 1) await new Promise(r => setTimeout(r, 1500));
+  }
+
+  status.innerHTML = `<span style="color:#25D366;font-weight:600;">✅ ${sendable.length} customers ko message bhej diya gaya!</span>`;
+  btn.textContent = '✓ Bheja Gaya';
+  toast(`✅ ${sendable.length} customers ko due reminder bheja gaya!`, 3500);
+}
+
+document.getElementById('bulkWaBtn').addEventListener('click', openBulkWaModal);
+document.getElementById('bwaSendAllBtn').addEventListener('click', sendAllDueReminders);
+
+// ══ INITIAL LOAD ══
+loadAllData();
+// ── Scroll to Top ──
+const scrollTopBtn = document.getElementById('scrollTopBtn');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 300) {
+    scrollTopBtn.classList.add('visible');
+  } else {
+    scrollTopBtn.classList.remove('visible');
+  }
+});
+scrollTopBtn.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+  import { checkPageAccess, applySidebarPermissions,
+          applyQuickActionPermissions, addLogoutToSidebar } from './auth.js';
+  if (!checkPageAccess()) throw new Error('Access denied');
+  applySidebarPermissions();
+  addLogoutToSidebar();
+</script>
+<script>
+(function(){
+  try { var d=JSON.parse(localStorage.getItem('staffAuth')||'null');
+    if(!d||!d.userId){location.href='login.html?redirect=billing.html';return;}
+  } catch(e){location.href='login.html';return;}
+  var o=document.createElement('div');
+  o.id='__auth_guard__';
+  o.style.cssText='position:fixed;inset:0;background:#000;z-index:99999;';
+  document.documentElement.appendChild(o);
+})();
+</script>
+
+<button id="scrollTopBtn" title="Back to top">&#8679;</button>
+</body>
+</html>

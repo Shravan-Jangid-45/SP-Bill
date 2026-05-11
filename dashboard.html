@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard - SP Fashion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- ══ Instant auth guard (runs sync, before body renders) ══ -->
+  <script>
+    (function () {
+      try {
+        var d = JSON.parse(localStorage.getItem('staffAuth') || 'null');
+        if (!d || !d.userId) { location.href = 'login.html?redirect=dashboard.html'; return; }
+      } catch (e) { location.href = 'login.html'; return; }
+      /* Black overlay — removed by auth.js once permission confirmed */
+      var o = document.createElement('div');
+      o.id = '__auth_guard__';
+      o.style.cssText = 'position:fixed;inset:0;background:#000;z-index:99999;';
+      document.documentElement.appendChild(o);
+    })();
+  </script>
+
+  <style>
+    :root {
+      --accent-green: #10bf39;
+      --accent-red: #e30202;
+      --accent-blue: #0066cc;
+      --accent-orange: #e65c00;
+      --accent-purple: #7b1fa2;
+      --font: "DM Sans","Inter",sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: #f5f5f5; min-height: 100vh; overflow-x: hidden; }
+    .app { display: flex; width: 100%; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { background: #1a1a1a; color: white; width: 200px; padding: 20px 0; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 1100; overflow-y: auto; transition: transform 0.3s ease-in-out; }
+    .brand { font-size: 18px; font-weight: bold; margin-bottom: 30px; text-align: center; color: white; padding: 0 16px; }
+    .nav-link { text-decoration: none; color: white; display: block; margin-bottom: 5px; }
+    .nav-inner { display: flex; align-items: center; gap: 12px; padding: 12px 20px; transition: background .3s; font-size: 14px; }
+    .nav-link:hover .nav-inner { background-color: #333; }
+    .nav-link.active .nav-inner { background: #0066cc; border-left: 3px solid #fff; }
+    .nav-inner img { width: 16px; height: 16px; }
+    .mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1099; opacity: 0; visibility: hidden; transition: opacity .3s; }
+    .mobile-overlay.active { opacity: 1; visibility: visible; }
+
+    /* ── Layout ── */
+    .main-content { margin-left: 200px; width: calc(100% - 200px); background: #fff; display: flex; flex-direction: column; min-height: 100vh; }
+    .top-header { background: white; padding: 12px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,.08); position: sticky; top: 0; z-index: 1050; min-height: 60px; gap: 10px; }
+    .page-title { font-size: 20px; font-weight: 600; color: #333; }
+    .menu-toggle { display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: #333; padding: 0; }
+    .content-area { padding: 20px 30px; flex-grow: 1; background: #f8f9fa; }
+
+    /* ── Desktop header filter ── */
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .filter-bar { display: flex; align-items: center; gap: 4px; background: #f2f2f2; border-radius: 8px; padding: 4px; }
+    .filter-btn { padding: 5px 11px; border-radius: 6px; border: none; background: transparent; font-size: 12px; font-weight: 600; color: #888; cursor: pointer; font-family: var(--font); transition: all .2s; white-space: nowrap; }
+    .filter-btn.active { background: white; color: #222; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    .date-range-wrap { display: flex; align-items: center; gap: 6px; }
+    .date-inp { padding: 5px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; font-family: var(--font); color: #555; outline: none; background: white; }
+    .date-inp:focus { border-color: var(--accent-blue); }
+    .apply-btn { padding: 5px 12px; background: var(--accent-blue); color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font); }
+    .date-badge { font-size: 12px; color: #888; background: #f0f0f0; padding: 5px 12px; border-radius: 20px; white-space: nowrap; }
+
+    /* ── Mobile filter bar ── */
+    .mobile-filter-bar { display: none; background: white; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.06); border: 1px solid #efefef; }
+    .mobile-filter-label { font-size: 11px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+    .mobile-filter-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+    .mobile-filter-scroll::-webkit-scrollbar { display: none; }
+    .mfb { padding: 7px 14px; border-radius: 20px; border: 1.5px solid #e8e8e8; background: white; font-size: 12px; font-weight: 600; color: #888; cursor: pointer; font-family: var(--font); white-space: nowrap; transition: all .2s; }
+    .mfb.active { background: #0066cc; border-color: #0066cc; color: white; }
+    .mobile-custom-date { margin-top: 10px; display: none; flex-direction: column; gap: 8px; }
+    .mobile-custom-date.show { display: flex; }
+    .mobile-date-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .mobile-date-row label { font-size: 12px; color: #666; font-weight: 500; width: 30px; }
+    .mobile-date-row input { flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; font-family: var(--font); color: #333; outline: none; }
+    .mobile-date-row input:focus { border-color: var(--accent-blue); }
+    .mobile-apply-btn { width: 100%; padding: 9px; background: var(--accent-blue); color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); margin-top: 4px; }
+
+    /* ── Section titles ── */
+    .section-title { font-size: 11px; font-weight: 700; color: #c0c0c0; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; margin-top: 24px; display: flex; align-items: center; gap: 8px; }
+    .section-title:first-child { margin-top: 0; }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: #e8e8e8; }
+
+    .period-lbl { font-size: 11px; color: #aaa; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+    .pdot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); display: inline-block; flex-shrink: 0; }
+
+    /* ── Stat cards ── */
+    .stats-grid  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 4px; }
+    .stats-grid5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 4px; }
+    .stat-card { background: white; border-radius: 12px; padding: 16px 16px 14px; box-shadow: 0 1px 4px rgba(0,0,0,.06); border: 1px solid #efefef; cursor: default; transition: transform .15s, box-shadow .15s; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 5px 14px rgba(0,0,0,.09); }
+    .sc-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; flex-shrink: 0; }
+    .sc-icon img { width: 18px; height: 18px; }
+    .sc-icon.g  { background:#f0f0f0; } .sc-icon.g img { filter:brightness(0) opacity(.4); }
+    .sc-icon.p  { background:#f3e5f5; } .sc-icon.p  img {filter: invert(21%) sepia(77%) saturate(2768%) hue-rotate(268deg) brightness(87%) contrast(98%); }
+    .sc-icon.r  { background:#fdecea; } .sc-icon.r  img { filter:invert(20%) sepia(90%) saturate(700%) hue-rotate(340deg); }
+    .sc-icon.o  { background:#fff3e0; } .sc-icon.o  img { filter:invert(40%) sepia(80%) saturate(600%) hue-rotate(10deg); }
+    .sc-icon.t  { background:#e0f2f1; } .sc-icon.t  img { filter:invert(40%) sepia(60%) saturate(400%) hue-rotate(160deg); }
+    .sc-icon.br { background:#efebe9; } .sc-icon.br img { filter:invert(30%) sepia(40%) saturate(300%) hue-rotate(20deg) brightness(80%); }
+    .sc-icon.dk { background:#e3f0ff; } .sc-icon.dk img { filter:brightness(0) opacity(.45); }
+    .sc-label { font-size: 11px; font-weight: 600; color: #c0c0c0; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
+    .sc-val   { font-size: 22px; font-weight: 800; color: #1a1a1a; line-height: 1.1; margin-bottom: 4px; }
+    .sc-sub   { font-size: 11px; color: #c0c0c0; }
+
+    /* ── Quick actions ── */
+    .quick-actions { display: grid; grid-template-columns: repeat(9, 1fr); gap: 10px; }
+    .qa-btn { background: white; border-radius: 12px; padding: 13px 6px 11px; cursor: pointer; border: 1px solid #efefef; text-decoration: none; color: #333; transition: all .2s; display: flex; flex-direction: column; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .qa-btn:hover { border-color: #10bf39; background: #f5fff8; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,191,57,.1); }
+    .qa-ic { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+    .qa-ic img { width: 18px; height: 18px; }
+    .qa-ic.g  { background:#e8f5e9; } .qa-ic.g  img { filter:invert(40%) sepia(80%) saturate(500%) hue-rotate(100deg); }
+    .qa-ic.p  { background:#f3e5f5; } .qa-ic.p  img { filter: invert(21%) sepia(77%) saturate(2768%) hue-rotate(268deg) brightness(87%) contrast(98%); }
+    .qa-ic.o  { background:#fff3e0; } .qa-ic.o  img { filter:invert(40%) sepia(80%) saturate(600%) hue-rotate(10deg); }
+    .qa-ic.t  { background:#e0f2f1; } .qa-ic.t  img { filter:invert(40%) sepia(60%) saturate(400%) hue-rotate(160deg); }
+    .qa-ic.br { background:#efebe9; } .qa-ic.br img { filter:invert(30%) sepia(40%) saturate(300%) hue-rotate(20deg) brightness(80%); }
+    .qa-ic.dk { background:#f0f0f0; } .qa-ic.dk img { filter:brightness(0) opacity(.4); }
+    .qa-lbl { font-size: 10px; font-weight: 600; color: #777; text-align: center; line-height: 1.3; }
+
+    /* ── Columns ── */
+    .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .three-col { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+    /* ── Card box ── */
+    .card-box { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); border: 1px solid #efefef; }
+    .cbt { font-size: 13px; font-weight: 700; color: #333; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+    .cbt a { font-size: 11px; color: var(--accent-blue); text-decoration: none; font-weight: 500; }
+
+    /* ── Mini list ── */
+    .mli { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; gap: 8px; }
+    .mli:last-child { border-bottom: none; }
+    .mli-l { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .mli-name { font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+    .mli-sub  { font-size: 11px; color: #c0c0c0; }
+    .mli-r { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+    .mli-val { font-weight: 700; color: #333; white-space: nowrap; font-size: 13px; }
+    .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+    .badge.paid { background: #e8f5e9; color: #2e7d32; }
+    .badge.due  { background: #fdecea; color: #c62828; }
+    .badge.partial { background: #fff8e1; color: #e65c00; }
+
+    .spill { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; white-space: nowrap; }
+    .spill.zero { background: #fdecea; color: #c62828; }
+    .spill.low  { background: #fff8e1; color: #e65c00; }
+
+    .sup-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; gap: 8px; }
+    .sup-row:last-child { border-bottom: none; }
+    .sup-name { font-weight: 600; color: #333; }
+    .sup-due  { font-weight: 700; color: #c62828; flex-shrink: 0; }
+
+    .cpn-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+    .cpn-row:last-child { border-bottom: none; }
+    .cpn-code { font-weight: 700; font-family: monospace; color: #7b1fa2; background: #f3e5f5; padding: 2px 8px; border-radius: 5px; font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+    .cpn-pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; }
+    .cpn-pill.active { background: #e8f5e9; color: #2e7d32; }
+    .cpn-pill.used   { background: #f5f5f5; color: #999; }
+    .cpn-info { flex: 1; min-width: 0; }
+    .cpn-disc { font-size: 12px; font-weight: 600; color: #555; }
+    .cpn-aud  { font-size: 11px; color: #bbb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .pbar  { width: 100%; height: 7px; background: #f0f0f0; border-radius: 10px; overflow: hidden; margin-bottom: 3px; }
+    .pfill { height: 100%; border-radius: 10px; transition: width .6s; }
+
+    .crow { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+    .crow:last-child { border-bottom: none; }
+    .crow span { color: #666; }
+    .crow strong { font-weight: 700; }
+
+    .sv-hdr { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 2px; border-bottom: 2px solid #e8e8e8; font-size: 11px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: .4px; }
+    .sv-cols { display: flex; gap: 16px; }
+    .sv-cols span { width: 72px; text-align: right; }
+    .sv-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+    .sv-row:last-child { border-bottom: none; }
+
+    .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid #ddd; border-top-color: #10bf39; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 4px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ltxt { color: #ccc; font-size: 13px; text-align: center; padding: 18px 0; }
+    .oktxt { color: #10bf39; font-size: 13px; text-align: center; padding: 14px 0; font-weight: 600; }
+
+    #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 11px 20px; border-radius: 8px; font-size: 14px; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,.2); white-space: nowrap; }
+    #toast.show { display: block; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1200px) {
+      .quick-actions  { grid-template-columns: repeat(5, 1fr); }
+      .stats-grid5    { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 1000px) {
+      .stats-grid     { grid-template-columns: repeat(2, 1fr); }
+      .stats-grid5    { grid-template-columns: repeat(3, 1fr); }
+      .two-col, .three-col { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .menu-toggle { display: block; }
+      .main-content { margin-left: 0; width: 100%; }
+      .top-header { position: fixed; top: 0; width: 100%; padding: 10px 14px; }
+      .content-area { padding: 14px; margin-top: 60px; }
+      .header-right .filter-bar,
+      .header-right .date-range-wrap { display: none; }
+      .mobile-filter-bar { display: block; }
+      .stats-grid, .stats-grid5 { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .quick-actions { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .sc-val { font-size: 18px; }
+      .cpn-grid { grid-template-columns: 1fr !important; }
+      .sv-cols span { width: 60px; font-size: 12px; }
+    }
+    @media (max-width: 480px) {
+      .quick-actions { grid-template-columns: repeat(3, 1fr); }
+      .stats-grid5 { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="appSidebar">
+    <div class="brand">SP Fashion</div>
+    <a href="dashboard.html" class="nav-link active"><div class="nav-inner"><img src="icon/deshboard.svg"/><span>Dashboard</span></div></a>
+    <a href="product.html"   class="nav-link"><div class="nav-inner"><img src="icon/products.svg"/><span>Products</span></div></a>
+    <a href="suppliers.html" class="nav-link"><div class="nav-inner"><img src="icon/Suppliers.svg"/><span>Suppliers</span></div></a>
+    <a href="staff.html"     class="nav-link"><div class="nav-inner"><img src="icon/customer.svg"/><span>Staff Members</span></div></a>
+    <a href="billing.html"   class="nav-link"><div class="nav-inner"><img src="icon/Bill.svg"/><span>Billing</span></div></a>
+    <a href="invoices.html"  class="nav-link"><div class="nav-inner"><img src="icon/invoices.svg"/><span>Invoices</span></div></a>
+    <a href="cashBook.html"  class="nav-link"><div class="nav-inner"><img src="icon/cashbook.svg"/><span>Cash Book</span></div></a>
+    <a href="coupon.html"    class="nav-link"><div class="nav-inner"><img src="icon/coupon.svg"/><span>Coupons</span></div></a>
+    <a href="settings.html"  class="nav-link"><div class="nav-inner"><img src="icon/setting.svg"/><span>Settings</span></div></a>
+    <!-- Logout injected here by addLogoutToSidebar() -->
+  </aside>
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main-content">
+
+    <!-- Top Header (no logout button here) -->
+    <div class="top-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="menu-toggle" id="menuToggle">&#9776;</button>
+        <h1 class="page-title">Dashboard</h1>
+      </div>
+      <div class="header-right">
+        <div class="filter-bar">
+          <span style="font-size:11px;color:#aaa;font-weight:600;padding:0 4px;">Period</span>
+          <button class="filter-btn active" data-period="all">All Time</button>
+          <button class="filter-btn" data-period="month">This Month</button>
+          <button class="filter-btn" data-period="week">This Week</button>
+          <button class="filter-btn" data-period="today">Today</button>
+          <button class="filter-btn" data-period="custom">Custom</button>
+        </div>
+        <div class="date-range-wrap" id="customDateRange" style="display:none;">
+          <input type="date" class="date-inp" id="dateFrom"/>
+          <span style="font-size:11px;color:#bbb;">to</span>
+          <input type="date" class="date-inp" id="dateTo"/>
+          <button class="apply-btn" id="applyDateBtn">Apply</button>
+        </div>
+        <div class="date-badge" id="todayDate">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content-area">
+
+      <div class="mobile-filter-bar" id="mobileFilterBar">
+        <div class="mobile-filter-label">Filter by Period</div>
+        <div class="mobile-filter-scroll">
+          <button class="mfb active" data-mperiod="all">All Time</button>
+          <button class="mfb" data-mperiod="month">This Month</button>
+          <button class="mfb" data-mperiod="week">This Week</button>
+          <button class="mfb" data-mperiod="today">Today</button>
+          <button class="mfb" data-mperiod="custom">Custom Date</button>
+        </div>
+        <div class="mobile-custom-date" id="mobileCustomDate">
+          <div class="mobile-date-row">
+            <label>From</label>
+            <input type="date" id="mDateFrom"/>
+          </div>
+          <div class="mobile-date-row">
+            <label>To</label>
+            <input type="date" id="mDateTo"/>
+          </div>
+          <button class="mobile-apply-btn" id="mApplyDateBtn">Apply Filter</button>
+        </div>
+      </div>
+
+      <div class="period-lbl"><span class="pdot"></span><span id="periodTxt">Showing: All Time Data</span></div>
+
+      <!-- Quick Actions -->
+      <p class="section-title">Quick Actions</p>
+      <div class="quick-actions">
+        <a href="billing.html"       class="qa-btn"><div class="qa-ic g"><img src="icon/Bill.svg"/></div><span class="qa-lbl">New Bill</span></a>
+        <a href="product.html"       class="qa-btn"><div class="qa-ic p"><img src="icon/products.svg"/></div><span class="qa-lbl">Products</span></a>
+        <a href="cashBook.html"      class="qa-btn"><div class="qa-ic t"><img src="icon/cashbook.svg"/></div><span class="qa-lbl">Cash Book</span></a>
+        <a href="invoices.html"      class="qa-btn"><div class="qa-ic dk"><img src="icon/invoices.svg"/></div><span class="qa-lbl">Invoices</span></a>
+        <a href="suppliers.html"     class="qa-btn"><div class="qa-ic o"><img src="icon/Suppliers.svg"/></div><span class="qa-lbl">Suppliers</span></a>
+        <a href="coupon.html"        class="qa-btn"><div class="qa-ic p"><img src="icon/coupon.svg"/></div><span class="qa-lbl">Coupons</span></a>
+        <a href="staff.html"         class="qa-btn"><div class="qa-ic dk"><img src="icon/customer.svg"/></div><span class="qa-lbl">Staff</span></a>
+        <a href="barcode-print.html" class="qa-btn"><div class="qa-ic br"><img src="icon/barcode.svg"/></div><span class="qa-lbl">Print Barcode</span></a>
+        <a href="settings.html"      class="qa-btn"><div class="qa-ic dk"><img src="icon/setting.svg"/></div><span class="qa-lbl">Settings</span></a>
+      </div>
+
+      <!-- Sales Overview -->
+      <p class="section-title">Sales Overview</p>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="sc-icon g"><img src="icon/Bill.svg"/></div><div class="sc-label">Total Sales</div><div class="sc-val" id="s-sales"><span class="spinner"></span></div><div class="sc-sub" id="s-sales-sub">Loading...</div></div>
+        <div class="stat-card"><div class="sc-icon p"><img src="icon/invoices.svg"/></div><div class="sc-label">Total Bills</div><div class="sc-val" id="s-bills"><span class="spinner"></span></div><div class="sc-sub" id="s-bills-sub">Loading...</div></div>
+        <div class="stat-card"><div class="sc-icon o"><img src="icon/cashbook.svg"/></div><div class="sc-label">Remaining Due</div><div class="sc-val" id="s-due"><span class="spinner"></span></div><div class="sc-sub" id="s-due-sub">Pending bills</div></div>
+        <div class="stat-card"><div class="sc-icon t"><img src="icon/invoices.svg"/></div><div class="sc-label">Amount Collected</div><div class="sc-val" id="s-collected"><span class="spinner"></span></div><div class="sc-sub">Paid + Cash Book</div></div>
+      </div>
+
+      <!-- Purchase Overview -->
+      <p class="section-title">Purchase Overview</p>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="sc-icon o"><img src="icon/Suppliers.svg"/></div><div class="sc-label">Total Purchase</div><div class="sc-val" id="s-purchase"><span class="spinner"></span></div><div class="sc-sub">Supplier invoices</div></div>
+        <div class="stat-card"><div class="sc-icon r"><img src="icon/Suppliers.svg"/></div><div class="sc-label">Supplier Due</div><div class="sc-val" id="s-sup-due"><span class="spinner"></span></div><div class="sc-sub">Pending payable</div></div>
+        <div class="stat-card"><div class="sc-icon g"><img src="icon/Suppliers.svg"/></div><div class="sc-label">Supplier Paid</div><div class="sc-val" id="s-sup-paid"><span class="spinner"></span></div><div class="sc-sub">Total payments made</div></div>
+        <div class="stat-card"><div class="sc-icon p"><img src="icon/Suppliers.svg"/></div><div class="sc-label">Total Suppliers</div><div class="sc-val" id="s-suppliers"><span class="spinner"></span></div><div class="sc-sub" id="s-suppliers-sub">Loading...</div></div>
+      </div>
+
+      <!-- Inventory -->
+      <p class="section-title">Inventory &amp; Stock Value</p>
+      <div class="stats-grid5">
+        <div class="stat-card"><div class="sc-icon p"><img src="icon/products.svg"/></div><div class="sc-label">Total Products</div><div class="sc-val" id="s-products"><span class="spinner"></span></div><div class="sc-sub" id="s-products-sub">Loading...</div></div>
+        <div class="stat-card"><div class="sc-icon r"><img src="icon/products.svg"/></div><div class="sc-label">Zero Stock</div><div class="sc-val" id="s-zero"><span class="spinner"></span></div><div class="sc-sub">Out of stock</div></div>
+        <div class="stat-card"><div class="sc-icon g"><img src="icon/products.svg"/></div><div class="sc-label">Stock Value (Rate)</div><div class="sc-val" id="s-sv-rate"><span class="spinner"></span></div><div class="sc-sub">At selling rate</div></div>
+        <div class="stat-card"><div class="sc-icon br"><img src="icon/products.svg"/></div><div class="sc-label">Stock Value (Purchase)</div><div class="sc-val" id="s-sv-purch"><span class="spinner"></span></div><div class="sc-sub">At purchase rate</div></div>
+        <div class="stat-card"><div class="sc-icon p"><img src="icon/coupon.svg"/></div><div class="sc-label">Active Coupons</div><div class="sc-val" id="s-coupons"><span class="spinner"></span></div><div class="sc-sub" id="s-coupons-sub">Loading...</div></div>
+      </div>
+
+      <!-- Recent Activity -->
+      <p class="section-title">Recent Activity</p>
+      <div class="three-col">
+        <div class="card-box"><div class="cbt">Recent Bills <a href="invoices.html">View All</a></div><div id="recentBills"><div class="ltxt"><span class="spinner"></span>Loading...</div></div></div>
+        <div class="card-box"><div class="cbt">Top Due Customers <a href="cashBook.html">View</a></div><div id="topDue"><div class="ltxt"><span class="spinner"></span>Loading...</div></div></div>
+      </div>
+
+      <!-- Suppliers & Stock Alerts -->
+      <p class="section-title">Suppliers &amp; Stock Alerts</p>
+      <div class="two-col">
+        <div class="card-box"><div class="cbt">Supplier Dues <a href="suppliers.html">View All</a></div><div id="supDues"><div class="ltxt"><span class="spinner"></span>Loading...</div></div></div>
+        <div class="card-box"><div class="cbt">Low / Zero Stock <a href="product.html">View</a></div><div id="lowStock"><div class="ltxt"><span class="spinner"></span>Loading...</div></div></div>
+      </div>
+
+      <!-- Stock Value & Collection -->
+      <p class="section-title">Stock Value &amp; Collection Summary</p>
+      <div class="two-col">
+        <div class="card-box"><div class="cbt">Stock Value Breakdown</div><div id="stockDetail"><div class="ltxt"><span class="spinner"></span>Loading...</div></div></div>
+        <div class="card-box"><div class="cbt">Collection Summary</div><div id="collSummary"><div class="ltxt"><span class="spinner"></span>Loading...</div></div></div>
+      </div>
+
+      <!-- Coupons -->
+      <p class="section-title">Recent Coupons</p>
+      <div class="card-box"><div class="cbt">Coupons <a href="coupon.html">View All</a></div><div id="couponsBox"><div class="ltxt"><span class="spinner"></span>Loading...</div></div></div>
+
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<!-- ═══ AUTH MODULE (runs first, checks access) ═══ -->
+<script type="module">
+import {
+  checkPageAccess, applySidebarPermissions,
+  applyQuickActionPermissions, addLogoutToSidebar
+} from './auth.js';
+
+// Gate: shows access denied overlay or removes guard
+if (!checkPageAccess()) throw new Error('Access denied');
+
+// Apply permission-based UI
+applySidebarPermissions();
+applyQuickActionPermissions();
+addLogoutToSidebar();
+</script>
+
+<!-- ═══ FIREBASE DATA MODULE ═══ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCVXql_12NNa9_bUXYfWhj8Z7ZUqTyD1ak",
+  authDomain: "sp-fashion-beca2.firebaseapp.com",
+  projectId: "sp-fashion-beca2",
+  storageBucket: "sp-fashion-beca2.firebasestorage.app",
+  messagingSenderId: "734725526616",
+  appId: "1:734725526616:web:4ed1410e441789653e262d",
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── Sidebar toggle ──
+const sidebar = document.getElementById('appSidebar');
+const overlay = document.getElementById('mobileOverlay');
+const openSB  = () => { sidebar.classList.add('active'); overlay.classList.add('active'); };
+const closeSB = () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); };
+document.getElementById('menuToggle').addEventListener('click', () =>
+  sidebar.classList.contains('active') ? closeSB() : openSB());
+overlay.addEventListener('click', closeSB);
+
+// ── Today date ──
+document.getElementById('todayDate').textContent =
+  new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+
+// ── Global state ──
+let _bills=[], _products=[], _suppliers=[], _coupons=[], _cashBook=[], _billinbox=[];
+let _period='all', _cfrom=null, _cto=null;
+
+function R(id,html){ const el=document.getElementById(id); if(el) el.innerHTML=String(html); }
+function fC(v){
+  const n=parseFloat(v||0);
+  if(n>=10000000) return '&#8377;'+(n/10000000).toFixed(2)+' Cr';
+  if(n>=100000)   return '&#8377;'+(n/100000).toFixed(2)+' L';
+  if(n>=1000)     return '&#8377;'+(n/1000).toFixed(1)+'k';
+  return '&#8377;'+n.toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:0});
+}
+function fF(v){ return '&#8377;'+parseFloat(v||0).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+function fD(ts){
+  if(!ts) return '';
+  let d;
+  if(ts&&typeof ts.toDate==='function') d=ts.toDate();
+  else if(ts&&ts.seconds) d=new Date(ts.seconds*1000);
+  else d=new Date(ts);
+  return isNaN(d)?'':d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+}
+function gMs(ts){
+  if(!ts) return 0;
+  if(ts&&typeof ts.toDate==='function') return ts.toDate().getTime();
+  if(ts&&ts.seconds) return ts.seconds*1000;
+  const d=new Date(ts); return isNaN(d)?0:d.getTime();
+}
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+
+function getRange(p){
+  const now=new Date();
+  if(p==='today'){ const f=new Date(now.getFullYear(),now.getMonth(),now.getDate()); const t=new Date(f); t.setHours(23,59,59,999); return{f,t}; }
+  if(p==='week'){ const f=new Date(now); f.setDate(now.getDate()-now.getDay()); f.setHours(0,0,0,0); const t=new Date(now); t.setHours(23,59,59,999); return{f,t}; }
+  if(p==='month'){ const f=new Date(now.getFullYear(),now.getMonth(),1); const t=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59,999); return{f,t}; }
+  if(p==='custom') return{f:_cfrom,t:_cto};
+  return{f:null,t:null};
+}
+function filtBills(bills){ if(_period==='all') return bills; const{f,t}=getRange(_period); if(!f) return bills; return bills.filter(b=>{ const ms=gMs(b.timestamp); return ms>=f.getTime()&&ms<=(t?t.getTime():Date.now()); }); }
+function filtBillinbox(bx){ if(_period==='all') return bx; const{f,t}=getRange(_period); if(!f) return bx; return bx.filter(b=>{ const ms=b.date?new Date(b.date).getTime():(b.createdAt?new Date(b.createdAt).getTime():0); return ms>=f.getTime()&&ms<=(t?t.getTime():Date.now()); }); }
+function pLabel(){
+  const n=new Date();
+  if(_period==='all') return 'Showing: All Time Data';
+  if(_period==='today') return 'Showing: Today — '+n.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  if(_period==='week') return 'Showing: This Week';
+  if(_period==='month') return 'Showing: '+n.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  if(_period==='custom'&&_cfrom&&_cto) return 'Showing: '+_cfrom.toLocaleDateString('en-IN',{day:'numeric',month:'short'})+' to '+_cto.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  return 'Custom Range';
+}
+
+function activatePeriod(p){
+  _period=p;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.period===p));
+  document.querySelectorAll('.mfb').forEach(b=>b.classList.toggle('active',b.dataset.mperiod===p));
+  document.getElementById('customDateRange').style.display=(p==='custom')?'flex':'none';
+  document.getElementById('mobileCustomDate').classList.toggle('show',p==='custom');
+  if(p!=='custom') renderAll();
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn=>{ btn.addEventListener('click',()=>{ const p=btn.dataset.period; if(p==='custom'){ const td=new Date().toISOString().split('T')[0]; document.getElementById('dateTo').value=td; if(!document.getElementById('dateFrom').value){ const d=new Date(); d.setMonth(d.getMonth()-1); document.getElementById('dateFrom').value=d.toISOString().split('T')[0]; } } activatePeriod(p); }); });
+document.getElementById('applyDateBtn').addEventListener('click',()=>{ const f=document.getElementById('dateFrom').value; const t=document.getElementById('dateTo').value; if(!f||!t){toast('Select both dates');return;} _cfrom=new Date(f+'T00:00:00'); _cto=new Date(t+'T23:59:59'); document.getElementById('mDateFrom').value=f; document.getElementById('mDateTo').value=t; renderAll(); });
+document.querySelectorAll('.mfb').forEach(btn=>{ btn.addEventListener('click',()=>{ const p=btn.dataset.mperiod; if(p==='custom'){ const td=new Date().toISOString().split('T')[0]; document.getElementById('mDateTo').value=td; if(!document.getElementById('mDateFrom').value){ const d=new Date(); d.setMonth(d.getMonth()-1); document.getElementById('mDateFrom').value=d.toISOString().split('T')[0]; } } activatePeriod(p); }); });
+document.getElementById('mApplyDateBtn').addEventListener('click',()=>{ const f=document.getElementById('mDateFrom').value; const t=document.getElementById('mDateTo').value; if(!f||!t){toast('Select both dates');return;} _cfrom=new Date(f+'T00:00:00'); _cto=new Date(t+'T23:59:59'); document.getElementById('dateFrom').value=f; document.getElementById('dateTo').value=t; renderAll(); });
+
+function buildCbMap(cb){ const m={}; cb.forEach(p=>{ (p.allocations||[]).forEach(a=>{ if(a.billId) m[a.billId]=(m[a.billId]||0)+(a.amount||0); }); (p.extraAllocations||[]).forEach(a=>{ if(a.billId) m[a.billId]=(m[a.billId]||0)+(a.amount||0); }); }); return m; }
+function isBillFullyPaid(bill,cbMap){ if(bill.status==='paid'||bill.status==='replaced'||bill.status==='returned') return true; const eff=parseFloat(bill.effectiveTotal!==undefined?bill.effectiveTotal:(bill.totalAmount||0)); const rcvd=parseFloat(bill.receivedAmount||0); const cb=cbMap[bill.id]||0; return(rcvd+cb)>=eff-0.01; }
+
+async function load(){
+  try {
+    const [bs,ps,ss,cs,cbs,bxs] = await Promise.all([
+      getDocs(collection(db,'bills')), getDocs(collection(db,'products')),
+      getDocs(collection(db,'shops')), getDocs(collection(db,'coupons')),
+      getDocs(collection(db,'customerCashBook')), getDocs(collection(db,'billinbox')),
+    ]);
+    _bills     = bs.docs.map(d=>({id:d.id,...d.data()}));
+    _products  = ps.docs.map(d=>({id:d.id,...d.data()}));
+    _suppliers = ss.docs.map(d=>({id:d.id,...d.data()}));
+    _coupons   = cs.docs.map(d=>({id:d.id,...d.data()}));
+    _cashBook  = cbs.docs.map(d=>({id:d.id,...d.data()}));
+    _billinbox = bxs.docs.map(d=>({id:d.id,...d.data()}));
+    renderAll();
+  } catch(e){ console.error(e); toast('Error loading data'); }
+}
+
+function renderAll(){
+  const bills=filtBills(_bills); const billinbox=filtBillinbox(_billinbox); const cbMap=buildCbMap(_cashBook);
+  document.getElementById('periodTxt').textContent=pLabel();
+  doSales(bills,cbMap); doPurchase(billinbox); doInventory(_products,_coupons);
+  doRecentBills(bills,cbMap); doTopDue(bills,cbMap); doSupDues(_suppliers,billinbox);
+  doLowStock(_products); doStockDetail(_products); doCollection(bills,cbMap); doCoupons(_coupons);
+}
+
+function doSales(bills,cbMap){ let sales=0,due=0,collected=0,paidCount=0,dueCount=0; bills.forEach(b=>{ const eff=parseFloat(b.effectiveTotal!==undefined?b.effectiveTotal:(b.totalAmount||0)); const rcvd=parseFloat(b.receivedAmount||0); const cb=cbMap[b.id]||0; sales+=eff; if(isBillFullyPaid(b,cbMap)){paidCount++;collected+=eff;}else{dueCount++;collected+=rcvd+cb;due+=Math.max(0,eff-rcvd-cb);} }); R('s-sales',fC(sales)); R('s-sales-sub',fF(sales)+'&bull;'+bills.length+' bills'); R('s-bills',bills.length); R('s-bills-sub',paidCount+' paid &bull; '+dueCount+' due'); R('s-due',fC(due)); R('s-due-sub',dueCount+' pending bills'); R('s-collected',fC(collected)); }
+function doPurchase(bx){ let purchase=0,paid=0; bx.forEach(b=>{ if(b.type==='purchase') purchase+=(b.amount||0); if(b.type==='payment') paid+=(b.amount||0); }); R('s-purchase',fC(purchase)); R('s-sup-due',fC(Math.max(0,purchase-paid))); R('s-sup-paid',fC(paid)); R('s-suppliers',_suppliers.length); R('s-suppliers-sub',_suppliers.length+' suppliers registered'); }
+function doInventory(products,coupons){ const zero=products.filter(p=>(p.stock||0)===0).length; const units=products.reduce((s,p)=>s+(p.stock||0),0); const svR=products.reduce((s,p)=>s+((p.rate||0)*(p.stock||0)),0); const svP=products.reduce((s,p)=>s+((p.purchasingRate||0)*(p.stock||0)),0); R('s-products',products.length); R('s-products-sub',units+' total units'); R('s-zero',zero); R('s-sv-rate',fC(svR)); R('s-sv-purch',fC(svP)); const today=new Date(); today.setHours(0,0,0,0); const act=coupons.filter(c=>!c.claimed&&(!c.validity||new Date(c.validity)>=today)).length; R('s-coupons',act); R('s-coupons-sub',coupons.length+' total coupons'); }
+
+function doRecentBills(bills,cbMap){ const el=document.getElementById('recentBills'); const sorted=[...bills].sort((a,b)=>gMs(b.timestamp)-gMs(a.timestamp)).slice(0,8); if(!sorted.length){el.innerHTML='<div class="ltxt">No bills in this period.</div>';return;} el.innerHTML=sorted.map(b=>{ const eff=parseFloat(b.effectiveTotal!==undefined?b.effectiveTotal:(b.totalAmount||0)); const rcvd=parseFloat(b.receivedAmount||0); const cb=cbMap[b.id]||0; const totalPaid=rcvd+cb; const fp=isBillFullyPaid(b,cbMap); const partial=!fp&&totalPaid>0.01; const bc=fp?'paid':(partial?'partial':'due'); const bt=fp?'PAID':(partial?'PARTIAL':'DUE'); return `<div class="mli"><div class="mli-l"><span class="mli-name">${b.customerName||'Cash Customer'}</span><span class="mli-sub">${b.billNumber||''}&bull;${fD(b.timestamp)}</span></div><div class="mli-r"><span class="mli-val">${fF(eff)}</span><span class="badge ${bc}">${bt}</span></div></div>`; }).join(''); }
+function doTopDue(bills,cbMap){ const el=document.getElementById('topDue'); const m={}; bills.forEach(b=>{ const ph=(b.customerPhone||'').trim()||'unknown'; if(!m[ph]) m[ph]={name:b.customerName||'—',phone:ph,due:0}; if(b.customerName) m[ph].name=b.customerName; if(!isBillFullyPaid(b,cbMap)){ const eff=parseFloat(b.effectiveTotal!==undefined?b.effectiveTotal:(b.totalAmount||0)); const rcvd=parseFloat(b.receivedAmount||0); const cb=cbMap[b.id]||0; m[ph].due+=Math.max(0,eff-rcvd-cb); } }); const top=Object.values(m).filter(c=>c.due>0.01).sort((a,b)=>b.due-a.due).slice(0,8); if(!top.length){el.innerHTML='<div class="oktxt">No customer dues!</div>';return;} el.innerHTML=top.map(c=>`<div class="mli"><div class="mli-l"><span class="mli-name">${c.name}</span><span class="mli-sub">${c.phone}</span></div><span class="mli-val" style="color:#c62828;">${fF(c.due)}</span></div>`).join(''); }
+function doSupDues(suppliers,billinbox){ const el=document.getElementById('supDues'); const dues=[]; suppliers.forEach(s=>{ const sb=billinbox.filter(b=>b.shopId===s.id); let cr=0,dr=0; sb.forEach(b=>{ if(b.type==='purchase') cr+=(b.amount||0); if(b.type==='payment') dr+=(b.amount||0); }); const due=cr-dr; if(due>0.01) dues.push({name:s.shopName||'—',contact:s.contact||'',due}); }); if(!dues.length){el.innerHTML='<div class="oktxt">No supplier dues!</div>';return;} dues.sort((a,b)=>b.due-a.due); el.innerHTML=dues.slice(0,8).map(s=>`<div class="sup-row"><div><div class="sup-name">${s.name}</div><div style="font-size:11px;color:#c0c0c0;">${s.contact}</div></div><span class="sup-due">${fF(s.due)}</span></div>`).join(''); }
+function doLowStock(products){ const el=document.getElementById('lowStock'); const low=products.filter(p=>(p.stock||0)<=5).sort((a,b)=>(a.stock||0)-(b.stock||0)); if(!low.length){el.innerHTML='<div class="oktxt">All products have stock!</div>';return;} el.innerHTML=low.slice(0,10).map(p=>{ const s=p.stock||0; return `<div class="mli"><div class="mli-l"><span class="mli-name">${p.productName||'—'}</span><span class="mli-sub">${p.barcode||p.spBarcode||''}&bull;&#8377;${p.rate||0}</span></div><span class="spill ${s===0?'zero':'low'}">${s===0?'Out of Stock':s+' left'}</span></div>`; }).join(''); }
+function doStockDetail(products){ const el=document.getElementById('stockDetail'); function cat(arr){return{n:arr.length,u:arr.reduce((s,p)=>s+(p.stock||0),0),r:arr.reduce((s,p)=>s+((p.rate||0)*(p.stock||0)),0),p:arr.reduce((s,p)=>s+((p.purchasingRate||0)*(p.stock||0)),0)};} const all=cat(products),rm=cat(products.filter(p=>!p.category||p.category==='readymade')),gen=cat(products.filter(p=>p.category==='general')),gar=cat(products.filter(p=>p.category==='garments')); const profit=all.r-all.p; el.innerHTML=`<div class="sv-hdr"><span>Category</span><div class="sv-cols"><span>Sell Value</span><span>Buy Value</span></div></div><div class="sv-row"><div><div style="font-weight:600;color:#333;font-size:13px;">Readymade</div><div style="font-size:11px;color:#bbb;">${rm.n} items&bull;${rm.u} units</div></div><div class="sv-cols"><span style="color:#0a8a28;">${fF(rm.r)}</span><span style="color:#b04400;">${fF(rm.p)}</span></div></div><div class="sv-row"><div><div style="font-weight:600;color:#333;font-size:13px;">General</div><div style="font-size:11px;color:#bbb;">${gen.n} items&bull;${gen.u} units</div></div><div class="sv-cols"><span style="color:#0a8a28;">${fF(gen.r)}</span><span style="color:#b04400;">${fF(gen.p)}</span></div></div><div class="sv-row"><div><div style="font-weight:600;color:#333;font-size:13px;">Garments</div><div style="font-size:11px;color:#bbb;">${gar.n} items</div></div><div class="sv-cols"><span style="color:#0a8a28;">${fF(gar.r)}</span><span style="color:#b04400;">${fF(gar.p)}</span></div></div><div class="sv-row" style="border-top:2px solid #e8e8e8;margin-top:4px;padding-top:10px;"><div style="font-weight:700;color:#333;">Total</div><div class="sv-cols"><span style="color:#0a8a28;font-weight:800;">${fF(all.r)}</span><span style="color:#b04400;font-weight:800;">${fF(all.p)}</span></div></div><div style="margin-top:12px;padding:10px 12px;background:${profit>=0?'#f0fff4':'#fff5f5'};border-radius:8px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;color:#666;font-weight:500;">Potential Profit (Stock)</span><strong style="font-size:15px;color:${profit>=0?'#0a8a28':'#c62828'};">${fF(profit)}</strong></div>`; }
+function doCollection(bills,cbMap){ const el=document.getElementById('collSummary'); let billed=0,rcvdBilling=0,cbTotal=0; bills.forEach(b=>{ const eff=parseFloat(b.effectiveTotal!==undefined?b.effectiveTotal:(b.totalAmount||0)); const rcvd=parseFloat(b.receivedAmount||0); const cb=cbMap[b.id]||0; billed+=eff; const sp=b.status==='paid'||b.status==='replaced'||b.status==='returned'; if(sp){rcvdBilling+=eff;}else{rcvdBilling+=rcvd;cbTotal+=cb;} }); const due=Math.max(0,billed-rcvdBilling-cbTotal); const pct=billed>0?Math.min(100,((rcvdBilling+cbTotal)/billed)*100):0; const clr=pct>80?'#10bf39':pct>50?'#e65c00':'#e30202'; el.innerHTML=`<div class="crow"><span>Total Billed</span><strong>${fF(billed)}</strong></div><div class="crow"><span>Received at Billing</span><strong style="color:#0a8a28;">${fF(rcvdBilling)}</strong></div><div class="crow"><span>Paid via Cash Book</span><strong style="color:#004fa3;">${fF(cbTotal)}</strong></div><div class="crow"><span>Remaining Due</span><strong style="color:#c62828;">${fF(due)}</strong></div><div style="margin-top:14px;"><div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:5px;"><span>Collection Rate</span><strong style="color:#333;">${pct.toFixed(1)}%</strong></div><div class="pbar"><div class="pfill" style="width:${pct}%;background:${clr};"></div></div><div style="font-size:11px;color:#bbb;margin-top:4px;">${pct.toFixed(1)}% of total billed collected</div></div>`; }
+function doCoupons(coupons){ const el=document.getElementById('couponsBox'); if(!coupons.length){el.innerHTML='<div class="ltxt">No coupons yet.</div>';return;} const today=new Date(); today.setHours(0,0,0,0); const sorted=[...coupons].sort((a,b)=>{ const aA=!a.claimed&&(!a.validity||new Date(a.validity)>=today); const bA=!b.claimed&&(!b.validity||new Date(b.validity)>=today); return(bA?1:0)-(aA?1:0); }); const rows=sorted.slice(0,12).map(c=>{ const isActive=!c.claimed&&(!c.validity||new Date(c.validity)>=today); const disc=c.discountType==='cash'?'&#8377;'+c.discountValue+' OFF':c.discountValue+'% OFF'; const aud=c.audience==='specific'?(c.customerName||c.customerMobile||'Specific Customer'):'All customers'; const expiry=c.validity?' &bull; Exp: '+new Date(c.validity).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):''; return `<div class="cpn-row"><span class="cpn-code">${c.code||'—'}</span><div class="cpn-info"><div class="cpn-disc">${disc}</div><div class="cpn-aud">${aud}${expiry}</div></div><span class="cpn-pill ${isActive?'active':'used'}">${isActive?'Active':'Used'}</span></div>`; }).join(''); el.innerHTML=`<div class="cpn-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">${rows}</div>`; }
+
+load();
+</script>
+</body>
+</html>
